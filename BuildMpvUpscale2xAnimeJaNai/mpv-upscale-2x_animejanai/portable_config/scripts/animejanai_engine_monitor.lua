@@ -57,31 +57,29 @@ mp.add_periodic_timer(o.poll_interval, function()
         if o.auto_pause and not mp.get_property_bool("pause") then
             mp.set_property_bool("pause", true)
             we_paused = true
-            msg.info("engine build started; pausing playback")
+            msg.info("TensorRT 引擎开始构建；已暂停播放")
         else
-            msg.info("engine build started")
+            msg.info("TensorRT 引擎开始构建")
         end
     elseif not b and building then
         building = false
         local failed = s ~= nil and s:find("build FAILED", 1, true) ~= nil
-        msg.info(string.format("engine build finished after %ds%s",
+        msg.info(string.format("TensorRT 引擎构建完成，耗时 %d 秒%s",
             math.floor(mp.get_time() - started_at),
-            we_paused and "; resuming playback" or ""))
+            we_paused and "；正在恢复播放" or ""))
         if we_paused then
             mp.set_property_bool("pause", false)
             we_paused = false
         end
         if failed then
             local log_path = s and s:match("%(see ([^%)]+)%)") or
-                             "the .build.log file next to the model"
+                             "模型旁边的 .build.log 文件"
             mp.osd_message(string.format(
-                "AnimeJaNai: Building TensorRT engine for %s for %s " ..
-                "failed. Upscaling is disabled. (details: %s).",
+                "AnimeJaNai：为 %s（%s）构建 TensorRT 引擎失败。已关闭超分。（详情：%s）",
                 build_name, build_res, log_path), 10)
         else
             mp.osd_message(string.format(
-                "AnimeJaNai: Building TensorRT engine for %s for %s " ..
-                "completed successfully. Upscaling is active.",
+                "AnimeJaNai：为 %s（%s）构建 TensorRT 引擎成功。超分已启用。",
                 build_name, build_res), 5)
         end
     end
@@ -94,11 +92,10 @@ mp.add_periodic_timer(o.poll_interval, function()
             build_res = r
         end
         local elapsed = math.floor(mp.get_time() - started_at)
-        local second = we_paused and "Playback will resume on completion."
-                                  or "Upscaling will activate on completion."
+        local second = we_paused and "构建完成后将自动恢复播放。"
+                                  or "构建完成后将自动启用超分。"
         mp.osd_message(string.format(
-            "AnimeJaNai: Building TensorRT engine for %s for %s " ..
-            "(%ds, usually about a minute)\n%s",
+            "AnimeJaNai：正在为 %s（%s）构建 TensorRT 引擎（已用 %d 秒，通常约一分钟）\n%s",
             build_name, build_res, elapsed, second),
             o.poll_interval + 0.5)
         -- while paused no frames flow, so the filter would never notice the
