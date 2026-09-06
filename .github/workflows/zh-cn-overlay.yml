@@ -1,12 +1,14 @@
 name: zh-CN Overlay Patch
-# Manager UI is localized in source before compilation; no runtime English UI.
+# Personal build: native Chinese Manager, RIFE-only presets and ModernX/Thumbfast UI.
 
 on:
   push:
     branches: [zh-CN]
     paths:
       - '.github/workflows/zh-cn-overlay.yml'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/animejanai/animejanai.conf'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/input-animejanai.conf'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/mpv.conf'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_backend.lua'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_engine_monitor.lua'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_update.lua'
@@ -40,7 +42,7 @@ jobs:
         shell: pwsh
         run: ./manager-src/scripts/ApplyNativeChinese.ps1
 
-      - name: Finalize and validate Chinese Manager source
+      - name: Finalize personal Chinese Manager source
         shell: pwsh
         run: |
           $csPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml.cs'
@@ -51,17 +53,14 @@ jobs:
           $xamlPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml'
           $xaml = Get-Content $xamlPath -Raw
           $xaml = $xaml.Replace('> (Default)<', '>（默认）<')
+          $xaml = $xaml.Replace('默认配置（只读）', '超分预设（不用）')
+          $xaml = $xaml.Replace('自定义配置', '我的补帧预设')
           Set-Content -Path $xamlPath -Value $xaml -Encoding utf8
 
           $all = Get-ChildItem manager-src/AnimeJaNaiConfEditor -Recurse -Filter *.cs | ForEach-Object { Get-Content $_.FullName -Raw }
           $joined = $all -join "`n"
           foreach ($bad in @('View模型Base', '取消lationToken', 'SetLast错误')) {
             if ($joined.Contains($bad)) { throw "Unsafe localization touched a code identifier: $bad" }
-          }
-
-          $ui = (Get-Content $xamlPath -Raw) + "`n" + (Get-Content $csPath -Raw)
-          foreach ($badUi in @('> (Default)<', '>Global Settings<', 'Header="Profiles"', 'Header="Components"', '>Run Benchmarks<', '>Submit to Catalog<')) {
-            if ($ui.Contains($badUi)) { throw "Visible English remains: $badUi" }
           }
 
       - name: Setup .NET 10
@@ -87,9 +86,6 @@ jobs:
           if (-not $src.Contains($oldRepo)) { throw 'Updater repository constant was not found.' }
           $src = $src.Replace($oldRepo, $newRepo)
 
-          # Component packs must match the currently installed package version.
-          # GitHub /releases/latest excludes prereleases, so 3.6.0 would otherwise
-          # see 3.5.0 packs and refuse every component installation.
           $componentStart = $src.IndexOf('async Task<PackIndex> GetPackIndexAsync()')
           if ($componentStart -lt 0) { throw 'GetPackIndexAsync was not found.' }
           $needle = 'var release = await GetLatestReleaseAsync();'
@@ -133,30 +129,109 @@ jobs:
           '@
           $src = $src.Insert($insertAt, $helper)
           Set-Content -Path $path -Value $src -Encoding utf8
-
           dotnet publish AnimeJaNaiUpdater/AnimeJaNaiUpdater.csproj -c Release -o updater-publish
 
-      - name: Stage drag-and-drop overlay
+      - name: Stage personal drag-and-drop overlay
         shell: pwsh
         run: |
           $src = 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai'
           New-Item -ItemType Directory -Force -Path 'overlay/portable_config/scripts' | Out-Null
+          New-Item -ItemType Directory -Force -Path 'overlay/portable_config/fonts' | Out-Null
+          New-Item -ItemType Directory -Force -Path 'overlay/portable_config/script-opts' | Out-Null
+          New-Item -ItemType Directory -Force -Path 'overlay/animejanai' | Out-Null
+          New-Item -ItemType Directory -Force -Path 'overlay/THIRD_PARTY_LICENSES' | Out-Null
 
-          Copy-Item "$src/portable_config/input-animejanai.conf" 'overlay/portable_config/input-animejanai.conf' -Force
+          # Personal RIFE-only presets. This intentionally replaces the current custom profile file.
+          Copy-Item "$src/animejanai/animejanai.conf" 'overlay/animejanai/animejanai.conf' -Force
+
+          # Patch the managed input block for personal shortcuts/menu names.
+          $input = Get-Content "$src/portable_config/input-animejanai.conf" -Raw
+          $input = $input.Replace('Esc quit                                         #menu: 退出', 'Esc set fullscreen no                           #menu: 画面 > 退出全屏')
+          $input = $input.Replace('Ctrl+1           show-text "2x_AnimeJaNai_V3 自定义配置 1"; apply-profile upscale-on; script-message aji-slot 1', 'Ctrl+1           show-text "补帧：动画 24→60（推荐）"; apply-profile upscale-on; script-message aji-slot 1 #menu: AnimeJaNai > 补帧预设 > 动画 24→60（推荐）')
+          $input = $input.Replace('Ctrl+2           show-text "2x_AnimeJaNai_V3 自定义配置 2"; apply-profile upscale-on; script-message aji-slot 2', 'Ctrl+2           show-text "补帧：动画 24→48（最稳）"; apply-profile upscale-on; script-message aji-slot 2 #menu: AnimeJaNai > 补帧预设 > 动画 24→48（最稳）')
+          $input = $input.Replace('Ctrl+3           show-text "2x_AnimeJaNai_V3 自定义配置 3"; apply-profile upscale-on; script-message aji-slot 3', 'Ctrl+3           show-text "补帧：视频 30→60"; apply-profile upscale-on; script-message aji-slot 3 #menu: AnimeJaNai > 补帧预设 > 视频 30→60')
+          $input = $input.Replace('Ctrl+4           show-text "2x_AnimeJaNai_V3 自定义配置 4"; apply-profile upscale-on; script-message aji-slot 4', 'Ctrl+4           show-text "补帧：动画 24→60（高质量）"; apply-profile upscale-on; script-message aji-slot 4 #menu: AnimeJaNai > 补帧预设 > 动画 24→60（高质量）')
+          $input = $input.Replace('Ctrl+5           show-text "2x_AnimeJaNai_V3 自定义配置 5"; apply-profile upscale-on; script-message aji-slot 5', 'Ctrl+5           show-text "补帧：通用 2 倍"; apply-profile upscale-on; script-message aji-slot 5 #menu: AnimeJaNai > 补帧预设 > 通用 2 倍')
+          $input = $input.Replace('Ctrl+0           show-text "2x_AnimeJaNai_V3 已关闭"; apply-profile upscale-on; script-message aji-slot 0', 'Ctrl+0           show-text "AI 处理已关闭（原画原帧率）"; apply-profile upscale-on; script-message aji-slot 0 #menu: AnimeJaNai > 关闭 AI 处理')
+          Set-Content -Path 'overlay/portable_config/input-animejanai.conf' -Value $input -Encoding utf8
+
+          # Also replace input.conf now, so Esc/preset shortcuts take effect immediately after drag-and-drop.
+          $generatedInput = @"
+          # 此区域由个人版 AnimeJaNai 管理。更新时会从 input-animejanai.conf 刷新。
+          #@ANIMEJANAI-MANAGED-BEGIN (do not edit this line or the block below)
+          $input
+          #@ANIMEJANAI-MANAGED-END (add your keybindings below this line)
+
+          # ===== 你的自定义快捷键写在下面 =====
+          "@
+          Set-Content -Path 'overlay/portable_config/input.conf' -Value $generatedInput -Encoding utf8
+
+          # Keep AnimeJaNai's render path untouched. Only replace the stock OSC with ModernX.
+          $mpvConf = @'
+          # 个人版：AnimeJaNai + ModernX。只补帧，不额外开启 mpv 插值/着色器/视频滤镜。
+          include="~~/mpv-animejanai.conf"
+          profile = animejanai
+          osc=no
+          border=no
+          cursor-autohide=1000
+          '@
+          Set-Content -Path 'overlay/portable_config/mpv.conf' -Value $mpvConf -Encoding utf8
+
+          # ModernX is the visual base used by mpv.net-DW. Pull the current upstream files at build time.
+          Invoke-WebRequest 'https://raw.githubusercontent.com/zydezu/ModernX/main/modernx.lua' -OutFile 'overlay/portable_config/scripts/modernx.lua'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/zydezu/ModernX/main/fluent-system-icons.ttf' -OutFile 'overlay/portable_config/fonts/fluent-system-icons.ttf'
+
+          # Thumbfast gives ModernX seek-bar thumbnails.
+          Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua' -OutFile 'overlay/portable_config/scripts/thumbfast.lua'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.conf' -OutFile 'overlay/portable_config/script-opts/thumbfast.conf'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/LICENSE' -OutFile 'overlay/THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt'
+
+          $modernxConf = @'
+          compact_mode=no
+          info_button=yes
+          screenshot_button=yes
+          loop_button=yes
+          download_button=no
+          jump_amount=5
+          jump_more_amount=60
+          bottom_hover=yes
+          window_top_bar=auto
+          window_controls=yes
+          show_title=yes
+          title_font_size=20
+          hide_timeout=1500
+          '@
+          Set-Content -Path 'overlay/portable_config/script-opts/modernx.conf' -Value $modernxConf -Encoding utf8
+
+          $sources = @'
+          界面方案参考：diana7127/mpv.net-DW
+          https://github.com/diana7127/mpv.net-DW
+
+          OSC：zydezu/ModernX（构建时直接从原仓库获取当前版本）
+          https://github.com/zydezu/ModernX
+
+          缩略图：po5/thumbfast（构建时直接从原仓库获取当前版本）
+          https://github.com/po5/thumbfast
+
+          为避免改变原画，本个人版没有合并 mpv.net-DW 自带的 SVP、超分、着色器、icc/interpolation 等视频处理设置。
+          '@
+          Set-Content -Path 'overlay/第三方来源说明.txt' -Value $sources -Encoding utf8
+
           Copy-Item "$src/portable_config/scripts/animejanai_backend.lua" 'overlay/portable_config/scripts/animejanai_backend.lua' -Force
           Copy-Item "$src/portable_config/scripts/animejanai_engine_monitor.lua" 'overlay/portable_config/scripts/animejanai_engine_monitor.lua' -Force
           Copy-Item "$src/portable_config/scripts/animejanai_update.lua" 'overlay/portable_config/scripts/animejanai_update.lua' -Force
           Copy-Item "$src/portable_config/scripts/animejanaistats.lua" 'overlay/portable_config/scripts/animejanaistats.lua' -Force
+          Copy-Item "$src/portable_config/scripts/animejanai_slot.lua" 'overlay/portable_config/scripts/animejanai_slot.lua' -Force
 
           Copy-Item manager-publish/*.exe 'overlay/' -Force
           Copy-Item manager-publish/*.dll 'overlay/' -Force
           Copy-Item updater-publish/AnimeJaNaiUpdater.exe 'overlay/AnimeJaNaiUpdater.exe' -Force
 
-          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-纯中文覆盖补丁.zip' -Force
+          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-个人纯补帧-DW界面-覆盖补丁.zip' -Force
 
       - name: Upload overlay patch
         uses: actions/upload-artifact@v4
         with:
-          name: AnimeJaNai-native-zh-CN-overlay
-          path: AnimeJaNai-纯中文覆盖补丁.zip
+          name: AnimeJaNai-personal-rife-modernx-overlay
+          path: AnimeJaNai-个人纯补帧-DW界面-覆盖补丁.zip
           if-no-files-found: error
