@@ -10,6 +10,7 @@ on:
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_engine_monitor.lua'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_update.lua'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanaistats.lua'
+      - 'AnimeJaNaiUpdater/**'
   workflow_dispatch:
 
 jobs:
@@ -38,6 +39,61 @@ jobs:
             -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true `
             -o manager-publish
 
+      - name: Build prerelease-aware component updater
+        shell: pwsh
+        run: |
+          $path = 'AnimeJaNaiUpdater/Program.cs'
+          $src = Get-Content $path -Raw
+
+          # Component packs must match the currently installed package version.
+          # GitHub /releases/latest excludes prereleases, so a 3.6.0 prerelease
+          # otherwise sees the 3.5.0 stable packs and refuses every install.
+          $componentStart = $src.IndexOf('async Task<PackIndex> GetPackIndexAsync()')
+          if ($componentStart -lt 0) { throw 'GetPackIndexAsync was not found.' }
+          $needle = 'var release = await GetLatestReleaseAsync();'
+          $replaceAt = $src.IndexOf($needle, $componentStart)
+          if ($replaceAt -lt 0) { throw 'Component release lookup was not found.' }
+          $src = $src.Remove($replaceAt, $needle.Length).Insert($replaceAt, 'var release = await GetInstalledReleaseAsync();')
+
+          $marker = 'async Task<Release> GetLatestReleaseAsync()'
+          $insertAt = $src.IndexOf($marker)
+          if ($insertAt -lt 0) { throw 'GetLatestReleaseAsync was not found.' }
+          $helper = @'
+          async Task<Release> GetInstalledReleaseAsync()
+          {
+              string local = ReadManifestString(localManifest, "package_version", ReadLocalVersion())
+                  .Trim().TrimStart('v');
+              if (string.IsNullOrWhiteSpace(local) || local == "0.0.0")
+              {
+                  return await GetLatestReleaseAsync();
+              }
+
+              string url = $"https://api.github.com/repos/{Repo}/releases/tags/{System.Uri.EscapeDataString(local)}";
+              using var client = new HttpClient();
+              client.DefaultRequestHeaders.UserAgent.ParseAdd("AnimeJaNaiUpdater");
+              string json = await client.GetStringAsync(url);
+              using var doc = JsonDocument.Parse(json);
+              var root = doc.RootElement;
+              string tag = root.GetProperty("tag_name").GetString() ?? "";
+              var assets = new List<Asset>();
+              if (root.TryGetProperty("assets", out var arr))
+              {
+                  foreach (var a in arr.EnumerateArray())
+                  {
+                      assets.Add(new Asset(
+                          a.GetProperty("name").GetString() ?? "",
+                          a.GetProperty("browser_download_url").GetString() ?? ""));
+                  }
+              }
+              return new Release(tag, assets);
+          }
+
+          '@
+          $src = $src.Insert($insertAt, $helper)
+          Set-Content -Path $path -Value $src -Encoding utf8
+
+          dotnet publish AnimeJaNaiUpdater/AnimeJaNaiUpdater.csproj -c Release -o updater-publish
+
       - name: Stage drag-and-drop overlay
         shell: pwsh
         run: |
@@ -52,6 +108,7 @@ jobs:
 
           Copy-Item manager-publish/*.exe 'overlay/' -Force
           Copy-Item manager-publish/*.dll 'overlay/' -Force
+          Copy-Item updater-publish/AnimeJaNaiUpdater.exe 'overlay/AnimeJaNaiUpdater.exe' -Force
 
           Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-zh-CN-覆盖补丁.zip' -Force
 
