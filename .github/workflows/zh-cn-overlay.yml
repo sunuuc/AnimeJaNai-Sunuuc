@@ -45,6 +45,13 @@ jobs:
           $path = 'AnimeJaNaiUpdater/Program.cs'
           $src = Get-Content $path -Raw
 
+          # Use the repository's current canonical name rather than relying on
+          # GitHub's redirect from the historical repository name.
+          $oldRepo = 'const string Repo = "the-database/mpv-upscale-2x_animejanai";'
+          $newRepo = 'const string Repo = "the-database/mpv-AnimeJaNai";'
+          if (-not $src.Contains($oldRepo)) { throw 'Updater repository constant was not found.' }
+          $src = $src.Replace($oldRepo, $newRepo)
+
           # Component packs must match the currently installed package version.
           # GitHub /releases/latest excludes prereleases, so a 3.6.0 prerelease
           # otherwise sees the 3.5.0 stable packs and refuses every install.
