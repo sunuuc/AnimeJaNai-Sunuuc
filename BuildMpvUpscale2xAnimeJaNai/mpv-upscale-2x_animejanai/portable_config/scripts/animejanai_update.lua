@@ -19,15 +19,15 @@ local releases_url = "github.com/the-database/mpv-upscale-2x_animejanai/releases
 
 local function start_update()
     if not available_version then
-        mp.osd_message("AnimeJaNai is up to date.", 3)
+        mp.osd_message("AnimeJaNai 已是最新版本。", 3)
         return
     end
     if is_appimage then
         mp.osd_message("AnimeJaNai " .. available_version ..
-            " is available.\nDownload the new AppImage:\n" .. releases_url, 12)
+            " 已发布。\n请下载新的 AppImage：\n" .. releases_url, 12)
         return
     end
-    mp.osd_message("Installing AnimeJaNai " .. available_version .. " - mpv will close and reopen...", 5)
+    mp.osd_message("正在安装 AnimeJaNai " .. available_version .. "，mpv 将自动关闭并重新打开……", 5)
     -- Detached so it outlives mpv; the updater waits for mpv to exit, applies, then relaunches mpv.
     mp.command_native({
         name = "subprocess",
@@ -47,12 +47,12 @@ local function on_check(success, result)
     local ver = (result.stdout or ""):match("UPDATE_AVAILABLE%s+(%S+)")
     if ver then
         available_version = ver
-        msg.info("Update available: " .. ver)
-        local how = is_appimage and "press Ctrl+U for the download link."
-                                 or "press Ctrl+U to install."
-        mp.osd_message("AnimeJaNai update " .. ver .. " available - " .. how, 8)
+        msg.info("有可用更新: " .. ver)
+        local how = is_appimage and "按 Ctrl+U 查看下载地址。"
+                                 or "按 Ctrl+U 安装更新。"
+        mp.osd_message("AnimeJaNai 有新版本 " .. ver .. " - " .. how, 8)
     else
-        msg.verbose("AnimeJaNai is up to date.")
+        msg.verbose("AnimeJaNai 已是最新版本。")
     end
 end
 
