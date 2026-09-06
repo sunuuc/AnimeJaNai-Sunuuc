@@ -142,13 +142,13 @@ jobs:
           $personal = @(
             'Esc      set fullscreen no; show-text "已退出全屏" #menu: 画面 > 退出全屏',
             'Ctrl+0   show-text "AI 处理已关闭（原画原帧率）"; apply-profile upscale-on; script-message aji-slot 0 #menu: AnimeJaNai > 我的预设 > 关闭 AI 处理',
-            'Ctrl+1   show-text "只补帧：动画 24→60（默认）"; apply-profile upscale-on; script-message aji-slot 1 #menu: AnimeJaNai > 我的预设 > 1 动画 24→60｜只补帧（默认）',
-            'Ctrl+2   show-text "只补帧：动画 24→48（稳）"; apply-profile upscale-on; script-message aji-slot 2 #menu: AnimeJaNai > 我的预设 > 2 动画 24→48｜只补帧（稳）',
+            'Ctrl+1   show-text "只补帧：动画 24→48（默认·稳）"; apply-profile upscale-on; script-message aji-slot 1 #menu: AnimeJaNai > 我的预设 > 1 动画 24→48｜只补帧（默认·稳）',
+            'Ctrl+2   show-text "只补帧：动画 24→72（高流畅）"; apply-profile upscale-on; script-message aji-slot 2 #menu: AnimeJaNai > 我的预设 > 2 动画 24→72｜只补帧（高流畅）',
             'Ctrl+3   show-text "只补帧：视频 30→60"; apply-profile upscale-on; script-message aji-slot 3 #menu: AnimeJaNai > 我的预设 > 3 视频 30→60｜只补帧',
             'Ctrl+4   show-text "只超分：1080p→4K（均衡）"; apply-profile upscale-on; script-message aji-slot 4 #menu: AnimeJaNai > 我的预设 > 4 1080p→4K｜只超分（均衡）',
             'Ctrl+5   show-text "只超分：1080p→4K（性能）"; apply-profile upscale-on; script-message aji-slot 5 #menu: AnimeJaNai > 我的预设 > 5 1080p→4K｜只超分（性能）',
             'Ctrl+6   show-text "只超分：720p及以下低清增强"; apply-profile upscale-on; script-message aji-slot 6 #menu: AnimeJaNai > 我的预设 > 6 720p及以下｜只超分（低清增强）',
-            'Ctrl+7   show-text "补帧+超分：24→60 + 1080p→4K（性能，高负载）"; apply-profile upscale-on; script-message aji-slot 7 #menu: AnimeJaNai > 我的预设 > 7 24→60 + 1080p→4K｜性能（高负载）',
+            'Ctrl+7   show-text "补帧+超分：24→48 + 1080p→4K（性能，高负载）"; apply-profile upscale-on; script-message aji-slot 7 #menu: AnimeJaNai > 我的预设 > 7 24→48 + 1080p→4K｜性能（高负载）',
             'Ctrl+8   show-text "补帧+超分：24→48 + 1080p→4K（均衡，高负载）"; apply-profile upscale-on; script-message aji-slot 8 #menu: AnimeJaNai > 我的预设 > 8 24→48 + 1080p→4K｜均衡（高负载）',
             'Ctrl+9   show-text "只补帧：通用 2 倍"; apply-profile upscale-on; script-message aji-slot 9 #menu: AnimeJaNai > 我的预设 > 9 通用 2 倍｜只补帧'
           ) -join "`n"
@@ -191,13 +191,102 @@ jobs:
             'jump_amount=5',
             'jump_more_amount=60',
             'bottom_hover=yes',
+            'bottom_hover_zone=260',
             'window_top_bar=auto',
             'window_controls=yes',
             'show_title=yes',
-            'title_font_size=20',
-            'hide_timeout=1500'
+            'title_font_size=24',
+            'time_font_size=24',
+            'playpause_size=38',
+            'midbuttons_size=30',
+            'sidebuttons_size=30',
+            'scale_windowed=1.20',
+            'scale_fullscreen=2.00',
+            'scale_forced_window=1.20',
+            'hide_timeout=1800'
           ) -join "`n"
           Set-Content -Path 'overlay/portable_config/script-opts/modernx.conf' -Value $modernxConf -Encoding utf8
+
+          $thumb = Get-Content 'overlay/portable_config/script-opts/thumbfast.conf' -Raw
+          $thumb = $thumb.Replace('max_height=200', 'max_height=320')
+          $thumb = $thumb.Replace('max_width=200', 'max_width=480')
+          $thumb = $thumb.Replace('network=no', 'network=yes')
+          Set-Content -Path 'overlay/portable_config/script-opts/thumbfast.conf' -Value $thumb -Encoding utf8
+
+          # Player UI uses mpv's --{ / --} option-group markers. mpv.exe understands them,
+          # but mpv.net treats each marker as a property named { or } and shows harmless errors.
+          # This tiny launcher removes only those two markers, then forwards every other argument.
+          $launcher = @(
+            'using System;',
+            'using System.Collections.Generic;',
+            'using System.Diagnostics;',
+            'using System.IO;',
+            'using System.Text;',
+            '',
+            'class Player UIMpvNetLauncher',
+            '{',
+            '    static string Quote(string arg)',
+            '    {',
+            '        if (arg.Length == 0) return "\"\"";',
+            '        bool need = false;',
+            '        for (int i = 0; i < arg.Length; i++)',
+            '            if (char.IsWhiteSpace(arg[i]) || arg[i] == ''\"'') { need = true; break; }',
+            '        if (!need) return arg;',
+            '        StringBuilder sb = new StringBuilder();',
+            '        sb.Append(''\"'');',
+            '        int slashes = 0;',
+            '        foreach (char c in arg)',
+            '        {',
+            '            if (c == ''\\'') { slashes++; continue; }',
+            '            if (c == ''\"'')',
+            '            {',
+            '                sb.Append(''\\'', slashes * 2 + 1);',
+            '                sb.Append(''\"'');',
+            '                slashes = 0;',
+            '                continue;',
+            '            }',
+            '            if (slashes > 0) { sb.Append(''\\'', slashes); slashes = 0; }',
+            '            sb.Append(c);',
+            '        }',
+            '        if (slashes > 0) sb.Append(''\\'', slashes * 2);',
+            '        sb.Append(''\"'');',
+            '        return sb.ToString();',
+            '    }',
+            '',
+            '    [STAThread]',
+            '    static int Main(string[] args)',
+            '    {',
+            '        List<string> forwarded = new List<string>();',
+            '        foreach (string a in args)',
+            '        {',
+            '            if (a == "--{" || a == "--}") continue;',
+            '            forwarded.Add(a);',
+            '        }',
+            '        string real = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mpvnet.exe");',
+            '        if (!File.Exists(real)) return 2;',
+            '        ProcessStartInfo psi = new ProcessStartInfo();',
+            '        psi.FileName = real;',
+            '        psi.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;',
+            '        psi.UseShellExecute = false;',
+            '        StringBuilder all = new StringBuilder();',
+            '        foreach (string a in forwarded)',
+            '        {',
+            '            if (all.Length > 0) all.Append('' '');',
+            '            all.Append(Quote(a));',
+            '        }',
+            '        psi.Arguments = all.ToString();',
+            '        Process p = Process.Start(psi);',
+            '        if (p == null) return 3;',
+            '        p.WaitForExit();',
+            '        return p.ExitCode;',
+            '    }',
+            '}'
+          ) -join "`r`n"
+          Set-Content -Path 'Player UIMpvNetLauncher.cs' -Value $launcher -Encoding ascii
+          $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          if (-not (Test-Path $csc)) { throw '64-bit .NET Framework C# compiler not found.' }
+          & $csc /nologo /target:winexe /optimize+ /out:overlay/Player UI-mpvnet.exe Player UIMpvNetLauncher.cs
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to build Player UI-mpvnet.exe.' }
 
           $sources = @(
             '界面方案参考：diana7127/mpv.net-DW',
@@ -209,9 +298,30 @@ jobs:
             '缩略图：po5/thumbfast',
             'https://github.com/po5/thumbfast',
             '',
+            'Player UI-mpvnet.exe：仅过滤 Player UI 传入的 --{ 和 --}，其余参数原样转交给原版 mpvnet.exe。',
+            '原因：mpv.net 当前命令行解析会把 --{ / --} 误当成名为 { / } 的属性。',
+            '',
             'AI 部分仍使用 AnimeJaNai 自己的 TensorRT/RIFE/超分处理链，避免与 DW 旧版 SVP/VapourSynth 链重复处理。'
           ) -join "`n"
           Set-Content -Path 'overlay/第三方来源说明.txt' -Value $sources -Encoding utf8
+
+          $usage = @(
+            'Player UI 外部播放器推荐：指向 Player UI-mpvnet.exe。',
+            '如果不需要 mpv.net 的右键菜单，也可以直接指向 mpv.exe。',
+            '',
+            'Ctrl+1：24→48，只补帧（默认，整数 2 倍）',
+            'Ctrl+2：24→72，只补帧（整数 3 倍，高流畅/高负载）',
+            'Ctrl+3：30→60，只补帧',
+            'Ctrl+4：1080p→4K，只超分（均衡）',
+            'Ctrl+5：1080p→4K，只超分（性能）',
+            'Ctrl+6：720p及以下，只超分（低清增强）',
+            'Ctrl+7：24→48 + 1080p→4K，补帧+超分（性能）',
+            'Ctrl+8：24→48 + 1080p→4K，补帧+超分（均衡）',
+            'Ctrl+9：通用 2 倍，只补帧',
+            'Ctrl+0：关闭 AI 处理',
+            'Esc：只退出全屏，不退出播放器'
+          ) -join "`n"
+          Set-Content -Path 'overlay/使用说明.txt' -Value $usage -Encoding utf8
 
           Copy-Item "$src/portable_config/scripts/animejanai_backend.lua" 'overlay/portable_config/scripts/animejanai_backend.lua' -Force
           Copy-Item "$src/portable_config/scripts/animejanai_engine_monitor.lua" 'overlay/portable_config/scripts/animejanai_engine_monitor.lua' -Force
@@ -223,11 +333,11 @@ jobs:
           Copy-Item manager-publish/*.dll 'overlay/' -Force
           Copy-Item updater-publish/AnimeJaNaiUpdater.exe 'overlay/AnimeJaNaiUpdater.exe' -Force
 
-          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-个人全场景-DW界面-覆盖补丁.zip' -Force
+          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-个人全场景-DW界面-同步修复版.zip' -Force
 
       - name: Upload overlay patch
         uses: actions/upload-artifact@v4
         with:
-          name: AnimeJaNai-personal-all-scenarios-modernx-overlay
-          path: AnimeJaNai-个人全场景-DW界面-覆盖补丁.zip
+          name: AnimeJaNai-personal-sync-ui-mpvnet-fixed-overlay
+          path: AnimeJaNai-个人全场景-DW界面-同步修复版.zip
           if-no-files-found: error
