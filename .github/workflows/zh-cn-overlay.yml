@@ -1,0 +1,63 @@
+name: zh-CN Overlay Patch
+
+on:
+  push:
+    branches: [zh-CN]
+    paths:
+      - '.github/workflows/zh-cn-overlay.yml'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/input-animejanai.conf'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_backend.lua'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_engine_monitor.lua'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_update.lua'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanaistats.lua'
+  workflow_dispatch:
+
+jobs:
+  build-overlay:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Chinese mpv files
+        uses: actions/checkout@v4
+
+      - name: Checkout Chinese Manager
+        uses: actions/checkout@v4
+        with:
+          repository: sunuuc/AnimeJaNaiManager
+          ref: zh-CN
+          path: manager-src
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Build Chinese Manager
+        shell: pwsh
+        run: |
+          dotnet publish manager-src/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj `
+            -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true `
+            -o manager-publish
+
+      - name: Stage drag-and-drop overlay
+        shell: pwsh
+        run: |
+          $src = 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai'
+          New-Item -ItemType Directory -Force -Path 'overlay/portable_config/scripts' | Out-Null
+
+          Copy-Item "$src/portable_config/input-animejanai.conf" 'overlay/portable_config/input-animejanai.conf' -Force
+          Copy-Item "$src/portable_config/scripts/animejanai_backend.lua" 'overlay/portable_config/scripts/animejanai_backend.lua' -Force
+          Copy-Item "$src/portable_config/scripts/animejanai_engine_monitor.lua" 'overlay/portable_config/scripts/animejanai_engine_monitor.lua' -Force
+          Copy-Item "$src/portable_config/scripts/animejanai_update.lua" 'overlay/portable_config/scripts/animejanai_update.lua' -Force
+          Copy-Item "$src/portable_config/scripts/animejanaistats.lua" 'overlay/portable_config/scripts/animejanaistats.lua' -Force
+
+          Copy-Item manager-publish/*.exe 'overlay/' -Force
+          Copy-Item manager-publish/*.dll 'overlay/' -Force
+
+          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-zh-CN-覆盖补丁.zip' -Force
+
+      - name: Upload overlay patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeJaNai-zh-CN-overlay
+          path: AnimeJaNai-zh-CN-覆盖补丁.zip
+          if-no-files-found: error
