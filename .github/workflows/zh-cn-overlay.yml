@@ -1,5 +1,4 @@
 name: zh-CN Overlay Patch
-# Personal build: native Chinese Manager, all-scenario AI presets and ModernX/Thumbfast UI.
 
 on:
   push:
@@ -9,10 +8,7 @@ on:
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/animejanai/animejanai.conf'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/input-animejanai.conf'
       - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/mpv.conf'
-      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_backend.lua'
-      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_engine_monitor.lua'
-      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanai_update.lua'
-      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/animejanaistats.lua'
+      - 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai/portable_config/scripts/**'
       - 'AnimeJaNaiUpdater/**'
   workflow_dispatch:
 
@@ -80,7 +76,6 @@ jobs:
         run: |
           $path = 'AnimeJaNaiUpdater/Program.cs'
           $src = Get-Content $path -Raw
-
           $oldRepo = 'const string Repo = "the-database/mpv-upscale-2x_animejanai";'
           $newRepo = 'const string Repo = "the-database/mpv-AnimeJaNai";'
           if (-not $src.Contains($oldRepo)) { throw 'Updater repository constant was not found.' }
@@ -102,9 +97,7 @@ jobs:
               string local = ReadManifestString(localManifest, "package_version", ReadLocalVersion())
                   .Trim().TrimStart('v');
               if (string.IsNullOrWhiteSpace(local) || local == "0.0.0")
-              {
                   return await GetLatestReleaseAsync();
-              }
 
               string url = $"https://api.github.com/repos/{Repo}/releases/tags/{System.Uri.EscapeDataString(local)}";
               using var client = new HttpClient();
@@ -131,7 +124,7 @@ jobs:
           Set-Content -Path $path -Value $src -Encoding utf8
           dotnet publish AnimeJaNaiUpdater/AnimeJaNaiUpdater.csproj -c Release -o updater-publish
 
-      - name: Stage personal drag-and-drop overlay
+      - name: Stage all-scenario personal overlay
         shell: pwsh
         run: |
           $src = 'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai'
@@ -141,27 +134,24 @@ jobs:
           New-Item -ItemType Directory -Force -Path 'overlay/animejanai' | Out-Null
           New-Item -ItemType Directory -Force -Path 'overlay/THIRD_PARTY_LICENSES' | Out-Null
 
-          # Personal presets: pure RIFE, pure upscale, and RIFE+upscale combinations.
           Copy-Item "$src/animejanai/animejanai.conf" 'overlay/animejanai/animejanai.conf' -Force
 
-          # Keep the translated managed menu source. Personal overrides are placed BELOW
-          # the managed block in input.conf so updater refreshes do not erase them.
           $input = Get-Content "$src/portable_config/input-animejanai.conf" -Raw
           Set-Content -Path 'overlay/portable_config/input-animejanai.conf' -Value $input -Encoding utf8
 
-          $personal = @'
-Esc      set fullscreen no; show-text "已退出全屏" #menu: 画面 > 退出全屏
-Ctrl+0   show-text "AI 处理已关闭（原画原帧率）"; apply-profile upscale-on; script-message aji-slot 0 #menu: AnimeJaNai > 我的预设 > 关闭 AI 处理
-Ctrl+1   show-text "只补帧：动画 24→60（默认）"; apply-profile upscale-on; script-message aji-slot 1 #menu: AnimeJaNai > 我的预设 > 1 动画 24→60｜只补帧（默认）
-Ctrl+2   show-text "只补帧：动画 24→48（稳）"; apply-profile upscale-on; script-message aji-slot 2 #menu: AnimeJaNai > 我的预设 > 2 动画 24→48｜只补帧（稳）
-Ctrl+3   show-text "只补帧：视频 30→60"; apply-profile upscale-on; script-message aji-slot 3 #menu: AnimeJaNai > 我的预设 > 3 视频 30→60｜只补帧
-Ctrl+4   show-text "只超分：1080p→4K（均衡）"; apply-profile upscale-on; script-message aji-slot 4 #menu: AnimeJaNai > 我的预设 > 4 1080p→4K｜只超分（均衡）
-Ctrl+5   show-text "只超分：1080p→4K（性能）"; apply-profile upscale-on; script-message aji-slot 5 #menu: AnimeJaNai > 我的预设 > 5 1080p→4K｜只超分（性能）
-Ctrl+6   show-text "只超分：720p及以下低清增强"; apply-profile upscale-on; script-message aji-slot 6 #menu: AnimeJaNai > 我的预设 > 6 720p及以下｜只超分（低清增强）
-Ctrl+7   show-text "补帧+超分：24→60 + 1080p→4K（性能，高负载）"; apply-profile upscale-on; script-message aji-slot 7 #menu: AnimeJaNai > 我的预设 > 7 24→60 + 1080p→4K｜性能（高负载）
-Ctrl+8   show-text "补帧+超分：24→48 + 1080p→4K（均衡，高负载）"; apply-profile upscale-on; script-message aji-slot 8 #menu: AnimeJaNai > 我的预设 > 8 24→48 + 1080p→4K｜均衡（高负载）
-Ctrl+9   show-text "只补帧：通用 2 倍"; apply-profile upscale-on; script-message aji-slot 9 #menu: AnimeJaNai > 我的预设 > 9 通用 2 倍｜只补帧
-'@
+          $personal = @(
+            'Esc      set fullscreen no; show-text "已退出全屏" #menu: 画面 > 退出全屏',
+            'Ctrl+0   show-text "AI 处理已关闭（原画原帧率）"; apply-profile upscale-on; script-message aji-slot 0 #menu: AnimeJaNai > 我的预设 > 关闭 AI 处理',
+            'Ctrl+1   show-text "只补帧：动画 24→60（默认）"; apply-profile upscale-on; script-message aji-slot 1 #menu: AnimeJaNai > 我的预设 > 1 动画 24→60｜只补帧（默认）',
+            'Ctrl+2   show-text "只补帧：动画 24→48（稳）"; apply-profile upscale-on; script-message aji-slot 2 #menu: AnimeJaNai > 我的预设 > 2 动画 24→48｜只补帧（稳）',
+            'Ctrl+3   show-text "只补帧：视频 30→60"; apply-profile upscale-on; script-message aji-slot 3 #menu: AnimeJaNai > 我的预设 > 3 视频 30→60｜只补帧',
+            'Ctrl+4   show-text "只超分：1080p→4K（均衡）"; apply-profile upscale-on; script-message aji-slot 4 #menu: AnimeJaNai > 我的预设 > 4 1080p→4K｜只超分（均衡）',
+            'Ctrl+5   show-text "只超分：1080p→4K（性能）"; apply-profile upscale-on; script-message aji-slot 5 #menu: AnimeJaNai > 我的预设 > 5 1080p→4K｜只超分（性能）',
+            'Ctrl+6   show-text "只超分：720p及以下低清增强"; apply-profile upscale-on; script-message aji-slot 6 #menu: AnimeJaNai > 我的预设 > 6 720p及以下｜只超分（低清增强）',
+            'Ctrl+7   show-text "补帧+超分：24→60 + 1080p→4K（性能，高负载）"; apply-profile upscale-on; script-message aji-slot 7 #menu: AnimeJaNai > 我的预设 > 7 24→60 + 1080p→4K｜性能（高负载）',
+            'Ctrl+8   show-text "补帧+超分：24→48 + 1080p→4K（均衡，高负载）"; apply-profile upscale-on; script-message aji-slot 8 #menu: AnimeJaNai > 我的预设 > 8 24→48 + 1080p→4K｜均衡（高负载）',
+            'Ctrl+9   show-text "只补帧：通用 2 倍"; apply-profile upscale-on; script-message aji-slot 9 #menu: AnimeJaNai > 我的预设 > 9 通用 2 倍｜只补帧'
+          ) -join "`n"
 
           $generatedInput = @(
             '# 此区域由 AnimeJaNai 管理。更新时会从 input-animejanai.conf 刷新。',
@@ -170,61 +160,57 @@ Ctrl+9   show-text "只补帧：通用 2 倍"; apply-profile upscale-on; script-
             '#@ANIMEJANAI-MANAGED-END (add your keybindings below this line)',
             '',
             '# ===== 你的个人快捷键（更新保留） =====',
-            $personal.TrimEnd(),
+            $personal,
             ''
           ) -join "`n"
           Set-Content -Path 'overlay/portable_config/input.conf' -Value $generatedInput -Encoding utf8
 
-          # Keep mpv's own processing neutral. AI work is selected only by AnimeJaNai presets.
-          $mpvConf = @'
-          # 个人版：AnimeJaNai + ModernX。
-          # 不额外开启 mpv 自带插值、着色器或视频滤镜；补帧/超分全部由上面的 AnimeJaNai 预设控制。
-          include="~~/mpv-animejanai.conf"
-          profile = animejanai
-          osc=no
-          border=no
-          cursor-autohide=1000
-          '@
+          $mpvConf = @(
+            '# 个人版：AnimeJaNai + ModernX。',
+            '# 不额外开启 mpv 自带插值、着色器或视频滤镜；补帧/超分由 AnimeJaNai 预设控制。',
+            'include="~~/mpv-animejanai.conf"',
+            'profile = animejanai',
+            'osc=no',
+            'border=no',
+            'cursor-autohide=1000'
+          ) -join "`n"
           Set-Content -Path 'overlay/portable_config/mpv.conf' -Value $mpvConf -Encoding utf8
 
-          # mpv.net-DW's visual style is based on ModernX; use the current maintained ModernX.
           Invoke-WebRequest 'https://raw.githubusercontent.com/zydezu/ModernX/main/modernx.lua' -OutFile 'overlay/portable_config/scripts/modernx.lua'
           Invoke-WebRequest 'https://raw.githubusercontent.com/zydezu/ModernX/main/fluent-system-icons.ttf' -OutFile 'overlay/portable_config/fonts/fluent-system-icons.ttf'
-
-          # Thumbfast provides ModernX seek-bar thumbnails.
           Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua' -OutFile 'overlay/portable_config/scripts/thumbfast.lua'
           Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.conf' -OutFile 'overlay/portable_config/script-opts/thumbfast.conf'
           Invoke-WebRequest 'https://raw.githubusercontent.com/po5/thumbfast/master/LICENSE' -OutFile 'overlay/THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt'
 
-          $modernxConf = @'
-          compact_mode=no
-          info_button=yes
-          screenshot_button=yes
-          loop_button=yes
-          download_button=no
-          jump_amount=5
-          jump_more_amount=60
-          bottom_hover=yes
-          window_top_bar=auto
-          window_controls=yes
-          show_title=yes
-          title_font_size=20
-          hide_timeout=1500
-          '@
+          $modernxConf = @(
+            'compact_mode=no',
+            'info_button=yes',
+            'screenshot_button=yes',
+            'loop_button=yes',
+            'download_button=no',
+            'jump_amount=5',
+            'jump_more_amount=60',
+            'bottom_hover=yes',
+            'window_top_bar=auto',
+            'window_controls=yes',
+            'show_title=yes',
+            'title_font_size=20',
+            'hide_timeout=1500'
+          ) -join "`n"
           Set-Content -Path 'overlay/portable_config/script-opts/modernx.conf' -Value $modernxConf -Encoding utf8
 
-          $sources = @'
-          界面方案参考：diana7127/mpv.net-DW
-          https://github.com/diana7127/mpv.net-DW
-
-          OSC：zydezu/ModernX（构建时从当前维护版本获取）
-          https://github.com/zydezu/ModernX
-
-          缩略图：po5/thumbfast
-          https://github.com/po5/thumbfast
-
-          本个人版保留 AnimeJaNai 自己的 TensorRT/RIFE/超分处理链，不合并 DW 包里旧的 SVP/VapourSynth 超分链，避免重复处理和冲突。
-          '@
+          $sources = @(
+            '界面方案参考：diana7127/mpv.net-DW',
+            'https://github.com/diana7127/mpv.net-DW',
+            '',
+            'OSC：zydezu/ModernX（当前维护版本）',
+            'https://github.com/zydezu/ModernX',
+            '',
+            '缩略图：po5/thumbfast',
+            'https://github.com/po5/thumbfast',
+            '',
+            'AI 部分仍使用 AnimeJaNai 自己的 TensorRT/RIFE/超分处理链，避免与 DW 旧版 SVP/VapourSynth 链重复处理。'
+          ) -join "`n"
           Set-Content -Path 'overlay/第三方来源说明.txt' -Value $sources -Encoding utf8
 
           Copy-Item "$src/portable_config/scripts/animejanai_backend.lua" 'overlay/portable_config/scripts/animejanai_backend.lua' -Force
