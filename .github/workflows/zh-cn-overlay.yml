@@ -1,5 +1,5 @@
 name: zh-CN Overlay Patch
-# Rebuild marker: Manager stays hidden until the zh-CN visual tree is fully ready.
+# Manager UI is localized in source before compilation; no runtime English flash.
 
 on:
   push:
@@ -27,6 +27,10 @@ jobs:
           repository: sunuuc/AnimeJaNaiManager
           ref: zh-CN
           path: manager-src
+
+      - name: Apply native Simplified Chinese Manager source
+        shell: pwsh
+        run: ./manager-src/scripts/ApplyNativeChinese.ps1
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
