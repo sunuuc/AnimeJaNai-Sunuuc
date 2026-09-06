@@ -1,0 +1,41 @@
+name: zh-CN Upstream Update Check
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for a new upstream release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream_json=$(curl -fsSL -H 'User-Agent: AnimeJaNai-zh-CN-updater' \
+            'https://api.github.com/repos/the-database/mpv-AnimeJaNai/releases?per_page=20')
+          ver=$(printf '%s' "$upstream_json" | jq -r '[.[] | select(.draft == false)][0].tag_name' | sed 's/^v//')
+          if [ -z "$ver" ] || [ "$ver" = "null" ]; then
+            echo 'Could not determine upstream version.' >&2
+            exit 1
+          fi
+          echo "Upstream version: $ver"
+
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H 'User-Agent: AnimeJaNai-zh-CN-updater' \
+            "https://api.github.com/repos/sunuuc/mpv-AnimeJaNai/releases/tags/$ver")
+          if [ "$code" = '200' ]; then
+            echo "Chinese release $ver already exists; nothing to do."
+            exit 0
+          fi
+
+          echo "Chinese release $ver is missing; dispatching a rebuild."
+          gh workflow run 'zh-CN Windows Package' --repo sunuuc/mpv-AnimeJaNai --ref zh-CN -f version="$ver"
