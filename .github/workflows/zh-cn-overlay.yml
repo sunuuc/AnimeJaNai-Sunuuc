@@ -1,5 +1,5 @@
 name: zh-CN Overlay Patch
-# Rebuild marker: Manager is localized synchronously before first render.
+# Rebuild marker: Manager stays hidden until the zh-CN visual tree is fully ready.
 
 on:
   push:
