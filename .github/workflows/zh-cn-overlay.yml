@@ -1,5 +1,5 @@
 name: zh-CN Overlay Patch
-# Manager UI is localized in source before compilation; no runtime English flash.
+# Manager UI is localized in source before compilation; no runtime English UI.
 
 on:
   push:
@@ -28,9 +28,41 @@ jobs:
           ref: zh-CN
           path: manager-src
 
+      - name: Prepare native Chinese Manager localizer
+        shell: pwsh
+        run: |
+          $path = 'manager-src/scripts/ApplyNativeChinese.ps1'
+          $src = Get-Content $path -Raw
+          $src = $src.Replace('function Apply-ExactSourceReplacements([string]$rel, [ordered]$replacements)', 'function Apply-ExactSourceReplacements([string]$rel, $replacements)')
+          Set-Content -Path $path -Value $src -Encoding utf8
+
       - name: Apply native Simplified Chinese Manager source
         shell: pwsh
         run: ./manager-src/scripts/ApplyNativeChinese.ps1
+
+      - name: Finalize and validate Chinese Manager source
+        shell: pwsh
+        run: |
+          $csPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml.cs'
+          $cs = Get-Content $csPath -Raw
+          $cs = $cs.Replace('+ +', '+')
+          Set-Content -Path $csPath -Value $cs -Encoding utf8
+
+          $xamlPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml'
+          $xaml = Get-Content $xamlPath -Raw
+          $xaml = $xaml.Replace('> (Default)<', '>（默认）<')
+          Set-Content -Path $xamlPath -Value $xaml -Encoding utf8
+
+          $all = Get-ChildItem manager-src/AnimeJaNaiConfEditor -Recurse -Filter *.cs | ForEach-Object { Get-Content $_.FullName -Raw }
+          $joined = $all -join "`n"
+          foreach ($bad in @('View模型Base', '取消lationToken', 'SetLast错误')) {
+            if ($joined.Contains($bad)) { throw "Unsafe localization touched a code identifier: $bad" }
+          }
+
+          $ui = (Get-Content $xamlPath -Raw) + "`n" + (Get-Content $csPath -Raw)
+          foreach ($badUi in @('> (Default)<', '>Global Settings<', 'Header="Profiles"', 'Header="Components"', '>Run Benchmarks<', '>Submit to Catalog<')) {
+            if ($ui.Contains($badUi)) { throw "Visible English remains: $badUi" }
+          }
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
@@ -50,16 +82,14 @@ jobs:
           $path = 'AnimeJaNaiUpdater/Program.cs'
           $src = Get-Content $path -Raw
 
-          # Use the repository's current canonical name rather than relying on
-          # GitHub's redirect from the historical repository name.
           $oldRepo = 'const string Repo = "the-database/mpv-upscale-2x_animejanai";'
           $newRepo = 'const string Repo = "the-database/mpv-AnimeJaNai";'
           if (-not $src.Contains($oldRepo)) { throw 'Updater repository constant was not found.' }
           $src = $src.Replace($oldRepo, $newRepo)
 
           # Component packs must match the currently installed package version.
-          # GitHub /releases/latest excludes prereleases, so a 3.6.0 prerelease
-          # otherwise sees the 3.5.0 stable packs and refuses every install.
+          # GitHub /releases/latest excludes prereleases, so 3.6.0 would otherwise
+          # see 3.5.0 packs and refuse every component installation.
           $componentStart = $src.IndexOf('async Task<PackIndex> GetPackIndexAsync()')
           if ($componentStart -lt 0) { throw 'GetPackIndexAsync was not found.' }
           $needle = 'var release = await GetLatestReleaseAsync();'
@@ -122,11 +152,11 @@ jobs:
           Copy-Item manager-publish/*.dll 'overlay/' -Force
           Copy-Item updater-publish/AnimeJaNaiUpdater.exe 'overlay/AnimeJaNaiUpdater.exe' -Force
 
-          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-zh-CN-覆盖补丁.zip' -Force
+          Compress-Archive -Path 'overlay/*' -DestinationPath 'AnimeJaNai-纯中文覆盖补丁.zip' -Force
 
       - name: Upload overlay patch
         uses: actions/upload-artifact@v4
         with:
-          name: AnimeJaNai-zh-CN-overlay
-          path: AnimeJaNai-zh-CN-覆盖补丁.zip
+          name: AnimeJaNai-native-zh-CN-overlay
+          path: AnimeJaNai-纯中文覆盖补丁.zip
           if-no-files-found: error
