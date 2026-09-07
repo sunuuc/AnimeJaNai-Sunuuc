@@ -4,7 +4,7 @@
 
 本分支基于上游 AnimeJaNai 项目继续整合，并不是上游官方发布版。需要原版说明、模型介绍和通用硬件支持时，请优先参考上游项目。
 
-> `main` 只保留实际覆盖替换文件、主页说明和分发所需的许可证文件。需要源码的组件在下方提供对应源码仓库或独立源码分支。
+> `zh-CN` 只保留实际覆盖替换文件、主页说明和分发所需的许可证文件。需要源码的组件在下方提供对应源码仓库或独立源码分支。
 
 ## 主要做了什么
 
@@ -12,6 +12,7 @@
 - **内置 RTX 5080 Laptop 专用预设**：按 16GB 显存、2560×1600 屏幕和实际性能测试重新安排 9 个快捷预设。
 - **Player UI 兼容**：使用 mpv.net 作为外部播放器时，修复 Player UI 传入 `--{` / `--}` 导致 mpv.net 误解析的问题。
 - **ModernX + thumbfast**：提供更现代的播放控制界面和进度条缩略图。
+
 ## 预设说明
 
 | 快捷键 | 预设 | 1080p / 24帧 | 720p / 24帧 |
@@ -76,7 +77,7 @@
 | [the-database/animejanai-inference](https://github.com/the-database/animejanai-inference) | AnimeJaNai 原生 TensorRT / DirectML 推理与 RIFE / 超分处理链 |
 | [mpv-player/mpv](https://github.com/mpv-player/mpv) | 底层视频播放器 |
 | [mpvnet-player/mpv.net](https://github.com/mpvnet-player/mpv.net/tree/v7.1.2.0) | Windows 播放器外壳；本版基于 v7.1.2.0 做 Player UI 参数兼容修复 |
-| [mpv.net Player UI 修改源码](https://github.com/sunuuc/AnimeJaNai-zh-CN/tree/mpvnet-player_ui-source) | main 中 `mpvnet.exe` 的完整对应源码与构建说明，GPL-2.0 |
+| [mpv.net Player UI 修改源码](https://github.com/sunuuc/AnimeJaNai-zh-CN/tree/mpvnet-player_ui-source) | `zh-CN` 中 `mpvnet.exe` 的完整对应源码与构建说明，GPL-2.0 |
 | [zydezu/ModernX](https://github.com/zydezu/ModernX) | 播放控制界面 |
 | [po5/thumbfast](https://github.com/po5/thumbfast) | 进度条视频缩略图，MPL-2.0 |
 | [NVIDIA TensorRT](https://github.com/NVIDIA/TensorRT) | NVIDIA GPU AI 推理后端 |
