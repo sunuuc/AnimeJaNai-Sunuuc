@@ -1,7 +1,8 @@
 # AnimeJaNai 中文汉化包
 个人使用，因为有人有需求我就分享了出来
 本分支基于上游 AnimeJaNai 项目继续整合，并不是上游官方发布版。需要原版说明、模型介绍和通用硬件支持时，请优先参考上游项目。
-适配3.6 直接覆盖安装目录
+## 如何使用
+适配 [AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai/releases)3.6 直接覆盖安装目录
 ## 这版主要做了什么
 
 - **AnimeJaNai Manager 简体中文化**：界面、按钮、提示、导入导出、组件管理、性能测试等可见内容均做了中文处理。
