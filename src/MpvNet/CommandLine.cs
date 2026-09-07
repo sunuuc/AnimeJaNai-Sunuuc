@@ -1,4 +1,4 @@
-﻿
+
 namespace MpvNet;
 
 public class CommandLine
@@ -21,6 +21,7 @@ public class CommandLine
 
             foreach (string i in Environment.GetCommandLineArgs().Skip(1))
             {
+                if (i == "--{" || i == "--}") continue;
                 string arg = i;
 
                 if (!arg.StartsWith("--"))
@@ -157,3 +158,4 @@ public class CommandLine
         return "";
     }
 }
+
