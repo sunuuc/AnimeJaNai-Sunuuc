@@ -58,7 +58,7 @@
 
 ## 使用方式
 
-适配 [AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai/releases) 3.6 版本。
+适配 [AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai/releases/tag/3.6.0) 3.6 版本。
 
 1. 以完整 AnimeJaNai 安装目录为基础，把本分支的文件下载后覆盖到安装目录。
 2. 使用外部播放器打开视频时，指向根目录的 **`mpvnet.exe`**。
@@ -116,4 +116,5 @@ RIFE 补帧模型和 AnimeJaNai 的超分模型由 AnimeJaNai 的组件体系提
 
 感谢 AnimeJaNai、AnimeJaNai Manager、mpv、mpv.net、ModernX、thumbfast、TensorRT 及相关项目的开发者。
 
-文档和部分修改由 GPT 辅助整理；本仓库不是 OpenAI 官方项目，OpenAI 不负责该项目的维护与支持。
+
+```所有修改由 GPT 完成。```
