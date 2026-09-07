@@ -1,3 +1,4 @@
+# temporary one-shot workflow; removes itself after success
 name: Stage license compliance files and source branch
 
 on:
