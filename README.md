@@ -8,7 +8,7 @@
 
 ## 下载
 
-直接使用请到 [Releases](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases) 下载完整覆盖包，不要直接下载仓库源码当安装包使用。
+直接使用请到 [Releases](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases) 下载完整覆盖包。
 
 当前 3.6.0 中文覆盖包：
 
