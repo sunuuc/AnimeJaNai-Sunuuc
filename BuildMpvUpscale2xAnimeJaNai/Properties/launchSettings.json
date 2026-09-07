@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "BuildMpvUpscale2xAnimeJaNai": {
-      "commandName": "Project",
-      "commandLineArgs": "3.2.0"
-    }
-  }
-}
