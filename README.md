@@ -78,7 +78,7 @@
 | [the-database/animejanai-inference](https://github.com/the-database/animejanai-inference) | AnimeJaNai 原生 TensorRT / DirectML 推理与 RIFE / 超分处理链 |
 | [mpv-player/mpv](https://github.com/mpv-player/mpv) | 底层视频播放器 |
 | [mpvnet-player/mpv.net](https://github.com/mpvnet-player/mpv.net/tree/v7.1.2.0) | Windows 播放器外壳；本版基于 v7.1.2.0 做 Player UI 参数兼容修复 |
-| [mpv.net Player UI 修改源码](https://github.com/sunuuc/mpv-AnimeJaNai/tree/mpvnet-player_ui-source) | main 中 `mpvnet.exe` 的完整对应源码与构建说明，GPL-2.0 |
+| [mpv.net Player UI 修改源码](https://github.com/sunuuc/AnimeJaNai-zh-CN/tree/mpvnet-player_ui-source) | main 中 `mpvnet.exe` 的完整对应源码与构建说明，GPL-2.0 |
 | [zydezu/ModernX](https://github.com/zydezu/ModernX) | 播放控制界面 |
 | [po5/thumbfast](https://github.com/po5/thumbfast) | 进度条视频缩略图，MPL-2.0 |
 | [NVIDIA TensorRT](https://github.com/NVIDIA/TensorRT) | NVIDIA GPU AI 推理后端 |
@@ -109,7 +109,7 @@ RIFE 补帧模型和 AnimeJaNai 的超分模型由 AnimeJaNai 的组件体系提
 第三方组件按各自许可证处理：
 
 - **AnimeJaNaiManager.exe**：GPL-3.0。完整许可证位于 [`THIRD_PARTY_LICENSES/AnimeJaNaiManager-GPL-3.0.txt`](./THIRD_PARTY_LICENSES/AnimeJaNaiManager-GPL-3.0.txt)，本次中文修改对应源码位于 [`sunuuc/AnimeJaNaiManager@bdcf21a`](https://github.com/sunuuc/AnimeJaNaiManager/tree/bdcf21af308d9494d23a309055196e7937819afc)。
-- **mpvnet.exe**：GPL-2.0。许可证位于 [`THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt`](./THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt)，本次 Player UI 兼容修改的完整对应源码位于 [`mpvnet-player_ui-source`](https://github.com/sunuuc/mpv-AnimeJaNai/tree/mpvnet-player_ui-source)。
+- **mpvnet.exe**：GPL-2.0。许可证位于 [`THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt`](./THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt)，本次 Player UI 兼容修改的完整对应源码位于 [`mpvnet-player_ui-source`](https://github.com/sunuuc/AnimeJaNai-zh-CN/tree/mpvnet-player_ui-source)。
 - **thumbfast**：MPL-2.0。许可证位于 [`THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt`](./THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt)，Lua 源码直接随覆盖文件分发。
 - **ModernX**：本仓库保留其原作者、项目地址和源文件头部署名。其上游仓库当前没有单独的 `LICENSE` 文件，因此本仓库不对 ModernX 另行授予或变更许可证；如需进一步再分发或用于其他项目，请以 ModernX 上游作者给出的许可为准。
 - 其他运行时、模型及组件继续遵循各自上游许可证与使用条款，本仓库的 CC BY-NC-SA 4.0 不会替代第三方组件自身许可证。
