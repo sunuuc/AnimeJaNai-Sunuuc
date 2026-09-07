@@ -77,7 +77,7 @@ jobs:
           git add src/MpvNet/CommandLine.cs SUNUUC_SOURCE_INFO.md
           git commit -m 'Player UI compatibility patch for mpv.net v7.1.2.0'
           git remote add target "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git push --force target HEAD:mpvnet-player_ui-source
+          git push --force target HEAD:refs/heads/mpvnet-player_ui-source
 
       - name: Commit license files and remove temporary workflow
         shell: pwsh
