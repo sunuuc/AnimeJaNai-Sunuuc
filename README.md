@@ -23,6 +23,7 @@
 - **Sharp1 高清模型配置**：Performance / Balanced 高清档切换到对应 Sharp1 模型。
 - **Player UI 兼容**：修复 Player UI 调用 mpv.net 时传入 `--{` / `--}` 导致的参数误解析。
 - **ModernX + thumbfast**：整合现代播放控制界面和进度条缩略图。
+- **Ctrl+J 实时状态**：在 AnimeJaNai 状态下同时显示实时有效 FPS、目标 FPS、每秒丢帧和累计输出丢帧。统计只在面板打开时每 1 秒采样一次，不使用逐帧回调，也不参与视频处理链。
 
 ## 预设
 
@@ -43,6 +44,17 @@
 
 - **极速 = Performance**
 - **高质量 = Balanced**
+
+## Ctrl+J 实时状态
+
+播放时按 `Ctrl+J` 显示 / 隐藏 AnimeJaNai 状态。面板底部会额外显示：
+
+- `实时有效 FPS`：按当前滤镜输出目标 FPS 减去最近 1 秒的输出丢帧速率计算。
+- `目标 FPS`：mpv 的 `estimated-vf-fps`，会随 RIFE 2× / 3× 改变。
+- `每秒丢帧`：最近一次采样区间内 `vo-drop-frame-count` 的增长速率。
+- `累计输出丢帧`：mpv 当前文件的输出丢帧累计值。
+
+为了尽量不影响播放性能，统计只在 `Ctrl+J` 面板开启时每 1 秒读取少量 mpv 属性；面板关闭后定时器会彻底停止。AI 状态日志最多每 5 秒读取一次。
 
 ## RTX 5080 Laptop 实测参考
 
