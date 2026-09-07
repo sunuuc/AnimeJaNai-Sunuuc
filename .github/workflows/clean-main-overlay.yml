@@ -1,4 +1,4 @@
-name: Stage replacement binaries
+name: Stage replacement text assets
 
 on:
   push:
@@ -10,145 +10,26 @@ permissions:
   contents: write
 
 jobs:
-  stage-binaries:
-    runs-on: windows-latest
+  stage-text-assets:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout current repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Checkout Chinese Manager
-        uses: actions/checkout@v4
-        with:
-          repository: sunuuc/AnimeJaNaiManager
-          ref: main
-          path: manager-src
-
-      - name: Checkout mpv.net v7.1.2.0
-        uses: actions/checkout@v4
-        with:
-          repository: mpvnet-player/mpv.net
-          ref: v7.1.2.0
-          path: mpvnet-src
-
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.x'
-
-      - name: Build Chinese AnimeJaNai Manager
-        shell: pwsh
+      - name: Download exact third-party replacement assets
         run: |
-          $path = 'manager-src/scripts/ApplyNativeChinese.ps1'
-          $src = Get-Content $path -Raw
-          $src = $src.Replace('function Apply-ExactSourceReplacements([string]$rel, [ordered]$replacements)', 'function Apply-ExactSourceReplacements([string]$rel, $replacements)')
-          Set-Content -Path $path -Value $src -Encoding utf8
-          ./manager-src/scripts/ApplyNativeChinese.ps1
+          mkdir -p portable_config/scripts THIRD_PARTY_LICENSES
+          curl -fsSL https://raw.githubusercontent.com/zydezu/ModernX/main/modernx.lua -o portable_config/scripts/modernx.lua
+          curl -fsSL https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua -o portable_config/scripts/thumbfast.lua
+          curl -fsSL https://raw.githubusercontent.com/po5/thumbfast/master/LICENSE -o THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt
+          curl -fsSL https://raw.githubusercontent.com/mpvnet-player/mpv.net/v7.1.2.0/License.txt -o THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt
 
-          $csPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml.cs'
-          $cs = Get-Content $csPath -Raw
-          $cs = $cs.Replace('+ +', '+')
-          Set-Content -Path $csPath -Value $cs -Encoding utf8
-
-          $xamlPath = 'manager-src/AnimeJaNaiConfEditor/Views/MainWindow.axaml'
-          $xaml = Get-Content $xamlPath -Raw
-          $xaml = $xaml.Replace('> (Default)<', '>（默认）<')
-          $xaml = $xaml.Replace('默认配置（只读）', '官方超分预设（可直接用）')
-          $xaml = $xaml.Replace('自定义配置', '我的全场景预设')
-          Set-Content -Path $xamlPath -Value $xaml -Encoding utf8
-
-          dotnet publish manager-src/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj `
-            -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true `
-            -o manager-publish
-
-      - name: Build Player UI-compatible mpv.net
-        shell: pwsh
+      - name: Commit staged assets
         run: |
-          $path = 'mpvnet-src/src/MpvNet/CommandLine.cs'
-          $src = Get-Content $path -Raw
-          $needle = "            foreach (string i in Environment.GetCommandLineArgs().Skip(1))`r`n            {`r`n                string arg = i;"
-          if (-not $src.Contains($needle)) {
-            $needle = "            foreach (string i in Environment.GetCommandLineArgs().Skip(1))`n            {`n                string arg = i;"
-          }
-          if (-not $src.Contains($needle)) { throw 'mpv.net command-line parser pattern not found.' }
-          $replacement = $needle.Replace('                string arg = i;', '                if (i == "--{" || i == "--}") continue;`n                string arg = i;')
-          $replacement = $replacement.Replace('`n', [Environment]::NewLine)
-          $src = $src.Replace($needle, $replacement)
-          Set-Content -Path $path -Value $src -Encoding utf8
-
-          dotnet publish mpvnet-src/src/MpvNet.Windows/MpvNet.Windows.csproj `
-            -c Release -r win-x64 --self-contained false `
-            -o mpvnet-publish
-
-      - name: Build prerelease-aware updater
-        shell: pwsh
-        run: |
-          $path = 'AnimeJaNaiUpdater/Program.cs'
-          $src = Get-Content $path -Raw
-          $oldRepo = 'const string Repo = "the-database/mpv-upscale-2x_animejanai";'
-          $newRepo = 'const string Repo = "the-database/mpv-AnimeJaNai";'
-          if ($src.Contains($oldRepo)) { $src = $src.Replace($oldRepo, $newRepo) }
-
-          $componentStart = $src.IndexOf('async Task<PackIndex> GetPackIndexAsync()')
-          if ($componentStart -lt 0) { throw 'GetPackIndexAsync was not found.' }
-          $needle = 'var release = await GetLatestReleaseAsync();'
-          $replaceAt = $src.IndexOf($needle, $componentStart)
-          if ($replaceAt -lt 0) { throw 'Component release lookup was not found.' }
-          $src = $src.Remove($replaceAt, $needle.Length).Insert($replaceAt, 'var release = await GetInstalledReleaseAsync();')
-
-          $marker = 'async Task<Release> GetLatestReleaseAsync()'
-          $insertAt = $src.IndexOf($marker)
-          if ($insertAt -lt 0) { throw 'GetLatestReleaseAsync was not found.' }
-          $helper = @'
-          async Task<Release> GetInstalledReleaseAsync()
-          {
-              string local = ReadManifestString(localManifest, "package_version", ReadLocalVersion())
-                  .Trim().TrimStart('v');
-              if (string.IsNullOrWhiteSpace(local) || local == "0.0.0")
-                  return await GetLatestReleaseAsync();
-
-              string url = $"https://api.github.com/repos/{Repo}/releases/tags/{System.Uri.EscapeDataString(local)}";
-              using var client = new HttpClient();
-              client.DefaultRequestHeaders.UserAgent.ParseAdd("AnimeJaNaiUpdater");
-              string json = await client.GetStringAsync(url);
-              using var doc = JsonDocument.Parse(json);
-              var root = doc.RootElement;
-              string tag = root.GetProperty("tag_name").GetString() ?? "";
-              var assets = new List<Asset>();
-              if (root.TryGetProperty("assets", out var arr))
-              {
-                  foreach (var a in arr.EnumerateArray())
-                  {
-                      assets.Add(new Asset(
-                          a.GetProperty("name").GetString() ?? "",
-                          a.GetProperty("browser_download_url").GetString() ?? ""));
-                  }
-              }
-              return new Release(tag, assets);
-          }
-
-          '@
-          $src = $src.Insert($insertAt, $helper)
-          Set-Content -Path $path -Value $src -Encoding utf8
-          dotnet publish AnimeJaNaiUpdater/AnimeJaNaiUpdater.csproj -c Release -o updater-publish
-
-      - name: Stage binary replacement files
-        shell: pwsh
-        run: |
-          Copy-Item manager-publish/AnimeJaNaiManager.exe ./AnimeJaNaiManager.exe -Force
-          Copy-Item manager-publish/av_libglesv2.dll ./av_libglesv2.dll -Force
-          Copy-Item manager-publish/libHarfBuzzSharp.dll ./libHarfBuzzSharp.dll -Force
-          Copy-Item manager-publish/libSkiaSharp.dll ./libSkiaSharp.dll -Force
-          Copy-Item updater-publish/AnimeJaNaiUpdater.exe ./AnimeJaNaiUpdater.exe -Force
-          Copy-Item mpvnet-publish/mpvnet.exe ./mpvnet.exe -Force
-
-          New-Item -ItemType Directory -Force -Path portable_config/fonts | Out-Null
-          Invoke-WebRequest 'https://raw.githubusercontent.com/zydezu/ModernX/main/fluent-system-icons.ttf' -OutFile 'portable_config/fonts/fluent-system-icons.ttf'
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add AnimeJaNaiManager.exe AnimeJaNaiUpdater.exe av_libglesv2.dll libHarfBuzzSharp.dll libSkiaSharp.dll mpvnet.exe portable_config/fonts/fluent-system-icons.ttf
-          git commit -m "Stage replacement binaries for clean main"
+          git add portable_config/scripts/modernx.lua portable_config/scripts/thumbfast.lua THIRD_PARTY_LICENSES/mpv.net-LICENSE.txt THIRD_PARTY_LICENSES/thumbfast-LICENSE.txt
+          git commit -m "Stage replacement text assets for clean main"
           git push origin HEAD:main
