@@ -1,8 +1,7 @@
 # AnimeJaNai 中文汉化包
 个人使用，因为有人有需求我就分享了出来
 本分支基于上游 AnimeJaNai 项目继续整合，并不是上游官方发布版。需要原版说明、模型介绍和通用硬件支持时，请优先参考上游项目。
-## 如何使用
-适配 [AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai/releases)3.6 直接覆盖安装目录
+
 ## 这版主要做了什么
 
 - **AnimeJaNai Manager 简体中文化**：界面、按钮、提示、导入导出、组件管理、性能测试等可见内容均做了中文处理。
@@ -55,8 +54,9 @@
 
 ## 使用方式
 
+ 适配 [AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai/releases) 3.6 版本
 1. 以完整 AnimeJaNai 安装目录为基础，把本分支构建出的覆盖包解压到安装目录并覆盖。
-2. Player UI 使用外部播放器时，指向根目录的 **`mpvnet.exe`**。
+2. 使用外部播放器打开视频时，指向根目录的 **`mpvnet.exe`**。
 3. 第一次运行某个 TensorRT 超分模型时，需要生成 TensorRT Engine，首次可能等待一段时间；生成后会缓存。
 4. 播放时用 `Ctrl+1` ～ `Ctrl+9` 切换预设，`Ctrl+0` 关闭 AI。
 5. `Esc` 只退出全屏。
