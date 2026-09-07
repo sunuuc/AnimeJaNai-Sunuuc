@@ -1,4 +1,4 @@
-# AnimeJaNai 中文汉化包
+# AnimeJaNai 中文汉化+个人调优
 
 个人使用，因为有人有需求我就分享了出来。
 
@@ -6,7 +6,7 @@
 
 > `main` 只保留实际覆盖替换文件、主页说明和分发所需的许可证文件。需要源码的组件在下方提供对应源码仓库或独立源码分支。
 
-## 这版主要做了什么
+## 主要做了什么
 
 - **AnimeJaNai Manager 简体中文化**：界面、按钮、提示、导入导出、组件管理、性能测试等可见内容均做了中文处理。
 - **内置 RTX 5080 Laptop 专用预设**：按 16GB 显存、2560×1600 屏幕和实际性能测试重新安排 9 个快捷预设。
@@ -116,5 +116,3 @@ RIFE 补帧模型和 AnimeJaNai 的超分模型由 AnimeJaNai 的组件体系提
 
 感谢 AnimeJaNai、AnimeJaNai Manager、mpv、mpv.net、ModernX、thumbfast、TensorRT 及相关项目的开发者。
 
-
-```所有修改由 GPT 完成。```
