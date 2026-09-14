@@ -8,6 +8,9 @@ on:
       - 'tools/stage_r2.py'
       - 'tests/test_windows_r2.py'
       - 'tests/test_stats.lua'
+      - 'tests/test_controls.lua'
+      - 'tests/test_smoke.lua'
+      - 'tests/test_script_suite.py'
       - 'portable_config/scripts/animejanaistats.lua'
       - 'portable_config/scripts/animejanai_session.lua'
       - 'portable_config/scripts/animejanai_engine_monitor.lua'
@@ -61,6 +64,8 @@ jobs:
           Start-Service Audiosrv
           python tests/test_windows_r2.py stage stage/build-info/runtime-r2
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Packaged controller logic and real Lua API smoke test
+        run: python tests/test_script_suite.py stage stage/build-info/runtime-r2
       - name: Package and verify every ZIP entry
         run: python tools/stage_r2.py finish
       - uses: actions/upload-artifact@v4
@@ -77,6 +82,7 @@ jobs:
           path: |
             stage/build-info/runtime-r2/*.log
             stage/build-info/runtime-r2/results.json
+            stage/build-info/runtime-r2/scripts-results.json
             stage/build-info/updater-tests.txt
             stage/build-info/updater-check.txt
             stage/build-info/provenance.json

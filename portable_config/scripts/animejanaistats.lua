@@ -34,7 +34,7 @@ local function ai_status(now)
         if f.name == 'animejanai' or f.name == 'vapoursynth' then active = true end
     end
     if not active then status = 'AI 已关闭'; return status end
-    local path = mp.get_property('user-data/animejanai/stats-path')
+    local path = mp.get_property_native('user-data/animejanai/stats-path')
         or mp.command_native({'expand-path', '~~/../animejanai/currentanimejanai.log'})
     local file = path and io.open(path, 'r')
     status = file and file:read(65536) or nil

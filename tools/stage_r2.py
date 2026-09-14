@@ -58,7 +58,8 @@ if (mode is "--check" or "--apply")
     text=text.replace(needle,needle+'\n'+guard);p.write_text(text,encoding='utf-8')
     source=INFO/'sources';source.mkdir(exist_ok=True)
     shutil.copy2(p,source/'AnimeJaNaiUpdater.Program.cs')
-    for name in ['stage_r2.py','../tests/test_windows_r2.py','../tests/test_stats.lua']:
+    for name in ['stage_r2.py','../tests/test_windows_r2.py','../tests/test_stats.lua',
+                 '../tests/test_controls.lua','../tests/test_smoke.lua','../tests/test_script_suite.py']:
         src=Path(__file__).parent/name;shutil.copy2(src,source/src.name)
     (INFO/'provenance.json').write_text(json.dumps({
         'revision':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],
@@ -75,6 +76,8 @@ if (mode is "--check" or "--apply")
 def finish():
     results=json.loads((INFO/'runtime-r2/results.json').read_text(encoding='utf-8'))
     assert results and all(x['passed'] for x in results),'Do not package failing tests'
+    controls=json.loads((INFO/'runtime-r2/scripts-results.json').read_text(encoding='utf-8'))
+    assert len(controls)==2 and all(x['passed'] for x in controls),'Do not package failing controls'
     assert (STAGE/'AnimeJaNaiUpdater.exe').stat().st_size>1000000
     assert 'vo-presented-frame-count' in (STAGE/'portable_config/scripts/animejanaistats.lua').read_text(encoding='utf-8')
     assert not (STAGE/'animejanai/animejanai.conf').exists()
