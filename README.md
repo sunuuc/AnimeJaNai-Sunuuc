@@ -1,5 +1,8 @@
 # AnimeJaNai 中文汉化 + 个人调优
 
+> **当前更新：r3 中文恢复与语言设置。** [下载 r3 累计修复包](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/tag/zh-CN-3.6.0-r3)。播放器设置窗口与管理器顶部均可选简体中文、English、跟随系统，默认简体中文，重启后生效。已包含 r2 修复，无须另装 r2；保留个人配置、模型和缓存。[详细说明](docs/RELEASE-r3.md)。下方 r2 链接和说明保留作历史参考。
+
+
 个人使用，因为有人有需求我就分享了出来。
 
 本仓库基于上游 [the-database/mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai) 继续整合，并不是上游官方发布版。
