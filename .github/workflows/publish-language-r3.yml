@@ -1,0 +1,33 @@
+name: Publish verified language r3
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-language-r3.yml']
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-language-r3
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Publish exact reviewed candidate after integrity and test checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/publish_language_r3.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r3-publication-verification
+          path: publish-dist/release-verification.json
+          if-no-files-found: warn
+          retention-days: 14
