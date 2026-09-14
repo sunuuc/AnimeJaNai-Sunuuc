@@ -1,105 +1,67 @@
--- Engine-build monitor for vf_animejanai.
---
--- TensorRT engines are built on first play (per model and resolution).
--- Builds run in the background, but TensorRT selects kernels by timing
--- them on the GPU and recommends an idle GPU for the best result - so by
--- default this script pauses playback while a build runs, narrates what
--- is happening on the OSD, and resumes automatically when the engine is
--- ready. Unpausing manually during a build is respected: the video keeps
--- playing (unupscaled) and the script stays hands-off.
---
--- The filter rewrites the stats log on every (re)configure; a
--- "Building TensorRT engine" line means a build is in flight.
---
--- script-opts (prefix animejanai_engine_monitor-):
---   auto_pause=yes|no   pause playback during builds (default yes)
---   stats_path=...      override the stats log location
-
+-- Poll only during active AI playback. Missing/truncated log != build success.
 local mp = require 'mp'
 local msg = require 'mp.msg'
 local options = require 'mp.options'
-
-local o = {
-    auto_pause = true,
-    poll_interval = 0.25,
-    stats_path = "~~/../animejanai/currentanimejanai.log",
-}
-options.read_options(o, "animejanai_engine_monitor")
-
-local stats_path = mp.command_native({'expand-path', o.stats_path})
-
-local building = false
-local we_paused = false
-local started_at = 0
-local build_name = "?"
-local build_res = "?"
-
-local function read_stats()
-    local f = io.open(stats_path, "r")
-    if not f then return nil end
-    local s = f:read("*a")
-    f:close()
-    return s
+local o = {auto_pause=true, poll_interval=0.5, stats_path=''}
+options.read_options(o, 'animejanai_engine_monitor')
+o.poll_interval = math.max(0.25, tonumber(o.poll_interval) or 0.5)
+local timer, building, we_paused = nil, false, false
+local started_at, build_name, build_res = 0, '?', '?'
+local poll_pending
+local function reset()
+    if we_paused and mp.get_property_bool('pause') then mp.set_property_bool('pause',false) end
+    building, we_paused = false, false
+    poll_pending=nil
+    if timer then timer:kill(); timer=nil end
 end
-
-mp.add_periodic_timer(o.poll_interval, function()
-    local s = read_stats()
-    local b = s ~= nil and s:find("Building TensorRT engine", 1, true) ~= nil
-
-    -- the user taking over wins: if they unpause mid-build, stay hands-off
-    if we_paused and not mp.get_property_bool("pause") then
-        we_paused = false
+local function poll()
+    if we_paused and not mp.get_property_bool('pause') then we_paused=false end
+    local path = o.stats_path ~= '' and mp.command_native({'expand-path',o.stats_path})
+        or mp.get_property('user-data/animejanai/stats-path')
+        or mp.command_native({'expand-path','~~/../animejanai/currentanimejanai.log'})
+    local file = io.open(path, 'r')
+    local text = file and file:read(65536) or nil
+    if file then file:close() end
+    -- A missing file or an incomplete rewrite provides no completion evidence.
+    if not text or text == '' then
+        if building then mp.commandv('vf-command','aji','poll','1') end
+        return
     end
-
-    if b and not building then
-        building = true
-        started_at = mp.get_time()
-        if o.auto_pause and not mp.get_property_bool("pause") then
-            mp.set_property_bool("pause", true)
-            we_paused = true
-            msg.info("TensorRT 引擎开始构建；已暂停播放")
-        else
-            msg.info("TensorRT 引擎开始构建")
+    local busy = text:find('Building TensorRT engine',1,true) ~= nil
+    if busy and not building then
+        building=true;started_at=mp.get_time()
+        if o.auto_pause and not mp.get_property_bool('pause') then
+            mp.set_property_bool('pause',true);we_paused=true
         end
-    elseif not b and building then
-        building = false
-        local failed = s ~= nil and s:find("build FAILED", 1, true) ~= nil
-        msg.info(string.format("TensorRT 引擎构建完成，耗时 %d 秒%s",
-            math.floor(mp.get_time() - started_at),
-            we_paused and "；正在恢复播放" or ""))
-        if we_paused then
-            mp.set_property_bool("pause", false)
-            we_paused = false
-        end
-        if failed then
-            local log_path = s and s:match("%(see ([^%)]+)%)") or
-                             "模型旁边的 .build.log 文件"
-            mp.osd_message(string.format(
-                "AnimeJaNai：为 %s（%s）构建 TensorRT 引擎失败。已关闭超分。（详情：%s）",
-                build_name, build_res, log_path), 10)
-        else
-            mp.osd_message(string.format(
-                "AnimeJaNai：为 %s（%s）构建 TensorRT 引擎成功。超分已启用。",
-                build_name, build_res), 5)
-        end
+    elseif building and not busy then
+        -- Require a stable snapshot across two reads: native writers truncate
+        -- before rewriting, so a single nonempty prefix can still be partial.
+        if poll_pending ~= text then poll_pending=text;return end
+        building=false;poll_pending=nil
+        local failed=text:find('build FAILED',1,true) ~= nil
+        if we_paused then mp.set_property_bool('pause',false);we_paused=false end
+        msg.info(failed and 'TensorRT 引擎构建失败' or 'TensorRT 引擎构建结束')
+        mp.osd_message(failed and 'AnimeJaNai：引擎构建失败，请查看模型旁的 .build.log'
+            or 'AnimeJaNai：引擎已就绪',5)
     end
-
+    if busy then poll_pending=nil end
     if building then
-        local n, r = s:match(
-            "Building TensorRT engine for ([^%s]+) for ([^%s]+)")
-        if n then
-            build_name = n
-            build_res = r
-        end
-        local elapsed = math.floor(mp.get_time() - started_at)
-        local second = we_paused and "构建完成后将自动恢复播放。"
-                                  or "构建完成后将自动启用超分。"
-        mp.osd_message(string.format(
-            "AnimeJaNai：正在为 %s（%s）构建 TensorRT 引擎（已用 %d 秒，通常约一分钟）\n%s",
-            build_name, build_res, elapsed, second),
-            o.poll_interval + 0.5)
-        -- while paused no frames flow, so the filter would never notice the
-        -- finished build; this no-op command wakes it so it polls
-        mp.commandv("vf-command", "aji", "poll", "1")
+        local n,r=text:match('Building TensorRT engine for ([^%s]+) for ([^%s]+)')
+        if n then build_name,build_res=n,r end
+        mp.osd_message(string.format('AnimeJaNai：正在构建 %s（%s），已用 %d 秒\n%s',
+            build_name,build_res,math.floor(mp.get_time()-started_at),
+            we_paused and '构建完成后恢复播放；手动继续播放将取消自动暂停。' or '后台构建中。'),o.poll_interval+0.5)
+        mp.commandv('vf-command','aji','poll','1')
     end
+end
+local function start()
+    reset()
+    for _, f in ipairs(mp.get_property_native('vf', {}) or {}) do
+        if f.name=='animejanai' then timer=mp.add_periodic_timer(o.poll_interval,poll);poll();break end
+    end
+end
+mp.register_event('file-loaded',start)
+mp.register_event('end-file',reset)
+mp.observe_property('vf','native',function()
+    if not mp.get_property_bool('idle-active',true) then start() end
 end)

@@ -1,212 +1,74 @@
-local open = io.open
+-- FPS is unique video frames submitted through VO, not monitor scanout.
+-- Requires this distribution's vo-presented-frame-count native property.
+local mp = require 'mp'
+local visible = false
+local timer
+local samples = {}
+local status, status_time = nil, -math.huge
+local WINDOW, INTERVAL = 2.0, 0.25
 
-local showingMessage = false
-local MAX_DURATION = 2147483
-local UPDATE_INTERVAL = 0.25
-local FPS_WINDOW = 2.0
-local FULL_SPEED_RATIO = 0.98
-
-local updateTimer = nil
-local cachedAnimeJaNaiStatus = nil
-local lastStatusReadTime = 0
-
--- 真正的实时帧率：统计 mpv 当前视频时间戳实际推进了多少次。
--- 不再使用 estimated-vf-fps 充当“实际 FPS”；它只用来提供目标值。
-local frameTimes = {}
-local lastTimePos = nil
-local sampleStartTime = nil
-local observingTimePos = false
-
-local function read_file(path)
-    local file = open(path, "r")
-    if not file then return nil end
-    local content = file:read "*a"
-    file:close()
-    return content
+local function reset()
+    samples = {}
+    status, status_time = nil, -math.huge
 end
 
-local function reset_fps_sample()
-    frameTimes = {}
-    lastTimePos = nil
-    sampleStartTime = mp.get_time()
+local function actual(now)
+    local n = mp.get_property_number('vo-presented-frame-count')
+    if not n or n < 0 then samples = {}; return nil end
+    if mp.get_property_bool('pause', false) then samples = {}; return 0 end
+    local last = samples[#samples]
+    if last and (n < last.n or now <= last.t or now - last.t > 4) then samples = {} end
+    samples[#samples + 1] = {t=now, n=n}
+    -- Retain one sample just before the window boundary; use its real time.
+    while #samples > 2 and samples[2].t <= now - WINDOW do table.remove(samples, 1) end
+    local first = samples[1]
+    if now - first.t < 0.75 then return nil end
+    return (n - first.n) / (now - first.t)
 end
 
-local function prune_frame_times(now)
-    local cutoff = now - FPS_WINDOW
-    local first = 1
-    while first <= #frameTimes and frameTimes[first] < cutoff do
-        first = first + 1
+local function ai_status(now)
+    if status and now - status_time < 2 then return status end
+    status_time = now
+    local active = false
+    for _, f in ipairs(mp.get_property_native('vf', {}) or {}) do
+        if f.name == 'animejanai' or f.name == 'vapoursynth' then active = true end
     end
-
-    if first > 1 then
-        local newTimes = {}
-        for i = first, #frameTimes do
-            newTimes[#newTimes + 1] = frameTimes[i]
-        end
-        frameTimes = newTimes
-    end
+    if not active then status = 'AI 已关闭'; return status end
+    local path = mp.get_property('user-data/animejanai/stats-path')
+        or mp.command_native({'expand-path', '~~/../animejanai/currentanimejanai.log'})
+    local file = path and io.open(path, 'r')
+    status = file and file:read(65536) or nil
+    if file then file:close() end
+    if not status or status == '' then status = 'AnimeJaNai 状态暂不可用' end
+    return status
 end
 
-local function on_time_pos(_, pos)
-    if not showingMessage or pos == nil then return end
-    if mp.get_property_bool("pause", false) then
-        lastTimePos = pos
-        return
-    end
-
+local function render()
+    if not visible then return end
     local now = mp.get_time()
-
-    if lastTimePos ~= nil then
-        local delta = pos - lastTimePos
-        -- 正常前进的一次 time-pos 更新按 1 个实际输出帧计。
-        -- 大跳转通常是 seek，不把一次跳转误算成很多帧。
-        if delta > 0 and delta < 0.5 then
-            frameTimes[#frameTimes + 1] = now
-        elseif delta < 0 or delta >= 0.5 then
-            -- seek / 大跨度跳转后重新开始采样。
-            frameTimes = {}
-            sampleStartTime = now
-        end
-    end
-
-    lastTimePos = pos
-    prune_frame_times(now)
+    local fps = actual(now)
+    local target = mp.get_property_number('estimated-vf-fps')
+    local speed = mp.get_property_number('speed', 1) or 1
+    local line = '当前实际 FPS: ' .. (fps and string.format('%.2f', fps) or '--')
+    line = line .. ' / 目标 ' .. (target and target > 0 and string.format('%.2f', target * speed) or '--')
+    mp.osd_message(ai_status(now) .. '\n\n' .. line, 2147483)
 end
 
-local function start_frame_observer()
-    if observingTimePos then return end
-    reset_fps_sample()
-    mp.observe_property("time-pos", "number", on_time_pos)
-    observingTimePos = true
-end
-
-local function stop_frame_observer()
-    if not observingTimePos then return end
-    mp.unobserve_property(on_time_pos)
-    observingTimePos = false
-end
-
-local function get_animejanai_status(now)
-    -- AI 状态日志最多每 5 秒读取一次，避免不必要的磁盘 I/O。
-    if cachedAnimeJaNaiStatus ~= nil and (now - lastStatusReadTime) < 5 then
-        return cachedAnimeJaNaiStatus
-    end
-
-    local vf = mp.get_property("vf") or ""
-    if vf == "" then
-        cachedAnimeJaNaiStatus = "AI 已关闭"
+local function toggle()
+    visible = not visible
+    reset()
+    if visible then
+        render()
+        timer = mp.add_periodic_timer(INTERVAL, render)
     else
-        local data_file_path = mp.command_native({"expand-path", "~~/../animejanai/currentanimejanai.log"})
-        local message = read_file(data_file_path)
-        if not message or message == "" then
-            message = "AnimeJaNai 状态读取失败；按 ~ 键在控制台查看错误信息"
-        end
-        cachedAnimeJaNaiStatus = message
+        if timer then timer:kill(); timer = nil end
+        mp.osd_message('')
     end
-
-    lastStatusReadTime = now
-    return cachedAnimeJaNaiStatus
 end
-
-local function get_actual_fps(now)
-    if mp.get_property_bool("pause", false) then
-        return 0
-    end
-
-    prune_frame_times(now)
-
-    if not sampleStartTime then
-        sampleStartTime = now
-    end
-
-    local elapsed = now - sampleStartTime
-    if elapsed < 0.75 then
-        return nil
-    end
-
-    local window = math.min(FPS_WINDOW, elapsed)
-    if window <= 0 then return nil end
-
-    return #frameTimes / window
+for _, event in ipairs({'start-file', 'file-loaded', 'seek', 'playback-restart', 'end-file'}) do
+    mp.register_event(event, reset)
 end
-
-local function get_target_fps()
-    local fps = mp.get_property_number("estimated-vf-fps", nil)
-    local speed = mp.get_property_number("speed", 1.0) or 1.0
-    if fps then
-        return fps * speed
-    end
-    return nil
-end
-
-local function render_stats()
-    if not showingMessage then return end
-
-    local now = mp.get_time()
-    local status = get_animejanai_status(now)
-    local actualFps = get_actual_fps(now)
-    local targetFps = get_target_fps()
-
-    local realtime
-    if actualFps == nil then
-        if targetFps then
-            realtime = string.format("当前实际 FPS: 采样中…  / 目标 %.2f", targetFps)
-        else
-            realtime = "当前实际 FPS: 采样中…"
-        end
-    elseif targetFps then
-        local full = actualFps >= targetFps * FULL_SPEED_RATIO
-        realtime = string.format(
-            "当前实际 FPS: %.2f  / 目标 %.2f",
-            actualFps,
-            targetFps
-        )
-    else
-        realtime = string.format("当前实际 FPS: %.2f", actualFps)
-    end
-
-    mp.osd_message(status .. "\n\n" .. realtime, MAX_DURATION)
-end
-
-function show_animejanai_stats()
-    if showingMessage then
-        if updateTimer then
-            updateTimer:kill()
-            updateTimer = nil
-        end
-        stop_frame_observer()
-        mp.osd_message("")
-        showingMessage = false
-        return
-    end
-
-    showingMessage = true
-    cachedAnimeJaNaiStatus = nil
-    lastStatusReadTime = 0
-    start_frame_observer()
-    render_stats()
-
-    -- Ctrl+J 面板显示时每 0.25 秒刷新一次；实际 FPS 使用最近 2 秒真实帧推进统计。
-    updateTimer = mp.add_periodic_timer(UPDATE_INTERVAL, render_stats)
-end
-
-mp.register_event("file-loaded", function()
-    cachedAnimeJaNaiStatus = nil
-    lastStatusReadTime = 0
-    reset_fps_sample()
-end)
-
-mp.register_event("seek", function()
-    reset_fps_sample()
-end)
-
-mp.observe_property("pause", "bool", function(_, paused)
-    if showingMessage then
-        reset_fps_sample()
-        if paused then
-            render_stats()
-        end
-    end
-end)
-
-mp.add_key_binding("Ctrl+j", "show_animejanai_stats", show_animejanai_stats)
+mp.observe_property('pause', 'bool', function() reset(); if visible then render() end end)
+mp.observe_property('speed', 'number', reset)
+mp.observe_property('vf', 'native', reset)
+mp.add_key_binding('Ctrl+j', 'show_animejanai_stats', toggle)
