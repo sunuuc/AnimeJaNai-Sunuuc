@@ -14,6 +14,7 @@ using ReactiveUI.Avalonia;
 string evidence=Path.GetFullPath(args[0]);Directory.CreateDirectory(evidence);
 string dir=Path.Combine(evidence,"preference-test");Directory.CreateDirectory(dir);
 string fixture=Path.Combine(evidence,"isolated-manager");Directory.CreateDirectory(fixture);
+foreach(string folder in new[]{"onnx","rife","backups","portable_config","inference"})Directory.CreateDirectory(Path.Combine(fixture,folder));
 File.Copy("manager/AnimeJaNaiConfEditor/animejanai.conf",Path.Combine(fixture,"animejanai.conf"),true);
 Environment.SetEnvironmentVariable("ANIMEJANAI_DATA_DIR",fixture);
 Environment.SetEnvironmentVariable("ANIMEJANAI_ROOT",fixture);
