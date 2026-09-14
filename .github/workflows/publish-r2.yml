@@ -1,0 +1,41 @@
+name: Verify and publish r2
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-r2.yml']
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-r2
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
+      CANDIDATE_ID: '10344837920'
+      CANDIDATE_SHA256: d345f80d5412c06a88dc13432b38f98c9b922ee42f9c3871a2596046dd022846
+      PACKAGE_SHA256: 90bb725313ee624df6938d4a84e21da149374043dc043cc378680b863470dee8
+      SOURCE_BUILD_SHA: bd34667e408dc7e7473c15450b8bfc7a970fe2e6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify exact candidate, test controls, publish only on success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/publish_r2.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r2-publish-verification
+          path: |
+            release-dist/control-tests.log
+            release-dist/script-smoke.log
+            release-dist/release-verification.json
+            release-dist/scripts-results.json
+          if-no-files-found: warn
+          retention-days: 14
