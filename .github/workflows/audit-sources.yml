@@ -1,0 +1,66 @@
+name: Audit player and upstream sources
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/audit-sources.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Collect source snapshots and upstream metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import json, pathlib, subprocess, shutil
+          root = pathlib.Path('audit'); root.mkdir()
+          repos = {
+            'config': ('sunuuc/AnimeJaNai-zh-CN', 'main'),
+            'player': ('sunuuc/AnimeJaNai-zh-CN', 'source'),
+            'manager': ('sunuuc/AnimeJaNaiManager', 'main'),
+            'upstream-config': ('the-database/mpv-AnimeJaNai', 'main'),
+            'upstream-manager': ('the-database/AnimeJaNaiManager', 'main'),
+            'upstream-player': ('mpvnet-player/mpv.net', 'main'),
+            'inference': ('the-database/animejanai-inference', 'main'),
+            'mpv': ('mpv-player/mpv', 'master'),
+          }
+          text_exts = {'.cs', '.csproj', '.sln', '.props', '.targets', '.md', '.txt', '.json', '.lua', '.conf', '.yml', '.yaml', '.py', '.c', '.h', '.cpp', '.hpp', '.cmake', '.ps1', '.sh', '.toml', '.rst', '.xaml', '.axaml', '.resx', '.config', '.xml', '.in', '.build'}
+          summary = {}
+          for key, (repo, branch) in repos.items():
+            dest = pathlib.Path('work') / key
+            subprocess.run(['git', 'clone', '--depth=80', '--filter=blob:none', '--branch', branch, 'https://github.com/' + repo + '.git', str(dest)], check=True)
+            out = root / key; out.mkdir()
+            files = subprocess.check_output(['git', '-C', str(dest), 'ls-files', '-z']).decode().split('\0')
+            for name in filter(None, files):
+              path = dest / name
+              if path.is_file() and path.suffix.lower() in text_exts and path.stat().st_size < 3000000:
+                target = out / name; target.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(path, target)
+            sha = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD']).decode().strip()
+            log = subprocess.check_output(['git', '-C', str(dest), 'log', '-40', '--format=%h %aI %s']).decode()
+            (root / (key + '-commits.txt')).write_text(log)
+            result = subprocess.run(['gh', 'api', 'repos/' + repo + '/releases?per_page=5'], capture_output=True, text=True)
+            releases = []
+            if result.returncode == 0:
+              for r in json.loads(result.stdout):
+                releases.append({k: r.get(k) for k in ['tag_name', 'published_at', 'updated_at', 'prerelease', 'html_url', 'body']})
+            summary[key] = {'repository': repo, 'branch': branch, 'sha': sha, 'releases': releases}
+          # Compare our manager with the fetched upstream history without changing any branch.
+          subprocess.run(['git', '-C', 'work/manager', 'fetch', '--depth=150', 'https://github.com/the-database/AnimeJaNaiManager.git', 'main'], check=True)
+          result = subprocess.run(['git', '-C', 'work/manager', 'merge-base', 'HEAD', 'FETCH_HEAD'], capture_output=True, text=True)
+          if result.returncode == 0:
+            base = result.stdout.strip(); summary['manager']['upstream_merge_base'] = base
+            for label, target in [('our', 'HEAD'), ('upstream', 'FETCH_HEAD')]:
+              diff = subprocess.check_output(['git', '-C', 'work/manager', 'diff', base, target, '--', '.', ':!*.po', ':!*.pot']).decode()
+              (root / ('manager-' + label + '.diff')).write_text(diff)
+          (root / 'versions.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+          print(json.dumps({k: {'sha':v['sha'], 'latest_tags':[r['tag_name'] for r in v['releases']]} for k,v in summary.items()}, indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-source-snapshots
+          path: audit/
+          include-hidden-files: true
+          retention-days: 7
