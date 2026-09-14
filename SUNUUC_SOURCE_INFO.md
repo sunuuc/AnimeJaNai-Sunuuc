@@ -1,15 +1,14 @@
-# mpv.net Player UI 兼容修改源码
+# mpv.net Player UI 外部调用修复 r2
 
-本分支对应 main 中分发的 mpvnet.exe。
+基线：mpvnet-player/mpv.net v7.1.2.0，GPL-2.0。本分支保留完整修改源码。
 
-- 上游项目：https://github.com/mpvnet-player/mpv.net
-- 基础版本：v7.1.2.0
-- 上游许可证：GPL-2.0
-- 修改内容：在 src/MpvNet/CommandLine.cs 中忽略 Player UI 外部播放器调用可能传入的 `--{` 与 `--}` 两个参数，避免被 mpv.net 当作属性解析。
-- 构建命令：
+此前跳过 `--{`/`--}` 的补丁会把分集字幕、标题和起播位置混成全局参数。
+现保留分组，通过 `loadfile URL mode -1 options` 绑定文件局部选项。
+带分组、独立 IPC 或显式字幕的调用使用独立进程，避免旧单实例转发丢失参数。
+UTF-8 字节长度引用保护中文、逗号、等号及签名 URL；重复的外部字幕不被覆盖。
+普通本地打开保留旧单实例行为，不修改服务器媒体或字幕名称，不输出完整带令牌启动命令。
 
-```powershell
-dotnet publish src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained false -o mpvnet-publish
-```
+测试：`dotnet run --project tests/ScopedCommandLine -c Release`
+构建：`dotnet publish src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained false -o publish`
 
-除上述兼容修改外，源码基线保持 mpv.net v7.1.2.0。
+这里支持明确测试过的命令行形式，不宣称完整重新实现 mpv 的全部命令行语法。原生播放器底层构建、Lua 脚本和发布验证在 main 分支。
