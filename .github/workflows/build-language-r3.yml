@@ -39,7 +39,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with: {dotnet-version: '10.x'}
       - name: Generate and embed reviewed bilingual resources
-        run: python tools/language-r3/prepare.py
+        run: |
+          python tools/language-r3/prepare.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/language-r3/finalize.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Prepare language and profile regression projects
         shell: python
         run: |
@@ -65,6 +69,7 @@ jobs:
           dotnet run --project tests-generated/manager-tests/ManagerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/manager-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Player language controls and embedded-resource tests
+        if: ${{ !cancelled() }}
         run: |
           dotnet run --project tests-generated/player-tests/PlayerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/player-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

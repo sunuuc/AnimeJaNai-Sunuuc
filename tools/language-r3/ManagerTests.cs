@@ -11,9 +11,27 @@ using Avalonia.Headless;
 using Avalonia.Threading;
 using Avalonia.Media.Imaging;
 using ReactiveUI.Avalonia;
+using System.Diagnostics;
+using System.Text.Json;
 string evidence=Path.GetFullPath(args[0]);Directory.CreateDirectory(evidence);
-string dir=Path.Combine(evidence,"preference-test");Directory.CreateDirectory(dir);
-string fixture=Path.Combine(evidence,"isolated-manager");Directory.CreateDirectory(fixture);
+if(args.Length==1)
+{
+    // Each launch has its own language and native window lifetime, just as a restart does.
+    foreach(string language in new[]{"zh-CN","en","system"})
+    {
+        var start=new ProcessStartInfo(Environment.ProcessPath!){UseShellExecute=false,RedirectStandardOutput=true,RedirectStandardError=true};
+        start.ArgumentList.Add(evidence);start.ArgumentList.Add(language);
+        using var process=Process.Start(start)!;
+        var stdout=process.StandardOutput.ReadToEndAsync();var stderr=process.StandardError.ReadToEndAsync();
+        if(!process.WaitForExit(120000)){process.Kill(true);throw new Exception("Language test timeout: "+language);}
+        Console.Write(stdout.GetAwaiter().GetResult());Console.Write(stderr.GetAwaiter().GetResult());
+        if(process.ExitCode!=0)throw new Exception("Language test failed: "+language+" / "+process.ExitCode);
+    }
+    Console.WriteLine("PASS Manager language suite");return;
+}
+string selected=args[1];
+string dir=Path.Combine(evidence,"preference-test-"+selected);Directory.CreateDirectory(dir);
+string fixture=Path.Combine(evidence,"isolated-manager-"+selected);Directory.CreateDirectory(fixture);
 foreach(string folder in new[]{"onnx","rife","backups","portable_config","inference"})Directory.CreateDirectory(Path.Combine(fixture,folder));
 File.Copy("manager/AnimeJaNaiConfEditor/animejanai.conf",Path.Combine(fixture,"animejanai.conf"),true);
 Environment.SetEnvironmentVariable("ANIMEJANAI_DATA_DIR",fixture);
@@ -32,30 +50,33 @@ using(var locked=new FileStream(InterfaceLanguage.SettingsPath,FileMode.Open,Fil
 {rejected=false;try{InterfaceLanguage.Save("zh-CN");}catch(Exception e) when(e is IOException or UnauthorizedAccessException){rejected=true;}Check(rejected,"locked preference refuses replacement");}
 Check(InterfaceLanguage.Read()=="en"&&!Directory.EnumerateFiles(dir,"*.tmp").Any(),"failed save retains old preference and removes temporary file");
 AppBuilder.Configure<AnimeJaNaiConfEditor.App>().UseHeadless(new AvaloniaHeadlessPlatformOptions{UseHeadlessDrawing=false}).UseSkia().UseReactiveUI(_=>{}).SetupWithoutStarting();
-foreach(string language in new[]{"zh-CN","en","system"})
+InterfaceLanguage.Save(selected);InterfaceLanguage.Reload();bool zh=InterfaceLanguage.IsChinese;
+Check(UiText.T("Profiles")== (zh?"配置方案":"Profiles"),"embedded resource "+selected);
+Check(UiText.F($"Remove Chain {7}")==(zh?"移除处理链 7":"Remove Chain 7"),"dynamic format "+selected);
+var vm=new MainWindowViewModel();vm.HandleShowGlobalSettings();
+string[] raw=vm.DefaultUpscaleSlots.Select(s=>s.ProfileName).ToArray();
+Console.WriteLine("Default profile names before UI: "+JsonSerializer.Serialize(raw));
+Check(raw.SequenceEqual(new[]{"Quality","Balanced","Performance"}),"default profile names preserved in raw configuration");
+var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.UIThread.RunJobs();
+Console.WriteLine("Default profile names after UI: "+JsonSerializer.Serialize(vm.DefaultUpscaleSlots.Select(s=>s.ProfileName)));
+Check(raw.SequenceEqual(vm.DefaultUpscaleSlots.Select(s=>s.ProfileName)),"display converters cannot write translated or null profile names");
+var tabs=w.GetLogicalDescendants().OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
+Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components"),"constructed tab headers "+selected);
+var selector=w.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name=="InterfaceLanguageSelector");
+Check(selector.SelectedIndex==Array.IndexOf(InterfaceLanguage.Choices,selected),"selector reflects persisted setting "+selected);
+foreach(string page in new[]{"global","profile","components"})
 {
-    InterfaceLanguage.Save(language);InterfaceLanguage.Reload();bool zh=InterfaceLanguage.IsChinese;
-    Check(UiText.T("Profiles")== (zh?"配置方案":"Profiles"),"embedded resource "+language);
-    Check(UiText.F($"Remove Chain {7}")==(zh?"移除处理链 7":"Remove Chain 7"),"dynamic format "+language);
-    var vm=new MainWindowViewModel();vm.HandleShowGlobalSettings();
-    var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.UIThread.RunJobs();
-    var logical=w.GetLogicalDescendants().OfType<Control>().ToArray();
-    var tabs=logical.OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
-    Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components"),"constructed tab headers "+language);
-    var selector=w.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name=="InterfaceLanguageSelector");
-    Check(selector.SelectedIndex==Array.IndexOf(InterfaceLanguage.Choices,language),"selector reflects persisted setting "+language);
-    foreach(string page in new[]{"global","profile","components"})
-    {
-        vm.SelectedTabIndex=page=="components"?1:0;
-        if(page=="global")vm.HandleShowGlobalSettings();
-        if(page=="profile")vm.HandleShowDefaultProfile(vm.DefaultUpscaleSlots.First().SlotNumber);
-        Dispatcher.UIThread.RunJobs();
-        using(var bitmap=new RenderTargetBitmap(new PixelSize(1100,800))){bitmap.Render(w);bitmap.Save(Path.Combine(evidence,"manager-"+language+"-"+page+".png"));}
-        File.WriteAllText(Path.Combine(evidence,"manager-"+language+"-"+page+".txt"),string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null)));
-    }
-    selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
-    Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"selector saves correct stable language ID "+language);
-    Check(InterfaceLanguage.IsChinese==zh,"selection does not partially relocalize current window "+language);
-    w.Close();Dispatcher.UIThread.RunJobs();
+    vm.SelectedTabIndex=page=="components"?1:0;
+    if(page=="global")vm.HandleShowGlobalSettings();
+    if(page=="profile")vm.HandleShowDefaultProfile(vm.DefaultUpscaleSlots.First().SlotNumber);
+    Dispatcher.UIThread.RunJobs();
+    using(var bitmap=new RenderTargetBitmap(new PixelSize(1100,800))){bitmap.Render(w);bitmap.Save(Path.Combine(evidence,"manager-"+selected+"-"+page+".png"));}
+    string text=string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null));
+    File.WriteAllText(Path.Combine(evidence,"manager-"+selected+"-"+page+".txt"),text);
+    if(page!="components")foreach(string original in raw)Check(text.Contains(UiText.T(original)),"visible profile label "+original+" / "+selected+" / "+page);
 }
-Console.WriteLine("PASS Manager language suite");
+selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
+Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"selector saves correct stable language ID "+selected);
+Check(InterfaceLanguage.IsChinese==zh,"selection does not partially relocalize current window "+selected);
+w.Close();Dispatcher.UIThread.RunJobs();
+Console.WriteLine("PASS Manager language process "+selected);
