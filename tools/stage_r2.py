@@ -32,14 +32,17 @@ def prepare():
     for name in ['animejanaistats.lua','animejanai_session.lua','animejanai_engine_monitor.lua','animejanai_update.lua']:
         dest=STAGE/'portable_config/scripts'/name;dest.parent.mkdir(parents=True,exist_ok=True)
         shutil.copy2(ROOT/'portable_config/scripts'/name,dest)
+    for p in (ROOT/'THIRD_PARTY_LICENSES').rglob('*'):
+        if p.is_file():
+            dst=STAGE/p.relative_to(ROOT);dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,dst)
     upstream=ROOT/'upstream'
     fixed=[]
-    for p in upstream.rglob('*.glsl'):
-        text=p.read_text(encoding='utf-8-sig')
-        if 'vec4 noise = vec4(0.5)' not in text:continue
-        parts=p.parts;idx=parts.index('portable_config');rel=Path(*parts[idx:])
-        dest=STAGE/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,dest);fixed.append(str(rel))
-    if len(fixed)!=2:raise RuntimeError('Expected exactly two reviewed D3D11 noise shaders: '+repr(fixed))
+    # Use exact upstream paths: these are mpv .hook files, not .glsl files.
+    for name in ('noise_static_chroma.hook','noise_static_luma.hook'):
+        rel=Path('portable_config/shaders')/name
+        p=upstream/'BuildMpvUpscale2xAnimeJaNai/mpv-upscale-2x_animejanai'/rel
+        assert 'vec4 noise = vec4(0.5)' in p.read_text(encoding='utf-8-sig'),name
+        dest=STAGE/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,dest);fixed.append(rel.as_posix())
     p=upstream/'AnimeJaNaiUpdater/Program.cs';text=p.read_text(encoding='utf-8-sig')
     needle='string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "--check";'
     assert text.count(needle)==1
