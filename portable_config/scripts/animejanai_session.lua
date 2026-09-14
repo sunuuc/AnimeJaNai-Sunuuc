@@ -17,12 +17,14 @@ local function configure()
     end
     if changed then
         changing = true
-        local ok, err = pcall(mp.set_property_native, 'vf', filters)
+        local ok, applied, err = pcall(mp.set_property_native, 'vf', filters)
         changing = false
-        if not ok then require('mp.msg').error('无法隔离当前进程的状态日志: ' .. tostring(err)) end
+        if not ok or not applied then
+            require('mp.msg').error('无法隔离当前进程的状态日志: ' .. tostring(ok and err or applied))
+        end
     end
 end
-mp.set_property('user-data/animejanai/stats-path', path)
+mp.set_property_native('user-data/animejanai/stats-path', path)
 mp.add_hook('on_load', -50, function() os.remove(path); configure() end)
 mp.observe_property('vf', 'native', configure)
 mp.register_event('shutdown', function() os.remove(path) end)

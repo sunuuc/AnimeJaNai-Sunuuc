@@ -17,7 +17,7 @@ end
 local function poll()
     if we_paused and not mp.get_property_bool('pause') then we_paused=false end
     local path = o.stats_path ~= '' and mp.command_native({'expand-path',o.stats_path})
-        or mp.get_property('user-data/animejanai/stats-path')
+        or mp.get_property_native('user-data/animejanai/stats-path')
         or mp.command_native({'expand-path','~~/../animejanai/currentanimejanai.log'})
     local file = io.open(path, 'r')
     local text = file and file:read(65536) or nil
