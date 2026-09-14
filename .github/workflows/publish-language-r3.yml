@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/publish-language-r3.yml']
+    paths: ['.github/workflows/publish-language-r3.yml','tools/publish_language_r3.py']
 permissions:
   contents: write
   actions: read

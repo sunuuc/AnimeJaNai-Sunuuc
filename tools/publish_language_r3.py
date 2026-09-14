@@ -9,13 +9,20 @@ ARTIFACT_SHA='a2a7754d5872cd1ed54513bad388d60041e4963ae412bdd15064a6b727c2aa8d'
 PACKAGE='AnimeJaNai-3.6.0-zh-CN-r3-language-update.zip'
 PACKAGE_SHA='9049be5423c38d63d36dd3d771b2257b325a1be30173d05d53d218d3b33e4767'
 TAG='zh-CN-3.6.0-r3'
-
 def api(path):return json.loads(subprocess.check_output(['gh','api',path]))
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def validate_paths(z):
     for i in z.infolist():
         p=PurePosixPath(i.filename)
         assert not p.is_absolute() and '..' not in p.parts and ':' not in i.filename and '\\' not in i.filename,i.filename
+
+def selected_release():
+    # A draft may not yet have a Git tag. Resolve its release ID from the
+    # authenticated list instead of calling the published-release tag endpoint.
+    matches=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==TAG]
+    assert len(matches)<=1,'Ambiguous release'
+    return matches[0] if matches else None
+
 run=api(f'repos/{REPO}/actions/runs/{RUN}')
 assert run['head_sha']==BUILD and run['status']=='completed' and run['conclusion']=='success'
 archive=Path('candidate.zip')
@@ -61,17 +68,21 @@ notes+=f'本包包含 {coverage["strings"]} 条双语映射，150 条主设置�
 notes+='安装包 SHA-256：`'+PACKAGE_SHA+'`。\n'
 notes+='源码构建提交：`'+BUILD+'`；完整 UI 来源见 `r3-ui-sources.zip`。\n'
 (out/'RELEASE-r3.md').write_text(notes,encoding='utf-8')
-exists=subprocess.run(['gh','release','view',TAG,'-R',REPO],capture_output=True)
-assert exists.returncode!=0,'Refusing to replace an existing release'
-subprocess.run(['gh','release','create',TAG,'-R',REPO,'--target',BUILD,'--draft','--prerelease',
-    '--title','AnimeJaNai 3.6.0 中文修复包 r3 · 语言设置','--notes-file',str(out/'RELEASE-r3.md')],check=True)
+release=selected_release()
+if release is None:
+    subprocess.run(['gh','release','create',TAG,'-R',REPO,'--target',BUILD,'--draft','--prerelease',
+        '--title','AnimeJaNai 3.6.0 中文修复包 r3 · 语言设置','--notes-file',str(out/'RELEASE-r3.md')],check=True)
+    release=selected_release()
+assert release and release['draft'] and release['target_commitish']==BUILD,'Only resume our matching draft; never replace a published release'
+release_id=release['id']
 assets=[out/n for n in [PACKAGE,'r3-ui-sources.zip','SHA256SUMS.txt','manifest.json','RELEASE-r3.md','release-verification.json']]
-subprocess.run(['gh','release','upload',TAG,'-R',REPO,*map(str,assets)],check=True)
-release=api(f'repos/{REPO}/releases/tags/{TAG}')
+subprocess.run(['gh','release','upload',TAG,'-R',REPO,'--clobber',*map(str,assets)],check=True)
+release=api(f'repos/{REPO}/releases/{release_id}')
 asset=next(a for a in release['assets'] if a['name']==PACKAGE)
 assert asset['digest']=='sha256:'+PACKAGE_SHA and asset['state']=='uploaded'
-subprocess.run(['gh','release','edit',TAG,'-R',REPO,'--draft=false','--prerelease'],check=True)
-# Refresh the download entry without touching presets or rebuilding the release.
+payload=Path('release-update.json');payload.write_text(json.dumps({'draft':False,'prerelease':True,'body':notes}),encoding='utf-8')
+subprocess.run(['gh','api','--method','PATCH',f'repos/{REPO}/releases/{release_id}','--input',str(payload)],check=True,stdout=subprocess.DEVNULL)
+assert api(f'repos/{REPO}/releases/tags/{TAG}')['id']==release_id
 head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 if head==os.environ['GITHUB_SHA']:
     readme=api(f'repos/{REPO}/contents/README.md?ref=main')
