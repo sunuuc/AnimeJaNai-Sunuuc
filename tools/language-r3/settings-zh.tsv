@@ -1,0 +1,150 @@
+process-instance	进程模式	决定是否允许同时运行多个播放器进程。按住 Shift 启动也可临时使用多进程模式。（mpv.net 选项）
+recent-count	近期文件数量	记住的近期文件数量，默认 15。（mpv.net 选项）
+media-info	媒体信息库	使用 MediaInfo 库而非 mpv 获取媒体信息。（mpv.net 选项）
+image-exts	图片扩展名	匹配封面、自动播放列表和目录筛选的图片扩展名。mpv.net 也用于文件关联和自动加载目录。默认支持 avif、bmp、gif、j2k、jp2、jpeg、jpg、jxl、png、svg、tga、tif、tiff、webp。
+menu-syntax	菜单语法	input.conf 中定义右键菜单所用的标记。mpv.net 默认使用 #menu:，uosc 默认使用 #!。
+video-sync	音画同步	选择播放器同步音频和视频的方式。详细行为请查看下方手册链接。
+debug-mode	调试模式	仅在开发者要求时启用。（mpv.net 选项）
+vo	视频输出	选择视频输出驱动。详细说明请查看下方手册链接。
+hwdec	硬件解码	选择优先使用的硬件视频解码接口。能否启用取决于编码格式和硬件支持；不可用时回退到软件解码。现代硬件解码通常能降低 CPU 占用和功耗。上游通用默认值以可靠性为先，整合包可另行配置。
+gpu-api	图形接口	限制播放器可以使用的图形 API 类型。
+scale	放大滤镜	GPU 渲染器放大视频时使用的滤镜。完整列表可用 mpv --scale=help 查看。
+cscale	色度放大滤镜	与 scale 类似，但用于插值色度信息；图像没有色度抽样时忽略此项。
+dscale	缩小滤镜	缩小视频时使用的滤镜；未指定时沿用放大滤镜。
+correct-downscaling	精确缩小	使用卷积滤镜缩小时扩展滤镜尺寸，可提高画质但降低性能。对于非方形像素视频，扩展只按两个轴中较温和的缩放比例计算，效果并非最优，但仍优于关闭。
+sigmoid-upscaling	S 形曲线放大	放大时使用 S 形颜色变换，避免强化振铃伪影；同时启用线性光缩放。
+dither-depth	抖动目标位深	指定抖动目标位深。播放器无法可靠检测显示器实际位深；液晶面板自身的抖动可能与本项冲突。
+deband	去色带	减少色带、色块和量化伪影，代价是少量细节模糊及性能开销。
+background	背景颜色	视频画面未覆盖的窗口区域颜色。颜色格式参见 sub-color。
+libplacebo-opts	libplacebo 高级参数	向 gpu-next 使用的 libplacebo 渲染器传入原始参数，可能覆盖普通设置产生的效果。
+preset	渲染预设	使用指定预设覆盖全部 libplacebo 参数。
+upscaler	放大滤镜	设置放大图像时使用的滤镜。
+downscaler	缩小滤镜	设置缩小图像时使用的滤镜。候选项大体按从快到慢排列。
+plane_upscaler	平面放大滤镜	单独指定色度或透明度平面的放大滤镜；none 表示沿用 upscaler。
+plane_downscaler	平面缩小滤镜	单独指定色度或透明度平面的缩小滤镜；none 表示沿用 downscaler。
+frame_mixer	帧混合滤镜	时间插值所用的帧混合滤镜。候选项大体按从快到慢排列。
+antiringing_strength	抗振铃强度	范围 0.0–1.0。0 表示关闭，1 表示最大强度；默认 0。
+deband	去色带	启用 libplacebo 的去色带处理。
+deband_preset	去色带预设	使用指定预设覆盖本组全部参数。
+deband_iterations	去色带迭代次数	范围 0–16，默认 1。增加步骤会进一步减少色带但耗时更长，后续步骤收益快速下降，通常不必超过 4。
+deband_threshold	去色带阈值	范围 0–1000，默认 3。提高阈值会明显增强去色带效果，但也会损失细节。
+deband_radius	去色带半径	范围 0–1000，默认 16。半径随迭代线性增长；较大半径可发现更多渐变，较小半径的平滑更强烈。
+deband_grain	去色带颗粒	范围 0–1000，默认 4。向画面加入轻微噪声以掩盖残余量化伪影，数值越大噪声越多。
+sigmoid	S 形变换	启用 S 形曲线变换。
+sigmoid_preset	S 形变换预设	使用指定预设覆盖本组全部参数。
+sigmoid_center	S 形曲线中心	范围 0.0–1.0，默认 0.75；控制曲线中心位置与偏移。
+sigmoid_slope	S 形曲线斜率	范围 1.0–20.0，默认 6.5；控制曲线陡峭程度。
+color_adjustment	色彩调整	启用色彩调整。
+color_adjustment_preset	色彩调整预设	使用指定预设覆盖本组全部参数。
+brightness	亮度	范围 -1.0–1.0，默认 0。为源亮度信号增加固定偏移；0 不变，1 为纯白，-1 为纯黑。
+contrast	对比度	范围 0–100，默认 1。按固定系数放大亮度信号；1 不变，0 为纯黑。
+saturation	饱和度	范围 0–100，默认 1。按固定系数放大色度信号；1 不变，0 为灰度。
+hue	色相	围绕中性色轴旋转 UV 色度向量，单位为弧度，默认 0。
+gamma	伽马	范围 0–100，默认 1。在保持整体对比度的同时调整视觉明暗；1 不变，0 为纯黑。
+temperature	色温偏移	范围 -1.143–5.286。相对 6500 K 调整：0 为 6500 K，-1 为 3000 K，1 为 10000 K。默认 0。
+peak_detect	HDR 峰值检测	启用 HDR 亮度峰值检测。
+peak_detection_preset	峰值检测预设	使用指定预设覆盖本组参数；high_quality 还会启用每帧亮度直方图测量。
+peak_smoothing_period	峰值平滑周期	范围 0–1000，控制检测结果的平滑系数。
+peak_percentile	峰值百分位	范围 0–100，选择亮度直方图中用作场景真实峰值的百分位。
+black_cutoff	黑位截断	范围 0–100，控制黑位截断强度。
+allow_delayed_peak	允许延迟峰值检测	允许检测结果延迟最多一帧，可能提升吞吐量，但转场时可能出现一帧闪烁。
+color_map	颜色映射设置	启用本组自定义颜色映射设置。关闭不是禁用颜色映射，而是改用默认参数。
+color_map_preset	颜色映射预设	使用指定预设覆盖本组参数；high_quality 还会启用 HDR 对比度恢复。
+gamut_mapping	色域映射	选择处理超出目标色域颜色的方法，也包括色调映射后产生的越界颜色。
+perceptual_deadzone	感知色度保护区	范围 0–1，默认 0.30。感知映射中保留色度不变的相对区域。
+perceptual_strength	感知映射强度	范围 0–1，默认 0.80。控制感知饱和度映射强度。
+colorimetric_gamma	色度裁切伽马	范围 0–10，默认 1.80。控制相对、绝对及暗化色度裁切时的 I/C 曲线。
+softclip_knee	柔性裁切拐点	范围 0–1，默认 0.70。感知映射和柔性裁切方法使用的拐点。
+softclip_desat	柔性裁切去饱和度	范围 0–1，默认 0.35，控制柔性裁切中的去饱和强度。
+lut3d_size_I	三维查找表亮度尺寸	范围 0–1024，默认 48；色域映射三维查找表的 I 维尺寸，0 使用默认值。
+lut3d_size_C	三维查找表色度尺寸	范围 0–1024，默认 32；色域映射三维查找表的 C 维尺寸，0 使用默认值。
+lut3d_size_h	三维查找表色相尺寸	范围 0–1024，默认 256；色域映射三维查找表的 h 维尺寸，0 使用默认值。
+lut3d_tricubic	三维查找表三次插值	使用画质较高但更慢的三次插值。小尺寸查找表的映射精度改善较明显，默认尺寸下通常影响较小。
+gamut_expansion	允许扩展色域	目标色域大于源色域时，允许映射函数扩展色域。关闭后，即使所选算法支持双向映射也不会扩大源色域。
+tone_mapping	色调映射	选择适应不同亮度范围的色调映射方法，包括黑点适配。
+knee_minimum	拐点下限	范围 0–0.5，默认 0.1。按 PQ 亮度范围的比例限制自动拐点的最小值。
+knee_maximum	拐点上限	范围 0.5–1.0，默认 0.8。按 PQ 亮度范围的比例限制自动拐点的最大值。
+knee_default	默认拐点	范围 0–1，默认 0.4。在缺少场景平均亮度元数据时使用；有元数据时通常依据相对场景平均亮度选择。
+knee_offset	拐点偏移	范围 0.5–2.0，仅用于 bt2390。标准规定的默认行为对应 0.5，libplacebo 默认值为 1.0。
+reinhard_contrast	Reinhard 对比度	范围 0–1，默认 0.5。控制显示峰值处的局部对比度；0.5 时参考白亮度约为直接裁切时的一半。
+linear_knee	线性光拐点	范围 0–1，默认 0.3。用于在线性光下运行的旧式 mobius、gamma 方法。
+exposure	曝光增益	范围 0–10，默认 1。控制 linear、linearlight 方法对画面施加的线性曝光增益。
+inverse_tone_mapping	反向色调映射	在所选算法支持时扩大信号动态范围。请自行选择适宜的 HDR 显示亮度。
+tone_map_metadata	色调映射元数据	选择色调映射的数据来源，可覆盖默认的元数据优先级。
+tone_lut_size	色调查找表尺寸	范围 0–4096，默认 256；0 使用默认尺寸。
+contrast_smoothness	对比度恢复平滑度	范围 1–32，默认 3.5。HDR 对比度恢复的低通滤波核尺寸，增减均可能明显改变画面观感。
+force_tone_mapping_lut	强制色调查找表	即使存在更快的纯 GLSL 实现，也强制使用完整查找表。用于调试。
+visualize_lut_x0	查找表预览左边界	控制预览相对视频的位置，默认 0。
+visualize_lut_y0	查找表预览上边界	控制预览相对视频的位置，默认 0。
+visualize_lut_x1	查找表预览右边界	控制预览相对视频的位置，默认 1。
+visualize_lut_y1	查找表预览下边界	控制预览相对视频的位置，默认 1。
+visualize_hue	色域预览色相旋转	沿 I 轴旋转色域三维查找表预览，单位弧度，默认 0。
+visualize_theta	色域预览截面旋转	沿 C 轴垂直旋转色域三维查找表的截面预览，单位弧度，默认 0。
+show_clipping	显示亮度裁切	高亮色调映射中被硬裁切的像素，即超过源声明亮度范围的像素。
+screenshot-directory	截图目录	保存截图的目录，与截图文件名模板组合使用。模板已包含绝对路径时忽略此目录。
+screenshot-format	截图格式	设置截图保存的图片格式。
+screenshot-tag-colorspace	截图色彩空间标记	为截图写入相应的色彩空间信息，并非所有格式都支持。
+screenshot-high-bit-depth	高位深截图	尽可能使用与视频源接近的位深。可能生成体积很大的 16 位 PNG，且包含未使用的透明度通道。
+screenshot-jpeg-source-chroma	JPEG 保留源色度抽样	JPEG 使用与视频源相同的色度抽样；关闭则采用 libjpeg 默认值。
+screenshot-template	截图文件名模板	不含扩展名的截图命名模板，可使用截图时替换的格式标记。默认 mpv-shot%n，例如 mpv-shot0012.png。完整语法见下方手册。
+screenshot-jpeg-quality	JPEG 质量	范围 0–100，数值越高质量越好，默认 90。
+screenshot-png-compression	PNG 压缩等级	范围 0–9，默认 7。等级越高压缩越充分，但保存更慢；过高的 CPU 开销可能影响播放。
+screenshot-png-filter	PNG 预处理滤镜	范围 0–5：0 不使用，1 sub，2 up，3 average，4 Paeth，5 mixed。影响压缩率，多数图像使用 mixed 效果较好，因此默认 5。
+video-exts	视频扩展名	用于自动播放列表、目录筛选、文件关联及自动加载目录的视频扩展名。默认包括 3g2、3gp、avi、flv、m2ts、m4v、mj2、mkv、mov、mp4、mpeg、mpg、ogv、rmvb、ts、webm、wmv、y4m。
+volume	启动音量	0 为静音，100 为不衰减也不放大；负值按 0 处理。控制内部软件混音器，默认 100。
+remember-volume	记住音量	退出时保存音量与静音状态，下次启动时恢复。（mpv.net 选项）
+alang	音频语言优先级	指定音轨语言优先顺序。DVD 使用两字母代码，Matroska、MPEG-TS、NUT 使用三字母代码，OGM 可使用自由格式标识。另参见 aid。
+audio-file-auto	自动加载音频	加载与视频文件名匹配的外置音频文件，参数控制匹配规则。
+audio-device	音频设备	指定输出接口与设备，格式通常为接口名/设备名；auto 按优先顺序尝试默认设备。可在“查看→更多→显示音频设备”查看列表，在“音频→音频设备”切换。
+remember-audio-device	记住音频设备	保存并恢复在右键菜单选择的音频设备，默认启用。
+audio-exts	音频扩展名	用于外置音频匹配、自动播放列表、目录筛选、文件关联及自动加载目录。默认包括 aac、ac3、aiff、ape、au、dts、eac3、flac、m4a、mka、mp3、oga、ogg、ogm、opus、thd、wav、wma、wv。
+slang	字幕语言优先级	指定字幕语言优先顺序。DVD 使用两字母代码，Matroska 使用三字母代码，OGM 可使用自由格式标识。另参见 sid。
+sub-auto	自动加载字幕	加载与视频文件名匹配的外置字幕，参数控制匹配规则；默认 exact（精确匹配）。
+sub-font	字幕字体	字幕本身没有指定字体时使用的字体，默认 sans-serif。
+sub-font-size	字幕字号	以窗口高度 720 时的缩放像素为单位；实际字号随窗口高度缩放，默认 55。
+sub-color	字幕颜色	无样式文本字幕的颜色。颜色格式及示例见下方手册。
+sub-border-color	字幕描边颜色	字幕字体边框颜色，格式参见 sub-color。设置非透明字幕背景时忽略此项。
+sub-back-color	字幕背景颜色	字幕文本背景颜色，格式参见 sub-color。可通过 sub-shadow-offset 调整其相对大小。
+title	窗口标题	设置视频窗口及可用时的音频流标题，支持属性展开。使用频繁变化或昂贵的属性可能明显增加 CPU 占用。
+fullscreen	启动时全屏	启动播放器时进入全屏。
+border	窗口装饰	显示窗口标题栏和边框。
+title-bar	窗口标题栏	设为 no 隐藏标题栏。
+screen	显示器	范围 0–32，多显示器环境下选择显示视频的屏幕。
+taskbar-progress	任务栏进度	在任务栏按钮上显示播放进度。
+osd-playing-msg	起播提示	播放开始时显示的屏幕提示，支持属性展开。例如 file: ${filename} 可显示当前文件名。完整说明见手册。
+osd-font-size	屏幕提示字号	屏幕提示字号，缩放规则参见 sub-font-size，默认 55。
+osd-duration	屏幕提示时长	屏幕提示的显示时长，单位毫秒，默认 1000。
+osd-scale-by-window	提示随窗口缩放	启用后提示随窗口尺寸缩放；关闭后按实际像素指定字号，窗口大小变化不会改变提示字号。
+autofit	初始窗口高度	初始窗口高度的百分比，默认 60。
+autofit-smaller	最小窗口高度	最小窗口高度的百分比，默认 10。
+autofit-larger	最大窗口高度	最大窗口高度的百分比，默认 80。
+autofit-image	图片窗口高度	显示图片时的初始窗口高度百分比，默认 80。
+autofit-audio	音频窗口高度	播放音频时的初始窗口高度百分比，默认 70。
+geometry	初始窗口位置	使用 x:y 百分比指定位置，默认 50:50 居中。x=0/100 靠左/右，y=0/100 靠上/下。Windows 10 的不可见边框可能导致轻微偏差，Windows 11 更准确。
+start-size	窗口尺寸记忆	设置启动时采用的窗口尺寸记忆方式。（mpv.net 选项）
+keepaspect-window	锁定窗口比例	窗口尺寸保持视频宽高比，默认启用。
+minimum-aspect-ratio	最小窗口宽高比	限制窗口最小宽高比，可使窗口及底部控制栏更宽。（mpv.net 选项）
+minimum-aspect-ratio-audio	音频窗口最小比例	与最小窗口宽高比相同，但仅用于音频文件。
+remember-window-position	记住窗口位置	退出时保存窗口位置。（mpv.net 选项）
+snap-window	窗口边缘吸附	将播放器窗口吸附到屏幕边缘。
+window-maximized	启动时最大化	启动时最大化窗口。
+keep-open-pause	结束时暂停	设为 no 时，保留窗口但不进入暂停状态；向后跳转后继续播放，再到结尾时停止。
+idle	空闲模式	当本项和 keep-open 均为 no 时，播放完最后一个文件后退出。
+loop-file	单文件循环	N 为循环次数，inf 为无限循环，no 为正常播放。只循环当前文件而非整个列表；单文件列表下，本项通过跳转回开头循环，而不是重新加载。loop 是本项别名。
+save-position-on-quit	退出时保存进度	退出时保存当前播放位置，下次播放该文件时恢复。切换到下一文件等其他停止方式不触发保存。默认关闭，但按 Shift+Q 退出时始终可以保存。
+watch-later-options	续播保存项目	列出在播放过程中改变后需要保存的选项，下次播放该文件时恢复。完整说明见下方手册。
+hr-seek	精确跳转	选择何时使用不受关键帧限制的精确跳转。需要从前一关键帧解码到目标位置，耗时取决于解码性能，部分格式不支持。快捷键或命令可显式覆盖此默认行为。
+track-auto-selection	自动选择轨道	按 aid、alang 等参数选择音视频及字幕轨道。关闭后不自动选轨，也不会因未选轨而退出，而是等待。可用于运行时设置 lavfi-complex；播放前已被滤镜引用的轨道始终会选中。
+loop-playlist	播放列表循环	1 播放一次，2 播放两次，inf 无限循环，no 等同于 1。命令行有多个文件时循环整个列表。force 类似 inf，但也重试标记失败的项目；无效文件可能浪费 CPU，网络不稳定的广播可能受益。
+autocreate-playlist	自动创建播放列表	打开本地文件时自动从所在目录生成列表。no 只加载该文件；filter 按 directory-filter-types 筛选；same 仅加入与当前文件同类且扩展名匹配的项目。当前文件未匹配任何扩展名列表时不自动创建。
+auto-load-folder	自动加载目录（旧）	打开单文件时将整个目录加入播放列表。此 mpv.net 选项已弃用，可改用 autocreate-playlist。
+reset-on-next-file	切集时重置选项	默认会保留播放期间调整过的选项。本项列出的选项在开始播放下一文件时恢复到启动时的初始值。
+input-ar-delay	按键连发延迟	开始自动重复按键前的等待时间，单位毫秒；0 禁用连发。
+input-ar-rate	按键连发速度	自动重复按键时每秒产生的按键次数。
+input-ipc-server	进程通信接口	启用 IPC，并在指定路径创建监听端点。
+language	界面语言	播放器和管理器共用的界面语言；请使用设置顶部的语言选择器，重启后生效。
+dark-mode	深浅主题模式	选择浅色或深色主题，重启后生效。（mpv.net 选项）
+dark-theme	深色主题	深色模式所用主题，默认 dark，重启后生效。（mpv.net 选项）
+light-theme	浅色主题	浅色模式所用主题，默认 light，重启后生效。（mpv.net 选项）
+cache	网络缓存	选择是否使用网络缓存设置。
+demuxer-max-bytes	最大预读缓存	限制解复用器允许预读的数据量，支持 KiB、MiB 等单位后缀。
