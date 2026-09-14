@@ -28,7 +28,7 @@ InterfaceLanguage.Save("en");Check(InterfaceLanguage.Read()=="en","persist Engli
 bool rejected=false;try{InterfaceLanguage.Save("bad");}catch(ArgumentException){rejected=true;}
 Check(rejected&&InterfaceLanguage.Read()=="en","reject invalid selection without changing stored value");
 using(var locked=new FileStream(InterfaceLanguage.SettingsPath,FileMode.Open,FileAccess.Read,FileShare.Read))
-{rejected=false;try{InterfaceLanguage.Save("zh-CN");}catch(IOException){rejected=true;}Check(rejected,"locked preference refuses replacement");}
+{rejected=false;try{InterfaceLanguage.Save("zh-CN");}catch(Exception e) when(e is IOException or UnauthorizedAccessException){rejected=true;}Check(rejected,"locked preference refuses replacement");}
 Check(InterfaceLanguage.Read()=="en"&&!Directory.EnumerateFiles(dir,"*.tmp").Any(),"failed save retains old preference and removes temporary file");
 AppBuilder.Configure<AnimeJaNaiConfEditor.App>().UseHeadless(new AvaloniaHeadlessPlatformOptions{UseHeadlessDrawing=false}).UseSkia().UseReactiveUI(_=>{}).SetupWithoutStarting();
 foreach(string language in new[]{"zh-CN","en","system"})
