@@ -1,0 +1,76 @@
+name: Diagnose native runtime before release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-native-runtime.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-counter-r2
+          run-id: 34815785037
+          github-token: ${{ github.token }}
+          path: native
+      - uses: actions/checkout@v4
+        with:
+          repository: the-database/mpv
+          ref: d4c06dd3424dc06d90d4ea15b0fa92fa3ceeb62f
+          path: mpv-source
+          persist-credentials: false
+          sparse-checkout: |
+            audio/out
+            osdep
+      - name: Start audio services
+        shell: pwsh
+        run: |
+          Start-Service AudioEndpointBuilder
+          Start-Service Audiosrv
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: mingw-w64-ucrt-x86_64-gdb
+      - name: Capture reproducible shutdown backtraces
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess, json, os, shutil
+          out=Path('diagnostics');out.mkdir()
+          exe=str(Path('native/mpv.exe').resolve())
+          debugger=r'C:\msys64\ucrt64\bin\gdb.exe'
+          if not Path(debugger).exists():
+              candidates=list(Path('D:/a/_temp').rglob('gdb.exe'))+list(Path('C:/').glob('msys*/ucrt64/bin/gdb.exe'))
+              if not candidates: raise RuntimeError('gdb missing')
+              debugger=str(candidates[0])
+          summary=[]
+          base=[exe,'--no-config','--vo=null','--ao=null','--frames=2','--msg-level=all=v,ao/wasapi=debug','av://lavfi:color=c=black:s=640x360:r=24:d=1']
+          for name, extra in [('default',[]),('selector-off',['--load-select=no'])]:
+              args=base[:1]+extra+base[1:]
+              p=subprocess.run(args,capture_output=True,timeout=30)
+              (out/(name+'.log')).write_bytes(p.stdout+p.stderr)
+              summary.append({'case':name,'exit_code':p.returncode})
+              commands=['set pagination off','set confirm off','set print thread-events off','run','thread apply all bt full','info sharedlibrary']
+              cmd=[debugger,'--batch']
+              for c in commands:cmd.extend(['-ex',c])
+              cmd.extend(['--args']+args)
+              try:
+                  g=subprocess.run(cmd,capture_output=True,timeout=90)
+                  (out/(name+'-gdb.txt')).write_bytes(g.stdout+g.stderr)
+              except subprocess.TimeoutExpired as e:
+                  (out/(name+'-gdb.txt')).write_bytes((e.stdout or b'')+(e.stderr or b''))
+          for name in ['ao_wasapi.c','ao_wasapi_changenotify.c','ao_wasapi.h']:
+              shutil.copy2(Path('mpv-source/audio/out')/name,out/name)
+          (out/'results.json').write_text(json.dumps(summary,indent=2))
+          print(json.dumps(summary,indent=2))
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-runtime-diagnostics
+          path: diagnostics/
+          retention-days: 7

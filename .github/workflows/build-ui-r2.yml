@@ -43,9 +43,14 @@ jobs:
           assert text.count(old)==1, 'Unexpected manager baseline'
           path.write_text(text.replace(old,'chain.RifeEnsemble ? "yes" : "no"'),encoding='utf-8-sig')
           shutil.copytree('upstream-manager/tests/ProfileRoundTrip','manager/tests/ProfileRoundTrip')
+          project=Path('manager/tests/ProfileRoundTrip/ProfileRoundTrip.csproj')
+          p=project.read_text()
+          p=p.replace('</ItemGroup>','  <Compile Include="../../AnimeJaNaiConfEditor/ChineseLocalization.cs" Link="Production/ChineseLocalization.cs" />\n  </ItemGroup>',1)
+          project.write_text(p)
           Path('stage/build-info').mkdir(parents=True)
           diff=subprocess.check_output(['git','-C','manager','diff','--','AnimeJaNaiConfEditor/ViewModels/MainWindowViewModel.cs'])
           Path('stage/build-info/manager-ensemble.patch').write_bytes(diff)
+          shutil.copytree('manager/tests/ProfileRoundTrip','stage/build-info/profile-tests-source')
       - name: Parser regression tests
         shell: pwsh
         run: |
