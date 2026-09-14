@@ -1,0 +1,102 @@
+name: Build tested UI r2
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-ui-r2.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 23946b4e9fefc8cef0d57b6c10131b47af5ace38
+          path: player
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: sunuuc/AnimeJaNaiManager
+          ref: bdcf21af308d9494d23a309055196e7937819afc
+          path: manager
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: the-database/AnimeJaNaiManager
+          ref: d69c523e3c21a5097a2a9366faf33516512845a2
+          path: upstream-manager
+          sparse-checkout: tests/ProfileRoundTrip
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Apply upstream ensemble serialization fix only
+        shell: python
+        run: |
+          from pathlib import Path
+          import shutil, subprocess
+          path=Path('manager/AnimeJaNaiConfEditor/ViewModels/MainWindowViewModel.cs')
+          text=path.read_text(encoding='utf-8-sig')
+          old='string.Create(ENGLISH_CULTURE, $"{chain.RifeEnsemble}")'
+          assert text.count(old)==1, 'Unexpected manager baseline'
+          path.write_text(text.replace(old,'chain.RifeEnsemble ? "yes" : "no"'),encoding='utf-8-sig')
+          shutil.copytree('upstream-manager/tests/ProfileRoundTrip','manager/tests/ProfileRoundTrip')
+          Path('stage/build-info').mkdir(parents=True)
+          diff=subprocess.check_output(['git','-C','manager','diff','--','AnimeJaNaiConfEditor/ViewModels/MainWindowViewModel.cs'])
+          Path('stage/build-info/manager-ensemble.patch').write_bytes(diff)
+      - name: Parser regression tests
+        shell: pwsh
+        run: |
+          dotnet run --project player/tests/ScopedCommandLine -c Release 2>&1 | Tee-Object stage/build-info/parser-tests.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Manager profile round-trip tests
+        shell: pwsh
+        run: |
+          dotnet run --project manager/tests/ProfileRoundTrip -c Release 2>&1 | Tee-Object stage/build-info/manager-tests.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Publish player and translated manager
+        shell: pwsh
+        run: |
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained false -p:InformationalVersion=7.1.2.0-sunuuc-r2 -o publish-player
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:InformationalVersion=0.6.0-sunuuc-r2 -o publish-manager
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Stage binaries and source provenance
+        shell: python
+        run: |
+          import pathlib, shutil, json, hashlib, os, urllib.request, zipfile
+          out=pathlib.Path('stage')
+          for root in ['publish-player','publish-manager']:
+              for p in pathlib.Path(root).rglob('*'):
+                  if p.is_file() and p.suffix.lower() in {'.exe','.dll','.json'}:
+                      rel=p.relative_to(root)
+                      target=out/rel; target.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,target)
+          info=out/'build-info'
+          provenance={'player':'23946b4e9fefc8cef0d57b6c10131b47af5ace38','manager_base':'bdcf21af308d9494d23a309055196e7937819afc','manager_patch_source':'d69c523e3c21a5097a2a9366faf33516512845a2','run_id':os.environ['GITHUB_RUN_ID']}
+          (info/'ui-sources.json').write_text(json.dumps(provenance,indent=2))
+          (info/'ui-sha256.json').write_text(json.dumps({p.relative_to(out).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in out.rglob('*') if p.is_file()},indent=2))
+          url='https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/download/zh-CN-3.6.0/AnimeJaNai-3.6.0-zh-CN-overlay.zip'
+          urllib.request.urlretrieve(url,'old-overlay.zip')
+          assert hashlib.sha256(pathlib.Path('old-overlay.zip').read_bytes()).hexdigest()=='9750f9c93e95700e87483d19aada0462458d70d639c74cd939c9ba1867f10732'
+          with zipfile.ZipFile('old-overlay.zip') as z:
+              (info/'old-overlay-files.json').write_text(json.dumps({i.filename:i.file_size for i in z.infolist()},ensure_ascii=False,indent=2))
+              for i in z.infolist():
+                  if pathlib.PurePosixPath(i.filename).suffix.lower() in {'.conf','.json'}:
+                      rel=pathlib.PurePosixPath(i.filename)
+                      if rel.is_absolute() or '..' in rel.parts: raise RuntimeError('Unsafe ZIP path')
+                      target=info/'old-configs'/rel
+                      target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(z.read(i))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-r2
+          path: stage/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ui-r2-failure
+          path: stage/build-info/
+          retention-days: 7
