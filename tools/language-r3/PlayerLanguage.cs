@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 using AnimeJaNai.Localization;
+using MpvNet.Windows.UI;
 namespace MpvNet.Windows.WPF;
 public sealed class TextExtension : MarkupExtension
 {
@@ -15,7 +16,10 @@ public static class LanguagePanel
     {
         var original=(UIElement)window.Content;window.Content=null;
         var hint=new TextBlock {Text=UiText.T("Language changes take effect after restarting both applications."),TextWrapping=TextWrapping.Wrap,FontSize=12,Opacity=0.75};
-        var select=new ComboBox {Name="InterfaceLanguageSelector",Width=215,ItemsSource=new[]{"简体中文","English","跟随系统 / System"},SelectedIndex=Array.IndexOf(InterfaceLanguage.Choices,InterfaceLanguage.Read())};
+        var select=new ComboBox {Name="InterfaceLanguageSelector",Width=215,
+            Foreground=Theme.Current?.Foreground ?? SystemColors.ControlTextBrush,
+            Background=Theme.Current?.Background ?? SystemColors.ControlBrush,
+            ItemsSource=new[]{"简体中文","English","跟随系统 / System"},SelectedIndex=Array.IndexOf(InterfaceLanguage.Choices,InterfaceLanguage.Read())};
         select.SelectionChanged+=(_,_)=>{
             if(select.SelectedIndex<0)return;
             try {InterfaceLanguage.Save(InterfaceLanguage.Choices[select.SelectedIndex]);hint.Text=UiText.T("Saved. Restart the player and manager to apply the language.");}
