@@ -1,4 +1,3 @@
-﻿
 using System.Windows.Forms;
 using System.Threading;
 
@@ -33,6 +32,7 @@ static class Program
 
             if (args.Length > 0 && args[0] == "--register-file-associations")
             {
+                if (args.Length < 2) throw new ArgumentException("缺少文件关联参数。");
                 FileAssociation.Register(args[1], args.Skip(1).ToArray());
                 return;
             }
@@ -43,9 +43,12 @@ static class Program
 
             if (Control.ModifierKeys == Keys.Shift ||
                 App.CommandLine.Contains("--process-instance=multi") ||
-                App.CommandLine.Contains("--o="))
+                App.CommandLine.Contains("--o=") ||
+                CommandLine.Parsed.NeedsDedicatedProcess)
             {
                 App.ProcessInstance = "multi";
+                if (CommandLine.Parsed.HasGroups)
+                    App.AutoLoadFolder = false;
             }
 
             if ((App.ProcessInstance == "single" || App.ProcessInstance == "queue") && !isFirst)
