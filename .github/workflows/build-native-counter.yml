@@ -1,9 +1,11 @@
-name: Native frame counter r2
+name: Native frame counter and runtime r2
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/build-native-counter.yml']
+    paths:
+      - '.github/workflows/build-native-counter.yml'
+      - 'tools/apply_native_r2.py'
 permissions:
   contents: read
 jobs:
@@ -21,6 +23,10 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
+          path: project
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
           repository: the-database/mpv
           ref: d4c06dd3424dc06d90d4ea15b0fa92fa3ceeb62f
           path: mpv-source
@@ -31,25 +37,11 @@ jobs:
           ref: 896614fa263f9f64944f7b8650ff6806d5328c4d
           path: libass-source
           persist-credentials: false
-      - name: Add native counter without changing timing or drop decisions
+      - name: Apply reviewed patches
         shell: python
         run: |
-          from pathlib import Path
-          def edit(name, old, new):
-              p = Path('mpv-source') / name
-              s = p.read_text(encoding='utf-8')
-              if s.count(old) != 1:
-                  raise RuntimeError('Unexpected pinned source: ' + name + ' / ' + old[:70])
-              p.write_text(s.replace(old, new), encoding='utf-8', newline='\n')
-          edit('video/out/vo.c', '    int64_t drop_count;\n', '    int64_t drop_count;\n    int64_t presented_frame_count;\n    uint64_t presented_frame_id;\n')
-          edit('video/out/vo.c', '        int64_t prev_drop_count = vo->in->drop_count;\n', '        int64_t prev_drop_count = vo->in->drop_count;\n        uint64_t presented_id = frame->current ? frame->frame_id : 0;\n')
-          edit('video/out/vo.c', '        in->dropped_frame = prev_drop_count < vo->in->drop_count;\n', '        in->dropped_frame = prev_drop_count < vo->in->drop_count;\n        // Count each video-frame ID once, after flip. OSD redraws and vsync\n        // repeats do not count; dropped frames do not count. Not scanout telemetry.\n        if (!in->dropped_frame && presented_id && presented_id != in->presented_frame_id) {\n            in->presented_frame_count++;\n            in->presented_frame_id = presented_id;\n        }\n')
-          edit('video/out/vo.c', '    frame->duration = -1;\n    mp_mutex_unlock(&in->lock);\n', '    frame->duration = -1;\n    uint64_t presented_id = frame->current ? frame->frame_id : 0;\n    int64_t previous_drops = in->drop_count;\n    mp_mutex_unlock(&in->lock);\n')
-          edit('video/out/vo.c', '    vo->driver->flip_page(vo);\n\n    if (frame != &dummy', '    vo->driver->flip_page(vo);\n\n    mp_mutex_lock(&in->lock);\n    if (previous_drops == in->drop_count && presented_id && presented_id != in->presented_frame_id) {\n        in->presented_frame_count++;\n        in->presented_frame_id = presented_id;\n    }\n    mp_mutex_unlock(&in->lock);\n\n    if (frame != &dummy')
-          edit('video/out/vo.c', 'int64_t vo_get_drop_count(struct vo *vo)\n', 'int64_t vo_get_presented_frame_count(struct vo *vo)\n{\n    mp_mutex_lock(&vo->in->lock);\n    int64_t value = vo->in->presented_frame_count;\n    mp_mutex_unlock(&vo->in->lock);\n    return value;\n}\n\nint64_t vo_get_drop_count(struct vo *vo)\n')
-          edit('video/out/vo.h', 'int64_t vo_get_drop_count(struct vo *vo);', 'int64_t vo_get_presented_frame_count(struct vo *vo);\nint64_t vo_get_drop_count(struct vo *vo);')
-          edit('player/command.c', 'static int mp_property_frame_drop_vo(', 'static int mp_property_presented_frame_count(void *ctx, struct m_property *prop,\n                                             int action, void *arg)\n{\n    MPContext *mpctx = ctx;\n    if (!mpctx->vo_chain || !mpctx->video_out)\n        return M_PROPERTY_UNAVAILABLE;\n    return m_property_int64_ro(action, arg, vo_get_presented_frame_count(mpctx->video_out));\n}\n\nstatic int mp_property_frame_drop_vo(')
-          edit('player/command.c', '    {"frame-drop-count", mp_property_frame_drop_vo},', '    {"vo-presented-frame-count", mp_property_presented_frame_count},\n    {"frame-drop-count", mp_property_frame_drop_vo},')
+          import subprocess,sys
+          subprocess.run([sys.executable,'project/tools/apply_native_r2.py','mpv-source'],check=True)
       - name: Start Windows audio services
         shell: pwsh
         run: |
@@ -80,7 +72,7 @@ jobs:
             mingw-w64-ucrt-x86_64-libarchive
             mingw-w64-ucrt-x86_64-lcms2
             mingw-w64-ucrt-x86_64-vulkan-headers
-      - name: Build pinned native components and test
+      - name: Build pinned native components and regression tests
         run: |
           set -euo pipefail
           prefix="$(cygpath -m "$PWD/native-prefix")"
@@ -97,20 +89,26 @@ jobs:
           meson test -C build-mpv --print-errorlogs
           (cd mpv-source && python TOOLS/subtest/test_stability.py --cc gcc --out ../native-output/build-info/subtitle-stability)
           pacman -Q > native-output/build-info/msys2-packages.txt
-          git -C mpv-source diff --binary > native-output/build-info/native-counter.patch
+          git -C mpv-source -c core.autocrlf=true diff --binary -- video/out/vo.c video/out/vo.h player/command.c audio/out/ao_wasapi.c audio/out/ao_wasapi.h audio/out/ao_wasapi_utils.c > native-output/build-info/native-r2.patch
           git -C mpv-source rev-parse HEAD > native-output/build-info/mpv-commit.txt
           git -C libass-source rev-parse HEAD > native-output/build-info/libass-commit.txt
           cp mpv-source/Copyright native-output/build-info/mpv-Copyright.txt
+      - name: Test native FPS, repeated shutdown and short-lived client thread
+        shell: python
+        run: |
+          import subprocess,sys
+          subprocess.run([sys.executable,'project/tests/test_native_runtime.py','native-output','native-output/build-info/runtime-tests'],check=True,timeout=240)
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: native-counter-r2
+          name: native-r2-candidate
           path: native-output/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: native-counter-r2-failure
+          name: native-r2-build-failure
           path: |
             build-ass/meson-logs/
             build-mpv/meson-logs/
