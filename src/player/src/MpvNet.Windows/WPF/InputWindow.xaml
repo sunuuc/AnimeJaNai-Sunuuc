@@ -1,0 +1,79 @@
+<Window xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="clr-namespace:MpvNet.Windows.WPF.Controls" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="MpvNet.Windows.WPF.InputWindow" mc:Ignorable="d" Title="{lng:Text Key=sc29391ac17af7fd4}" Height="500" Width="800" FontSize="13" ShowInTaskbar="False" Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}" Loaded="Window_Loaded" Closed="Window_Closed" StateChanged="Window_StateChanged" xmlns:lng="clr-namespace:MpvNet.Windows.WPF">
+    
+    <Window.Resources>
+        <Style x:Key="HeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource RegionBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:SearchControl HintText="Find a binding (Ctrl+F)" x:Name="SearchControl" Width="300" Margin="0,20,0,20" Grid.ColumnSpan="2" />
+       
+        <DataGrid Name="DataGrid" Grid.Row="1" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource HeaderStyle}" Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}" RowBackground="{Binding Theme.Background}" HorizontalGridLinesBrush="{Binding Theme.Foreground}" VerticalGridLinesBrush="{Binding Theme.Foreground}" CanUserAddRows="False" CanUserSortColumns="False" SelectionUnit="Cell" BeginningEdit="DataGrid_BeginningEdit" SelectedCellsChanged="DataGrid_SelectedCellsChanged">
+
+            <DataGrid.Resources>
+                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="{Binding DataContext.Theme.Background, ElementName=DataGrid}" />
+                </Style>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.Theme.MenuHighlightColor}" />
+            </DataGrid.Resources>
+
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="Padding" Value="2" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                    <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Comment}" MaxWidth="322" />
+                
+                <DataGridTextColumn Header="{lng:Text Key=s36ecb4f8669133ce}" Binding="{Binding Input}">
+                    
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="TextBlock.TextAlignment" Value="Center" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="2" />
+                            <EventSetter Event="PreviewKeyDown" Handler="DataGridCell_PreviewKeyDown" />
+                            <EventSetter Event="MouseLeftButtonUp" Handler="DataGridCell_MouseLeftButtonUp" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                        <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{Binding DataContext.Theme.MenuHighlight, ElementName=DataGrid}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Command" x:Name="CommandColumn" Binding="{Binding Command}" MaxWidth="322" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

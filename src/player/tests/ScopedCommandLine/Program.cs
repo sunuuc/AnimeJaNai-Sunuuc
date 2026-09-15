@@ -1,0 +1,33 @@
+using MpvNet;
+using System.Text;
+using System.Text.Json;
+int checks=0;
+void Check(bool ok,string name) {if(!ok) throw new Exception(name); Console.WriteLine("PASS "+name); checks++;}
+void Bad(string[] a) {try {ScopedCommandLine.Parse(a);} catch(ArgumentException) {checks++;return;} throw new Exception("Malformed input accepted");}
+var p=ScopedCommandLine.Parse(new[]{"--input-ipc-server=pipe","--playlist-start=1","--{","https://example.invalid/01?token=a,b=c","--sub-file=C:\\字幕,一.srt","--force-media-title=第 1 集","--start=5","--}","--{","--force-media-title=第 2 集","https://example.invalid/02","--sub-file=C:\\第二集.srt","--start=12","--}"});
+Check(p.Entries.Count==2,"two episodes");
+Check(p.GlobalOptions.Count==2,"no local option leaked globally");
+Check(p.NeedsDedicatedProcess,"dedicated IPC process");
+Check(p.Entries[0].Options.Single(o=>o.Name=="start").Value=="5","first resume position");
+Check(p.Entries[1].Options.Single(o=>o.Name=="start").Value=="12","second resume position");
+Check(p.Entries[0].Options.Single(o=>o.Name=="force-media-title").Value=="第 1 集","first title");
+Check(!ScopedCommandLine.FileOptions(p.Entries[0].Options).Contains("第二集"),"no cross-episode subtitle");
+var q=ScopedCommandLine.Parse(new[]{"outside.mkv","--{","a.mkv","b.mkv","--sid=2","--}","after.mkv","--volume=80"});
+Check(q.Entries[0].Options.Count==0 && q.Entries[3].Options.Count==0,"scope boundaries");
+Check(q.Entries[1].Options[0].Value=="2" && q.Entries[2].Options[0].Value=="2","trailing group options");
+Check(q.Entries[1].Options!=q.Entries[2].Options,"independent option containers");
+var two=ScopedCommandLine.Parse(new[]{"--{","a.mkv","--sub-file","C:\\带 空格.srt","--title","quoted \"title\"","--}"});
+Check(two.Entries[0].Options.Count==2,"separate option values");
+Check(ScopedCommandLine.Parse(new[]{"--","--literal.mkv"}).Entries[0].Path=="--literal.mkv","literal filename");
+Check(!ScopedCommandLine.Parse(new[]{"movie.mkv"}).NeedsDedicatedProcess,"ordinary single instance");
+Check(ScopedCommandLine.Parse(new[]{"--no-pause"}).GlobalOptions[0].Value=="no","negative boolean");
+Bad(new[]{"--}"}); Bad(new[]{"--{","a.mkv"}); Bad(new[]{"--{","--{","--}","--}"}); Bad(new[]{"--sub-file"}); Bad(new[]{"-v"}); Bad(new[]{"--sub-file","bad\0file"});
+Check(ScopedCommandLine.Parse(new[]{"movie.mkv","--sub-file=a.srt"}).NeedsDedicatedProcess,"explicit subtitle retained");
+string value="中文 😀 , = % \" \n https://example.invalid/a?x=1&token=a,b;c";
+Check(ScopedCommandLine.Quote(value).StartsWith("%"+Encoding.UTF8.GetByteCount(value)+"%"),"UTF8 byte length");
+var opts=ScopedCommandLine.FileOptions(new[]{new ScopedCommandLine.Option("sub-file","a;b.srt"),new ScopedCommandLine.Option("sub-file","二.srt")});
+Check(opts.Contains("a\\;b.srt;二.srt"),"multiple subtitles escaped");
+Check(opts.Split("sub-files-add").Length==2,"single aggregate key");
+Check(ScopedCommandLine.FileOptions(new[]{new ScopedCommandLine.Option("title",value)}).Contains(value),"payload unchanged");
+if(args.Length==2 && args[0]=="--json") File.WriteAllText(args[1],JsonSerializer.Serialize(p));
+Console.WriteLine($"PASS {checks} parser checks");

@@ -1,0 +1,714 @@
+<Window xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives" xmlns:hypertext="clr-namespace:HyperText.Avalonia.Controls;assembly=HyperText.Avalonia" xmlns="https://github.com/avaloniaui" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:AnimeJaNaiConfEditor" xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ui="using:FluentAvalonia.UI.Controls" xmlns:vm="using:AnimeJaNaiConfEditor.ViewModels" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080" WindowStartupLocation="CenterScreen" MinWidth="760" MinHeight="460" x:Class="AnimeJaNaiConfEditor.Views.MainWindow" x:DataType="vm:MainWindowViewModel" Icon="/Assets/logo.ico" Title="{local:Text Key=sa3d61b60b957b367}">
+
+  <Window.Resources>
+    <local:HelpTextConverter x:Key="HelpText" />
+  </Window.Resources>
+
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.help">
+      <Setter Property="Opacity" Value="0.5" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxLines" Value="2" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="ToolTip.Tip" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource HelpText}}" />
+    </Style>
+    <!-- MaxLines/TextTrimming/TextWrapping inherit (inherits:true); reset them on the tooltip
+         popup so the full help text shows untruncated even though the .help block is capped. -->
+    <Style Selector="ToolTip">
+      <Setter Property="TextBlock.MaxLines" Value="0" />
+      <Setter Property="TextBlock.TextTrimming" Value="None" />
+      <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.border">
+      <Setter Property="Margin" Value="0,10,0,0" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="BorderBrush" Value="#33888888" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="10" />
+    </Style>
+    <Style Selector="Button.active">
+      <Setter Property="Background" Value="{DynamicResource SystemAccentColor }" />
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
+      </Style>
+    </Style>
+    <Style Selector="Button.selectedprofile">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.transparent">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="Transparent" />
+      </Style>
+
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+          <Setter Property="Foreground" Value="Transparent" />
+      </Style>
+    </Style>
+  </Window.Styles>
+
+  <Design.DataContext>
+    <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+
+
+
+  <TabControl SelectedIndex="{Binding SelectedTabIndex}" Padding="10,4,10,10">
+  <TabItem Header="{local:Text Key=s535e52e4a2616ebe}">
+  <Grid ColumnDefinitions="300,*" RowDefinitions="*">
+    <ScrollViewer Grid.Column="0" Background="#33000000" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel>
+      <TextBlock Margin="0">
+
+      </TextBlock>
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}" HorizontalContentAlignment="Left" ClickMode="Press">
+        <StackPanel Orientation="Horizontal">
+          <materialIcons:MaterialIcon Kind="Gear" VerticalAlignment="Center" />
+          <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sa9b23af605466c98}" /></TextBlock>
+        </StackPanel>
+      </Button>
+      <TextBlock Margin="10"><Run Text="{local:Text Key=secb1065435bd5901}" /></TextBlock>
+      
+      <ItemsControl ItemsSource="{Binding DefaultUpscaleSlots}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:UpscaleSlot">
+            <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" Classes.active="{Binding ActiveSlot}" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowDefaultProfile}" CommandParameter="{Binding SlotNumber}" ClickMode="Press">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" Width="15" Margin="8,0,0,0" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="172" FontWeight="Bold">
+                    <Run Text="{Binding ProfileName, Mode=OneWay, Converter={x:Static local:LocalizedTextConverter.Instance}}" />
+                    <Run FontSize="11" Text="{local:Text Key=s8b2a7981d8d0a0a7}" />
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding !IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
+                    <Run Text="{Binding ProfileName, Mode=OneWay, Converter={x:Static local:LocalizedTextConverter.Instance}}" />
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center" />
+                </StackPanel>
+                
+                <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5" Text="{Binding DescriptionText}" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      
+      <TextBlock Margin="10"><Run Text="{local:Text Key=s7b8c6fcd543f9aa7}" /></TextBlock>
+      <ItemsControl ItemsSource="{Binding AnimeJaNaiConf.UpscaleSlots}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:UpscaleSlot">
+            <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" Classes.active="{Binding ActiveSlot}" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}" CommandParameter="{Binding SlotNumber}" ClickMode="Press">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" Width="15" Margin="8,0,0,0" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="172" FontWeight="Bold">
+                    <Run Text="{Binding ProfileName}" />
+                    <Run FontSize="11" Text="{local:Text Key=s8b2a7981d8d0a0a7}" />
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding !IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
+                    <Run Text="{Binding ProfileName}" />
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center" />
+                </StackPanel>
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Margin="10"><Run Text="{local:Text Key=s494c83ed2e0cf3aa}" /></TextBlock>
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Click="RunBenchmarkButtonClick" HorizontalContentAlignment="Left">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <materialIcons:MaterialIcon Kind="Finance" VerticalAlignment="Center" />
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190"><Run Text="{local:Text Key=s1317877fa3306a68}" /></TextBlock>
+          </StackPanel>
+          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5"><Run Text="{local:Text Key=sce8351348fcc7e44}" /></TextBlock>
+        </StackPanel>
+      </Button>
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Click="SubmitBenchmarkButtonClick" HorizontalContentAlignment="Left">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <materialIcons:MaterialIcon Kind="CloudUpload" VerticalAlignment="Center" />
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190"><Run Text="{local:Text Key=sd412e6756212d5b9}" /></TextBlock>
+          </StackPanel>
+          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5"><Run Text="{local:Text Key=sdc6ad71e83b61183}" /></TextBlock>
+        </StackPanel>
+      </Button>
+    </StackPanel>
+    </ScrollViewer>
+
+    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="20">
+      
+        <!-- Global Settings -->
+        <Grid IsVisible="{Binding ShowGlobalSettings}" RowDefinitions="Auto,*">
+          <StackPanel Grid.Row="1">
+            <Border Classes="border" Margin="10,0,0,15">
+              <Grid ColumnDefinitions="Auto,Auto,*">
+                <TextBlock VerticalAlignment="Center" Margin="0,0,12,0">界面语言 / Interface language</TextBlock>
+                <ComboBox Grid.Column="1" x:Name="InterfaceLanguageSelector" Width="200" />
+                <TextBlock Grid.Column="2" x:Name="InterfaceLanguageHint" Classes="help" Margin="18,0,0,0">语言设置在重启播放器和管理器后生效。</TextBlock>
+              </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+              <CheckBox Grid.Column="0" IsChecked="{Binding AnimeJaNaiConf.EnableLogging}" Content="{local:Text Key=s974ffd6a155aa77a}" />
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=sc5da4cc287301536}" /><Run FontFamily="Consolas">animejanai.log</Run><Run Text="{local:Text Key=s93d227d62099f42b}" /></TextBlock>
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="10,10,0,10">
+              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s87836266b6367adf}" /></TextBlock>
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.UserSelectTensorRt}" IsEnabled="{Binding TrtSelectable}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.UserSelectDirectMl}" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Classes="help" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold><Run Text="{local:Text Key=s4b4ec4c00b8c23e1}" /><Bold>DirectML</Bold><Run Text="{local:Text Key=s054e15e57a7560ed}" /></TextBlock>
+            </Grid>
+
+            <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange" IsVisible="{Binding HasBackendNotice}" Text="{Binding BackendNotice}" />
+
+            <TextBlock Margin="10,0,0,10" Classes="help" TextWrapping="Wrap"><Run Text="{local:Text Key=s60fb29623a6a5f6c}" /></TextBlock>
+
+            <StackPanel IsVisible="{Binding AnimeJaNaiConf.TensorRtSelected}" Margin="10,0,0,10">
+              <TextBlock Margin="0,10,0,5" Text="{local:Text Key=s6c4e4a83b23880da}" />
+              <Border Classes="border">
+                <StackPanel Margin="10">
+
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s6b3c4b6074b85f61}" /></TextBlock>
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticOnnxSelected}" Content="{local:Text Key=sf89f136bfea79306}" Command="{Binding AnimeJaNaiConf.SetTrtStaticOnnx}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticSelected}" Content="{local:Text Key=s1d2c73dc01f2359b}" Command="{Binding AnimeJaNaiConf.SetTrtStatic}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtDynamicSelected}" Content="{local:Text Key=sb6ee7b3e8d9c49d8}" Command="{Binding AnimeJaNaiConf.SetTrtDynamic}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0" xml:space="preserve"><Run Text="{local:Text Key=s3bea9c1abdf99558}" /><Bold><Run Text="{local:Text Key=sf89f136bfea79306}" /></Bold><Run Text="{local:Text Key=sdb3416aef1e7465c}" /><Bold><Run Text="{local:Text Key=s1d2c73dc01f2359b}" /></Bold><Run Text="{local:Text Key=se3ce407cd0ecb515}" /><Bold><Run Text="{local:Text Key=sb6ee7b3e8d9c49d8}" /></Bold><Run Text="{local:Text Key=s72dce64bf9194bcd}" /></TextBlock>
+                  </Grid>
+
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,5" IsVisible="{Binding AnimeJaNaiConf.TrtDynamicSelected}">
+                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s034ef4023519d2ce}" /></TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMinResolution, Mode=TwoWay}" ItemsSource="{Binding CommonResolutions}" />
+                    <TextBlock Margin="10,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s53affa765d59f897}" /></TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicOptResolution, Mode=TwoWay}" ItemsSource="{Binding CommonResolutions}" />
+                    <TextBlock Margin="10,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s77ea65bb7b325c58}" /></TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMaxResolution, Mode=TwoWay}" ItemsSource="{Binding CommonResolutions}" />
+                  </StackPanel>
+
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=scf472ebb2219a8e8}" /></TextBlock>
+                      <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtBuilderOptimizationLevel, Mode=TwoWay}" ItemsSource="{Binding BuilderOptimizationLevels}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s4a25c94b3214a847}" /></TextBlock>
+                  </Grid>
+
+                  <TextBox Text="{Binding AnimeJaNaiConf.TrtEngineSettings}" HorizontalAlignment="Stretch" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="70" VerticalContentAlignment="Top" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+              <CheckBox Grid.Column="0" IsChecked="{Binding AnimeJaNaiConf.GpuSubtitles}" Content="{local:Text Key=s2884bf7049044cb3}" />
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0" TextWrapping="Wrap" xml:space="preserve"><Bold><Run Text="{local:Text Key=s130011756125313c}" /></Bold><Run Text="{local:Text Key=s1a86e7bbdca22f24}" /><Bold><Run Text="{local:Text Key=sca7981b46ecf2c17}" /></Bold><Run Text="{local:Text Key=sa42cd08e1f42864b}" /></TextBlock>
+            </Grid>
+
+            <TextBlock Margin="10,0,0,10" Classes="help" TextWrapping="Wrap"><Run Text="{local:Text Key=sd24521f8961782dc}" /></TextBlock>
+
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Button Margin="10,0,10,0" Click="ImportFullConfButtonClick">
+              <StackPanel Orientation="Horizontal">
+                <materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
+                <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s1166d937f8c31379}" /></TextBlock>
+              </StackPanel>
+            </Button>
+            <Button Margin="10,0,10,0" Click="ExportFullConfButtonClick">
+              <StackPanel Orientation="Horizontal">
+                <materialIcons:MaterialIcon Kind="Export" VerticalAlignment="Center" />
+                <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s90e480426638b4a4}" /></TextBlock>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+        <!-- Default Profile Settings -->
+        <StackPanel IsVisible="{Binding ShowDefaultProfiles}">
+          <StackPanel>
+            <Grid Margin="10,10,0,10">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MaxWidth="500" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sa423b47777783386}" /></TextBlock>
+              <TextBox Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName, Mode=OneWay, Converter={x:Static local:LocalizedTextConverter.Instance}}" IsReadOnly="True" IsEnabled="False" />
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="10,10,0,10">
+              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sdae1278b2b78849c}" /></TextBlock>
+                <ToggleButton IsChecked="{Binding CurrentDefaultStandardSelected}" Content="{local:Text Key=sef6691545d2c5523}" Command="{Binding SetCurrentDefaultStandard}" />
+                <ToggleButton IsChecked="{Binding CurrentDefaultSharpSelected}" Content="{local:Text Key=s1a3c4b300d516c22}" Command="{Binding SetCurrentDefaultSharp}" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=sed394c89cdf3c282}" /></TextBlock>
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+              <Button Grid.Column="0" Classes="transparent" Command="{Binding SelectDefaultProfile}">
+                <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="{local:Text Key=s7524e7fb23604c3b}" IsHitTestVisible="False" />
+              </Button>
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s2f53e88e5f87beb5}" /></TextBlock>
+            </Grid>
+
+            <TextBlock Margin="10,0,0,10" Classes="help" TextWrapping="Wrap"><Run Text="{local:Text Key=saeb472bad44fc5cb}" /></TextBlock>
+
+            <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:UpscaleChain">
+                  <StackPanel>
+
+                    <TextBlock Margin="10,10,0,10" Text="{Binding ChainNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=s19914f92c94e8833}" />
+                    <Border Classes="border" Margin="0,0,0,20">
+                      <Grid>
+
+
+                        <StackPanel Grid.Column="0">
+
+                          <TextBlock Margin="10,10,0,5" Text="{local:Text Key=sb3b35245a9a24dc0}" />
+                          <Border Classes="border">
+                            <StackPanel>
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s2e9092b5e8d69476}" /></TextBlock>
+                                  <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}" ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+
+                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                  <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}" ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=sac01572f2c3d3314}" /></TextBlock>
+                              </Grid>
+
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sa6bed05b2b849453}" /></TextBlock>
+                                  <ui:FANumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+
+                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                  <ui:FANumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s13a044e28c02e8db}" /></TextBlock>
+                              </Grid>
+                            </StackPanel>
+
+                          </Border>
+
+                          <TextBlock Margin="10,20,0,5" Text="{local:Text Key=sfa7e12c812185148}" />
+                          <Border Classes="border">
+                            <StackPanel>
+                              <ItemsControl ItemsSource="{Binding Models}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:UpscaleModel">
+                                    <StackPanel>
+                                      <TextBlock Margin="10,20,10,0" Text="{Binding ModelNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=sf2500b17f559ffe7}" />
+                                      <Border Classes="border">
+                                        <Grid>
+                                          <StackPanel Grid.Column="0">
+                                            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s7b0cab30a50b4240}" /></TextBlock>
+                                                <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                              </StackPanel>
+                                              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s54a3e363a7b08b0c}" /></TextBlock>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s936a7033ee74acf1}" /></TextBlock>
+                                                <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
+                                              </StackPanel>
+                                              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=se3ff78c8c28c0de2}" /></TextBlock>
+                                            </Grid>
+                                            <Grid Margin="10,10,0,10">
+                                              <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" MaxWidth="400" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                              </Grid.ColumnDefinitions>
+                                              <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s5e2c614c23f02239}" /></TextBlock>
+                                              <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" IsEnabled="False" />
+                                              <Button Grid.Column="2" Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                                <StackPanel Orientation="Horizontal">
+                                                  <materialIcons:MaterialIcon Kind="Launch" />
+                                                  <TextBlock Margin="5,0,0,0" Text="{local:Text Key=s1b5ea48fd55f3b8e}" />
+                                                </StackPanel>
+                                              </Button>
+                                              <TextBlock Grid.Column="3" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s7944867eb03f34c4}" /></TextBlock>
+                                            </Grid>
+                                          </StackPanel>
+                                        </Grid>
+                                      </Border>
+                                    </StackPanel>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="{local:Text Key=s0505b30c271d8d2e}" IsEnabled="False" />
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s695645af935b2949}" /></TextBlock>
+                              </Grid>
+
+                            </StackPanel>
+
+
+
+                      </Border>
+
+
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+          </StackPanel>
+
+        </StackPanel>
+
+        <!-- Custom Profile Settings -->
+        <Grid IsVisible="{Binding ShowCustomProfiles}" RowDefinitions="Auto,*">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0">
+              <Grid Margin="10,10,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" MaxWidth="500" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sa423b47777783386}" /></TextBlock>
+                <TextBox Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="False" />
+              </Grid>
+
+
+              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+                <Button Grid.Column="0" Classes="transparent" Command="{Binding SelectDefaultProfile}">
+                  <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="{local:Text Key=s7524e7fb23604c3b}" IsHitTestVisible="False" />
+                </Button>
+                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s2f53e88e5f87beb5}" /></TextBlock>
+              </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:FAComboBox Margin="10,0,0,0" ItemsSource="{Binding AllSlots}" SelectedItem="{Binding SelectedProfileToClone}">
+                  <ui:FAComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:UpscaleSlot">
+                      <StackPanel Orientation="Horizontal">
+                        <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                        <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">
+                          <Run Text="{Binding ProfileName}" />
+                        </TextBlock>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ui:FAComboBox.ItemTemplate>
+                </ui:FAComboBox>
+
+                <Button Margin="0,0,10,0" Click="CloneSelectedProfileToCurrentProfile">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="ContentDuplicate" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s87b09e5851d35cb8}" /></TextBlock>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+
+              <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+
+                <Button Margin="10,0,10,0" Click="ImportCurrentProfileConfButtonClick">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sd8cbb609599f433e}" /></TextBlock>
+                  </StackPanel>
+                </Button>
+                <Button Margin="10,0,10,0" Click="ExportCurrentProfileConfButtonClick">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="Export" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s569e9a31622e5721}" /></TextBlock>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+
+          <StackPanel Grid.Row="1">
+              <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:UpscaleChain">
+                    <StackPanel>
+
+                      <TextBlock Margin="10,10,0,10" Text="{Binding ChainNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=s19914f92c94e8833}" />
+                      <Border Classes="border" Margin="0,0,0,20">
+                        <Grid RowDefinitions="Auto,*">
+
+
+                          <StackPanel Grid.Row="1">
+
+                            <TextBlock Margin="10,10,0,5" Text="{local:Text Key=sb3b35245a9a24dc0}" />
+                            <Border Classes="border">
+                              <StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s2e9092b5e8d69476}" /></TextBlock>
+                                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}" ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+
+                                    <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}" ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=sac01572f2c3d3314}" /></TextBlock>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=sa6bed05b2b849453}" /></TextBlock>
+                                    <ui:FANumberBox Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+
+                                    <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                    <ui:FANumberBox Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s13a044e28c02e8db}" /></TextBlock>
+                                </Grid>
+                              </StackPanel>
+
+                            </Border>
+
+                            <TextBlock Margin="10,20,0,5" Text="{local:Text Key=sfa7e12c812185148}" />
+                            <Border Classes="border">
+                              <StackPanel>
+
+
+
+                                <ItemsControl ItemsSource="{Binding Models}">
+                                  <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:UpscaleModel">
+                                      <StackPanel>
+                                        <TextBlock Margin="10,20,10,0" Text="{Binding ModelNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=sf2500b17f559ffe7}" />
+                                        <Border Classes="border">
+                                          <Grid RowDefinitions="Auto,*">
+                                            <StackPanel Grid.Row="1">
+                                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s7b0cab30a50b4240}" /></TextBlock>
+                                                  <ui:FANumberBox Margin="0,0,5,0" Maximum="1080" Minimum="0" Value="{Binding ResizeHeightBeforeUpscale}" />
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s54a3e363a7b08b0c}" /></TextBlock>
+                                              </Grid>
+                                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s936a7033ee74acf1}" /></TextBlock>
+                                                  <ui:FANumberBox Margin="0,0,5,0" Maximum="100" Minimum="0" Value="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=sf7660358ec7cdec3}" /></TextBlock>
+                                              </Grid>
+                                              <Grid Margin="10,10,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                  <ColumnDefinition Width="Auto" />
+                                                  <ColumnDefinition Width="*" MaxWidth="400" />
+                                                  <ColumnDefinition Width="Auto" />
+                                                  <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center"><Run Text="{local:Text Key=s5e2c614c23f02239}" /></TextBlock>
+                                                <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" />
+                                                <Button Grid.Column="2" Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                                  <StackPanel Orientation="Horizontal">
+                                                    <materialIcons:MaterialIcon Kind="Launch" />
+                                                    <TextBlock Margin="5,0,0,0" Text="{local:Text Key=s1b5ea48fd55f3b8e}" />
+                                                  </StackPanel>
+                                                </Button>
+                                                <TextBlock Grid.Column="3" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s7944867eb03f34c4}" /></TextBlock>
+                                              </Grid>
+                                            </StackPanel>
+
+                                            <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:UpscaleChain)DataContext).DeleteModel}" CommandParameter="{Binding}">
+                                              <StackPanel Orientation="Horizontal">
+                                                <materialIcons:MaterialIcon Kind="MinusCircle" />
+                                                <TextBlock Margin="5,0,0,0" Text="{Binding ModelNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=s91cafa43f4c6b9d8}" />
+                                              </StackPanel>
+                                            </Button>
+                                          </Grid>
+                                        </Border>
+                                      </StackPanel>
+                                    </DataTemplate>
+                                  </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Margin="10,20,0,20" Command="{Binding AddModel}">
+                                  <StackPanel Orientation="Horizontal">
+                                    <materialIcons:MaterialIcon Kind="PlusCircle" />
+                                    <TextBlock Margin="5,0,0,0"><Run Text="{local:Text Key=s7060e8240675f8ae}" /></TextBlock>
+                                  </StackPanel>
+                                </Button>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="{local:Text Key=s0505b30c271d8d2e}" IsEnabled="{Binding RifeToggleEnabled}" />
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=s695645af935b2949}" /></TextBlock>
+                                </Grid>
+
+                                <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RifeMissing}" Text="{local:Text Key=s8e68859097a24e34}" />
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="{local:Text Key=s40181f7d0e70fdbf}" />
+                                    <NumericUpDown Value="{Binding RifeFactorNumerator}" Minimum="{Binding RifeFactorDenominator}" FormatString="0" />
+                                    <TextBlock xml:space="preserve"> / </TextBlock>
+                                    <NumericUpDown Value="{Binding RifeFactorDenominator}" Minimum="1" Maximum="{Binding RifeFactorNumerator}" FormatString="0" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="{local:Text Key=s48bfeb319c86d8c2}" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="{local:Text Key=s5e2c614c23f02239}" />
+                                    <ComboBox Margin="0,0,5,0" VerticalAlignment="Center" SelectedValue="{Binding RifeModel}" ItemsSource="{Binding RifeModelList}" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="{local:Text Key=sd0aaf2359d6a3282}" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding RifeEnsemble}" Content="{local:Text Key=s9943c33a024c9949}" />
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="{local:Text Key=sec5f26d297709831}" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="{local:Text Key=s4da428858c7a0e9b}" />
+                                    <NumericUpDown Value="{Binding RifeSceneDetectThreshold}" Minimum="0" FormatString="0.000" Maximum="1" Increment="0.05" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="{local:Text Key=sa22bcf19957e42f0}" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding RifeBeforeUpscale}" Content="{local:Text Key=s66c266b0dc313abe}" />
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="{local:Text Key=s6711188961701c75}" />
+                                </Grid>
+
+                              </StackPanel>
+
+                            </Border>
+
+
+                          </StackPanel>
+
+                          <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
+                            <StackPanel Orientation="Horizontal">
+                              <materialIcons:MaterialIcon Kind="MinusCircle" />
+                              <TextBlock Margin="5,0,0,0" Text="{Binding ChainNumber, Converter={x:Static local:LocalizedFormatConverter.Instance}, ConverterParameter=s991d85960a6ff476}" />
+                            </StackPanel>
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </StackPanel>
+
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <Grid ColumnDefinitions="Auto,*">
+                <Button Grid.Column="0" Margin="10,20,0,20" Command="{Binding AddChain}">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="PlusCircle" />
+                    <TextBlock Margin="5,0,0,0"><Run Text="{local:Text Key=s845bff939e988aee}" /></TextBlock>
+                  </StackPanel>
+                </Button>
+                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0"><Run Text="{local:Text Key=scf8f6b995cbe187c}" /></TextBlock>
+              </Grid>
+
+          </StackPanel>
+
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+
+
+  </Grid>
+  </TabItem>
+
+  <TabItem Header="{local:Text Key=sa150ce2216025931}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="24" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
+        <TextBlock Text="{Binding ComponentManager.GpuText}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <Border Classes="border" IsVisible="{Binding ComponentManager.SetupNeeded}">
+          <Grid ColumnDefinitions="Auto,*">
+            <materialIcons:MaterialIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" Foreground="Orange" VerticalAlignment="Top" Margin="0,2,8,0" />
+            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{local:Text Key=s0a15081cc5a82610}" />
+          </Grid>
+        </Border>
+        <ItemsControl ItemsSource="{Binding ComponentManager.Packs}" IsEnabled="{Binding ComponentManager.NotBusy}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ComponentItem">
+              <Border Classes="border">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <CheckBox Grid.Column="0" IsChecked="{Binding Selected}" IsEnabled="False" VerticalAlignment="Center" Margin="0,0,12,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding StateText}" Opacity="0.6" FontSize="12" IsVisible="{Binding !HighlightRecommended}" />
+                      <Border Background="{DynamicResource SystemAccentColor}" CornerRadius="3" Padding="6,1" VerticalAlignment="Center" IsVisible="{Binding HighlightRecommended}">
+                        <TextBlock Text="{local:Text Key=s5997f1294c483087}" FontSize="12" FontWeight="SemiBold" />
+                      </Border>
+                    </StackPanel>
+                    <TextBlock Classes="help" Text="{Binding Description}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding SizeText}" VerticalAlignment="Center" Opacity="0.8" Margin="12,0,0,0" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="{local:Text Key=standaloneComponentsNote}" TextWrapping="Wrap" MaxWidth="600" />
+          <Button Content="{local:Text Key=s0e91610117029a62}" Command="{Binding ComponentManager.Refresh}" IsEnabled="{Binding ComponentManager.NotBusy}" />
+        </StackPanel>
+        <TextBlock Text="{Binding ComponentManager.StatusLine}" TextWrapping="Wrap" Opacity="0.7" />
+      </StackPanel>
+    </ScrollViewer>
+  </TabItem>
+  </TabControl>
+</Window>

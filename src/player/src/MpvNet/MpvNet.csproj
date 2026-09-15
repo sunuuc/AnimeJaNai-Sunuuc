@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<AssemblyName>libmpvnet</AssemblyName>
+		<RootNamespace>MpvNet</RootNamespace>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\docs\changelog.md" Link="Docs\changelog.md" />
+		<None Include="..\..\docs\manual.md" Link="Docs\manual.md" />
+		<None Include="..\..\README.md" Link="Docs\README.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Docs\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" />
+		<PackageReference Include="NGettext" />
+	</ItemGroup>
+
+<ItemGroup><EmbeddedResource Include="LanguageStrings.json" LogicalName="AnimeJaNai.LanguageStrings.json" /></ItemGroup>
+</Project>

@@ -1,0 +1,83 @@
+name: zh-CN Build
+
+on:
+  push:
+    branches: [zh-CN]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare native Chinese localizer
+        shell: pwsh
+        run: |
+          $path = 'scripts/ApplyNativeChinese.ps1'
+          $src = Get-Content $path -Raw
+          $src = $src.Replace('function Apply-ExactSourceReplacements([string]$rel, [ordered]$replacements)', 'function Apply-ExactSourceReplacements([string]$rel, $replacements)')
+          Set-Content -Path $path -Value $src -Encoding utf8
+
+      - name: Apply native Simplified Chinese source
+        shell: pwsh
+        run: ./scripts/ApplyNativeChinese.ps1
+
+      - name: Finalize and validate localized source
+        shell: pwsh
+        run: |
+          $csPath = 'AnimeJaNaiConfEditor/Views/MainWindow.axaml.cs'
+          $cs = Get-Content $csPath -Raw
+          # A translated string followed by the original concatenation operator can
+          # temporarily produce '+ +'. Normalize that source-only artifact.
+          $cs = $cs.Replace('+ +', '+')
+          Set-Content -Path $csPath -Value $cs -Encoding utf8
+
+          $xamlPath = 'AnimeJaNaiConfEditor/Views/MainWindow.axaml'
+          $xaml = Get-Content $xamlPath -Raw
+          $xaml = $xaml.Replace('> (Default)<', '>（默认）<')
+          # Keep the RIFE explanation accurate when a pre-upscale resize is configured.
+          $xaml = $xaml.Replace('先在源分辨率下运行 RIFE，再进行超分（更快，推荐）。取消勾选则先超分，再对超分后的画面补帧。', '在超分前运行 RIFE（通常更快，推荐）。如果设置了“超分前缩放高度”，RIFE 会在缩放后的分辨率运行。取消勾选则先超分，再对超分后的画面补帧。')
+          Set-Content -Path $xamlPath -Value $xaml -Encoding utf8
+
+          $vmPath = 'AnimeJaNaiConfEditor/ViewModels/MainWindowViewModel.cs'
+          $vm = Get-Content $vmPath -Raw
+          $vm = $vm.Replace('最低建议 GPU：', '最低建议显卡：')
+          Set-Content -Path $vmPath -Value $vm -Encoding utf8
+
+          # Guard against the old unsafe whole-source replacement failure mode.
+          $all = Get-ChildItem AnimeJaNaiConfEditor -Recurse -Filter *.cs | ForEach-Object { Get-Content $_.FullName -Raw }
+          $joined = $all -join "`n"
+          foreach ($bad in @('View模型Base', '取消lationToken', 'SetLast错误')) {
+            if ($joined.Contains($bad)) { throw "Unsafe localization touched a code identifier: $bad" }
+          }
+
+          # These ordinary English labels must never survive into this personal build.
+          $ui = (Get-Content $xamlPath -Raw) + "`n" + (Get-Content $csPath -Raw)
+          foreach ($badUi in @('> (Default)<', '>Global Settings<', 'Header="Profiles"', 'Header="Components"', '>Run Benchmarks<', '>Submit to Catalog<')) {
+            if ($ui.Contains($badUi)) { throw "Visible English remains: $badUi" }
+          }
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Publish Windows x64
+        run: dotnet publish AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+
+      - name: Stage runtime files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path staging | Out-Null
+          Copy-Item publish\*.exe staging\
+          Copy-Item publish\*.dll staging\
+          Compress-Archive -Path staging\* -DestinationPath AnimeJaNaiManager-zh-CN-win-x64.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeJaNaiManager-zh-CN-win-x64
+          path: AnimeJaNaiManager-zh-CN-win-x64.zip
+          if-no-files-found: error

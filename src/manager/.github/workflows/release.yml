@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version'
+        required: true
+  push:
+    branches: [linux-support]
+    paths:
+      - .github/workflows/release.yml
+      - 'AnimeJaNaiConfEditor/**'
+
+env:
+  DEFAULT_TAG: "0.4.0"
+
+jobs:
+  release:
+    # Windows leg only on manual dispatch; a push to linux-support runs just the
+    # Linux leg below.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    permissions:
+      contents: write  # required for ncipollo/release-action to create the release
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.x'  # Must match <TargetFramework> in AnimeJaNaiConfEditor.csproj
+
+    - name: Publish self-contained single-file win-x64
+      # Publish directly (not via FolderProfile.pubxml, which sets SelfContained=false).
+      run: dotnet publish AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+
+    - name: Stage runtime files only
+      # Keep just the executable and the native Avalonia DLLs (Skia/HarfBuzz/ANGLE).
+      # Exclude animejanai.conf, onnx/, and *.pdb - the conf and models are owned by the
+      # mpv-upscale-2x_animejanai overlay and must not ship in this artifact.
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Path staging | Out-Null
+        Copy-Item publish\*.exe staging\
+        Copy-Item publish\*.dll staging\
+
+    - name: Create zip archive
+      shell: pwsh
+      run: Compress-Archive -Path staging\* -DestinationPath AnimeJaNaiManager-portable-x64.zip -Force
+
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ github.event.inputs.release_version || env.DEFAULT_TAG }}
+        name: ${{ github.event.inputs.release_version || env.DEFAULT_TAG }}
+        # Published (not draft) so the mpv build can fetch the asset over the public
+        # releases/download/<tag>/ URL - draft assets 404 for unauthenticated requests.
+        draft: false
+        prerelease: false
+        allowUpdates: true
+        artifacts: AnimeJaNaiManager-portable-x64.zip
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  release-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.x'
+
+    - name: Publish self-contained single-file linux-x64
+      run: dotnet publish AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o publish
+
+    - name: Stage runtime files only
+      # The binary + Avalonia native libs (Skia/HarfBuzz). Exclude animejanai.conf,
+      # onnx/ and *.pdb (owned by the mpv-upscale-2x_animejanai overlay). Flat layout
+      # matches Windows: the Manager sits at the install root and finds animejanai/
+      # as a sibling.
+      run: |
+        mkdir -p staging
+        cp publish/AnimeJaNaiManager staging/
+        cp publish/*.so staging/ 2>/dev/null || true
+        chmod +x staging/AnimeJaNaiManager
+
+    - name: Create tarball
+      run: tar --zstd -C staging -cf AnimeJaNaiManager-portable-linux-x64.tar.zst .
+
+    - name: Create / update GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ github.event.inputs.release_version || env.DEFAULT_TAG }}
+        name: ${{ github.event.inputs.release_version || env.DEFAULT_TAG }}
+        draft: false
+        prerelease: false
+        allowUpdates: true
+        artifacts: AnimeJaNaiManager-portable-linux-x64.tar.zst
+        token: ${{ secrets.GITHUB_TOKEN }}
