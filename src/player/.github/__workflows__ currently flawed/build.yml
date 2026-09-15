@@ -1,0 +1,75 @@
+name: mpvnet build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - ci
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'docs/**'
+      - '.github/**'
+      - 'src/Extensions/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'docs/**'
+      - '.github/**'
+      - 'src/Extensions/**'
+
+jobs:
+  windows:
+    name: Windows build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: >-
+            base-devel
+            wget
+            p7zip
+      - name: Build
+        shell: cmd
+        run: |
+          cd src
+          nuget restore
+          msbuild -restore
+          msbuild MpvNet.sln /m /p:Configuration=Debug
+      - name: Create .mo files for localization
+        shell: pwsh
+        run: Install-Package Gettext.Tools -Force; $env:Path = ((Get-Package Gettext.Tools).Source | Split-Path) + '\tools\bin;' + $env:Path; .\lang\create-mo-files.ps1
+      - name: Download libmpv # In principle, only update this binary file when significant feature changes occur in mpv/mpv.net
+        shell: msys2 {0}
+        run: |
+          wget -nv -O libmpv.7z https://github.com/zhongfly/mpv-winbuild/releases/download/2025-05-03-e663cbc/mpv-dev-x86_64-20250503-git-e663cbc.7z
+          7z x -y libmpv.7z -olibmpv
+          cp -f libmpv/libmpv-2.dll src/MpvNet.Windows/bin/Debug/ || true
+      - name: Download MediaInfo
+        shell: msys2 {0}
+        run: |
+          wget -nv -O MediaInfo.7z https://mediaarea.net/download/binary/libmediainfo0/24.03/MediaInfo_DLL_24.03_Windows_x64_WithoutInstaller.7z
+          7z x -y MediaInfo.7z -oMediaInfo
+          cp -f MediaInfo/MediaInfo.dll src/MpvNet.Windows/bin/Debug/ || true
+      - name: Download mpvnet.com file
+        shell: msys2 {0}
+        run: |
+          wget -nv -O mpvnet.com https://github.com/mpvnet-player/file-host/releases/download/tag/mpvnet.com.txt
+          cp -f mpvnet.com src/MpvNet.Windows/bin/Debug/ || true
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: "mpv.net-win64"
+          path: src/MpvNet.Windows/bin/Debug/

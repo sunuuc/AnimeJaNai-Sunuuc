@@ -1,5 +1,8 @@
 # AnimeJaNai 中文汉化 + 个人调优
 
+> **完整便携版 1.0.0**：[下载本仓库完整包](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/tag/standalone-v1.0.0)。解压到空目录即可运行，不需要原项目或覆盖补丁。包含程序、运行库、模型、语言与预设。[说明和测试范围](docs/standalone.md)。以下覆盖包说明仅为历史记录。
+
+
 > **当前更新：r3 中文恢复与语言设置。** [下载 r3 累计修复包](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/tag/zh-CN-3.6.0-r3)。播放器设置窗口与管理器顶部均可选简体中文、English、跟随系统，默认简体中文，重启后生效。已包含 r2 修复，无须另装 r2；保留个人配置、模型和缓存。[详细说明](docs/RELEASE-r3.md)。下方 r2 链接和说明保留作历史参考。
 
 
