@@ -1,111 +1,97 @@
-name: Build and verify bilingual UI r3
+name: Build, verify and release r4
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/build-language-r3.yml','tools/language-r3/**']
+    paths:
+      - '.github/workflows/build-language-r3.yml'
+      - 'tools/language-r3/**'
+      - 'portable_config/scripts/**'
+      - 'tests/**'
+      - 'docs/RELEASE-r4.md'
 permissions:
-  contents: read
+  contents: write
+  actions: read
 concurrency:
-  group: language-r3
+  group: animejanai-r4
   cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 25
-    env:
-      PYTHONUTF8: '1'
+    timeout-minutes: 30
+    env: {PYTHONUTF8: '1'}
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - uses: actions/checkout@v4
-        with:
-          ref: 23946b4e9fefc8cef0d57b6c10131b47af5ace38
-          path: player
-          persist-credentials: false
+        with: {ref: 23946b4e9fefc8cef0d57b6c10131b47af5ace38, path: player, persist-credentials: false}
       - uses: actions/checkout@v4
-        with:
-          repository: sunuuc/AnimeJaNaiManager
-          ref: bdcf21af308d9494d23a309055196e7937819afc
-          path: manager
-          persist-credentials: false
+        with: {repository: sunuuc/AnimeJaNaiManager, ref: bdcf21af308d9494d23a309055196e7937819afc, path: manager, persist-credentials: false}
       - uses: actions/checkout@v4
-        with:
-          repository: the-database/AnimeJaNaiManager
-          ref: d69c523e3c21a5097a2a9366faf33516512845a2
-          path: upstream-manager
-          sparse-checkout: tests/ProfileRoundTrip
-          persist-credentials: false
+        with: {repository: the-database/AnimeJaNaiManager, ref: d69c523e3c21a5097a2a9366faf33516512845a2, path: upstream-manager, sparse-checkout: tests/ProfileRoundTrip, persist-credentials: false}
       - uses: actions/setup-dotnet@v4
         with: {dotnet-version: '10.x'}
-      - name: Generate and embed reviewed bilingual resources
+      - name: Generate bilingual UI and move language preference into Global Settings
         run: |
           python tools/language-r3/prepare.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/language-r3/finalize.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Prepare language and profile regression projects
+      - name: Prepare isolated UI/profile tests
         shell: python
         run: |
           from pathlib import Path
           import shutil
-          out=Path('language-evidence');out.mkdir(exist_ok=True)
+          Path('language-evidence').mkdir(exist_ok=True)
           for name in ('Manager','Player'):
-              dest=Path('tests-generated')/(name.lower()+'-tests');dest.mkdir(parents=True,exist_ok=True)
-              for ext in ('cs','csproj'):shutil.copy2(f'tools/language-r3/{name}Tests.{ext}',dest)
+              d=Path('tests-generated')/(name.lower()+'-tests');d.mkdir(parents=True,exist_ok=True)
+              for ext in ('cs','csproj'):shutil.copy2(f'tools/language-r3/{name}Tests.{ext}',d)
           shutil.copytree('upstream-manager/tests/ProfileRoundTrip','manager/tests/ProfileRoundTrip')
           p=Path('manager/tests/ProfileRoundTrip/ProfileRoundTrip.csproj');s=p.read_text()
-          additions=''.join(f'<Compile Include="../../AnimeJaNaiConfEditor/{name}.cs" Link="Production/{name}.cs" />' for name in ('ChineseLocalization','InterfaceLanguage','UiText'))
-          additions+='<EmbeddedResource Include="../../AnimeJaNaiConfEditor/LanguageStrings.json" LogicalName="AnimeJaNai.LanguageStrings.json" />'
-          p.write_text(s.replace('</ItemGroup>',additions+'</ItemGroup>',1))
-      - name: Parser and profile round-trip regressions
+          a=''.join(f'<Compile Include="../../AnimeJaNaiConfEditor/{n}.cs" Link="Production/{n}.cs" />' for n in ('ChineseLocalization','InterfaceLanguage','UiText'))
+          a+='<EmbeddedResource Include="../../AnimeJaNaiConfEditor/LanguageStrings.json" LogicalName="AnimeJaNai.LanguageStrings.json" />'
+          p.write_text(s.replace('</ItemGroup>',a+'</ItemGroup>',1))
+      - name: Parser/profile and bilingual UI regressions
         run: |
           dotnet run --project player/tests/ScopedCommandLine -c Release 2>&1 | Tee-Object language-evidence/parser-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project manager/tests/ProfileRoundTrip -c Release 2>&1 | Tee-Object language-evidence/profile-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Manager bilingual construction and persistence tests
-        run: |
           dotnet run --project tests-generated/manager-tests/ManagerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/manager-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Player language controls and embedded-resource tests
-        if: ${{ !cancelled() }}
-        run: |
           dotnet run --project tests-generated/player-tests/PlayerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/player-tests.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Publish exact tested UI sources
+      - name: Build tested player and manager
         run: |
-          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained false -p:InformationalVersion=7.1.2.0-sunuuc-r3 -o publish-player
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained false -p:InformationalVersion=7.1.2.0-sunuuc-r4 -o publish-player
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:InformationalVersion=0.6.0-sunuuc-r3 -o publish-manager
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:InformationalVersion=0.6.0-sunuuc-r4 -o publish-manager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/language-r3/package.py stage
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Validate staged FPS, Player UI parameters and runtime scripts
+      - name: Full Windows/Player UI/FPS/controller regression and package
         run: |
           Start-Service AudioEndpointBuilder
           Start-Service Audiosrv
-          python tests/test_windows_r2.py stage stage/build-info/runtime-r3
+          python tests/test_windows_r2.py stage stage/build-info/runtime-r4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tests/test_script_suite.py stage stage/build-info/runtime-r3
+          python tests/test_script_suite.py stage stage/build-info/runtime-r4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/language-r3/package.py finish
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         if: success()
-        with:
-          name: bilingual-r3-verified
-          path: dist/
-          if-no-files-found: error
-          retention-days: 14
+        with: {name: r4-verified-package, path: 'dist/', if-no-files-found: error, retention-days: 14}
+      - name: Publish only a fully verified release commit
+        if: ${{ success() && contains(github.event.head_commit.message, '[release]') }}
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: python tools/language-r3/package.py publish
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: bilingual-r3-evidence
+          name: r4-validation-evidence
           path: |
             language-evidence/
             language-coverage.json
-            stage/build-info/runtime-r3/*.log
-            stage/build-info/runtime-r3/*results.json
+            stage/build-info/runtime-r4/*.log
+            stage/build-info/runtime-r4/*results.json
           if-no-files-found: warn
           retention-days: 14
