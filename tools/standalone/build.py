@@ -1,8 +1,9 @@
-"""Full portable distribution builder. Bootstrap once; subsequent inputs live in our repo.
-Commands: prepare / stage / package / publish. Never reads a user's installation.
+"""Full portable builder. Bootstrap once; subsequent runtime inputs use our release.
+Commands: prepare / stage / package. Publishing is implemented in publish.py.
+No command reads or modifies a user's installation.
 """
 from pathlib import Path, PurePosixPath
-import base64, configparser, hashlib, json, os, re, shutil, subprocess, sys, time, urllib.request, zipfile
+import configparser, hashlib, json, os, re, shutil, subprocess, sys, time, urllib.request, zipfile
 R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete-evidence'
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
@@ -39,7 +40,7 @@ def extract(archive,dest):
             for i in z.infolist():valid_path(i.filename)
             z.extractall(dest)
     else:
-        listing=subprocess.check_output([SEVEN,'l','-slt','-sccUTF-8',str(archive)]).decode('utf-8',errors='strict').replace('\r\n','\n')
+        listing=subprocess.check_output([SEVEN,'l','-slt','-sccUTF-8',str(archive)]).decode('utf-8').replace('\r\n','\n')
         entries=listing.split('----------\n',1)[-1]
         for name in re.findall(r'^Path = (.+)$',entries,re.M):valid_path(name)
         if 'Symbolic Link = ' in entries or 'Hard Link = ' in entries:raise RuntimeError('Links in archive')
@@ -65,7 +66,6 @@ def prepare():
         shutil.rmtree(R/'source-bootstrap');srczip.unlink()
         for p in (R/'src').rglob('*'):
             if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
-    # The source archive is from our tested r4, including the language/global-settings fixes.
     manager=R/'src/manager/AnimeJaNaiConfEditor'
     p=manager/'Views/MainWindow.axaml'
     replace_once(p,'<CheckBox Grid.Column="0" IsChecked="{Binding Selected}" VerticalAlignment="Center" Margin="0,0,12,0" />',
@@ -78,13 +78,11 @@ def prepare():
         data['keys']['standaloneComponentsNote']=text
         data['translations'][text]='完整便携版已内置组件，无需单独安装或删除；更新请从本项目发布页下载完整程序。'
         dump(p,data)
-    # Build temporary working copies: src/ remains free of bin/obj and test fixtures.
     for name in ('player','manager'):cp(R/'src'/name,R/name)
     for name in ('Manager','Player'):
         dest=R/'tests-generated'/(name.lower()+'-tests');dest.mkdir(parents=True,exist_ok=True)
         for ext in ('cs','csproj'):cp(R/f'tools/language-r3/{name}Tests.{ext}',dest/f'{name}Tests.{ext}')
     (R/'language-evidence').mkdir(exist_ok=True)
-    # Source provenance does not claim the app was rewritten from scratch.
     dump(E/'source-inputs.json',{'ui_bootstrap':LOCK['ui_source'],'workflow_commit':os.environ.get('GITHUB_SHA'),
        'source_files':{p.relative_to(R/'src').as_posix():sha(p) for p in (R/'src').rglob('*') if p.is_file()}})
 
@@ -93,13 +91,12 @@ def stage():
     seed=LOCK.get('runtime_seed')
     if seed:
         for item in seed['assets']:download(item)
-        first=R/'downloads'/seed['assets'][0]['name'];extract(first,R/'seed-unpack')
+        extract(R/'downloads'/seed['assets'][0]['name'],R/'seed-unpack')
         cp(app_root(R/'seed-unpack'),ST);shutil.rmtree(R/'seed-unpack')
         records=json.loads((ST/'build-info/standalone/components.json').read_text(encoding='utf-8'))
     else:
-        base=download(LOCK['bootstrap_core']);extract(base,R/'base-unpack');original=app_root(R/'base-unpack')
-        # Keep the pinned inference stack, models, shaders, defaults and their notices.
-        cp(original,ST);shutil.rmtree(R/'base-unpack');base.unlink()
+        base=download(LOCK['bootstrap_core']);extract(base,R/'base-unpack')
+        cp(app_root(R/'base-unpack'),ST);shutil.rmtree(R/'base-unpack');base.unlink()
         native=download(LOCK['native_and_ui_resources']);extract(native,ST);native.unlink()
         records=[]
         for item in LOCK['components']:
@@ -114,16 +111,14 @@ def stage():
             if not files:raise RuntimeError('Empty component pack')
             records.append({'name':item['id'],'source':item,'files':files})
             shutil.rmtree(temp);archive.unlink()
-    # No leftovers from the upstream controller set; only our maintained scripts run.
+    dump(E/'component-inputs.json',records)
     shutil.rmtree(ST/'portable_config/scripts',ignore_errors=True)
     cp(R/'portable_config',ST/'portable_config')
     cp(R/'animejanai/animejanai.conf',ST/'animejanai/animejanai.conf')
     cp(R/'THIRD_PARTY_LICENSES',ST/'THIRD_PARTY_LICENSES');cp(R/'LICENSE',ST/'LICENSE')
     for folder in ('publish-player','publish-manager','publish-updater'):
         for p in (R/folder).rglob('*'):
-            if p.is_file() and p.suffix.lower() in ('.exe','.dll','.json'):
-                cp(p,ST/p.relative_to(R/folder))
-    # App-local VC runtime, not a requirement to run a separate redistributable installer.
+            if p.is_file() and p.suffix.lower() in ('.exe','.dll','.json'):cp(p,ST/p.relative_to(R/folder))
     candidates=list(Path(r'C:\Program Files\Microsoft Visual Studio\2022').glob('*/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT'))
     if candidates:
         crt=sorted(candidates)[-1]
@@ -131,7 +126,6 @@ def stage():
         dump(E/'vc-runtime.json',{'directory':str(crt),'files':{p.name:sha(p) for p in crt.glob('*.dll')}})
     for p in list(ST.rglob('*')):
         if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
-    # Resolve the modern control bar's icons via Windows' built-in symbols.
     p=ST/'portable_config/scripts/modernx.lua';s=p.read_text(encoding='utf-8')
     s=s.replace("local iconfont = 'fluent-system-icons'","local iconfont = 'Segoe UI Symbol'")
     marker='-- Localization'
@@ -155,7 +149,6 @@ local texts=language[ui_language] or language["en"]'''
     p=ST/'portable_config/scripts/thumbfast.lua';s=p.read_text(encoding='utf-8')
     s=s.replace('local mpv_path = options.mpv_path','local mpv_path = options.mpv_path == "mpv" and mp.command_native({"expand-path", "~~/../mpv.exe"}) or options.mpv_path')
     p.write_text(s,encoding='utf-8')
-    # New installs get the safe key bindings directly; no runtime migration is needed.
     for n in ('input.conf','input-animejanai.conf'):
         p=ST/'portable_config'/n;s=p.read_text(encoding='utf-8')
         s=s.replace('apply-profile upscale-on; script-message aji-slot','script-message aji-slot')
@@ -169,6 +162,8 @@ local texts=language[ui_language] or language["en"]'''
     inspect_payload()
 
 def inspect_payload():
+    files=[p for p in ST.rglob('*') if p.is_file()]
+    dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
        'portable_config/scripts/modernx.lua','portable_config/scripts/thumbfast.lua',
@@ -181,17 +176,36 @@ def inspect_payload():
     models=set(re.findall(r'^chain_\d+_model_\d+_name=(.+)$',conf,re.M))
     for n in models:
         if not (ST/'animejanai/onnx'/(n.strip()+'.onnx')).is_file():raise RuntimeError('Missing preset model: '+n)
+    # Numeric code 426 is named rife_v4.26.onnx by the actual inference shim.
+    # Match every configured model and ensemble variant, not a substring '426'.
+    parser=configparser.ConfigParser(interpolation=None,strict=False);parser.read_string(conf)
+    rife_required=set()
+    for section in parser.values():
+        for k,code in section.items():
+            match=re.fullmatch(r'chain_(\d+)_rife_model',k)
+            if not match:continue
+            code=code.strip()
+            if not code.isdigit() or len(code) not in (2,3,4):raise RuntimeError('Invalid configured RIFE code: '+code)
+            name='rife_v'+code[0]+'.'+code[1:3]
+            if len(code)==4 and code[-1]=='1':name+='_lite'
+            if section.get('chain_'+match[1]+'_rife_ensemble','no').strip().lower() in ('yes','true','1'):name+='_ensemble'
+            rife_required.add(name+'.onnx')
+    for name in rife_required:
+        if not (ST/'animejanai/rife'/name).is_file():raise RuntimeError('Missing configured RIFE file: '+name)
     rife=list((ST/'animejanai/rife').glob('*.onnx'))
-    if not rife or not any('426' in p.name for p in rife):raise RuntimeError('RIFE v426 model is missing')
+    if not rife or not rife_required:raise RuntimeError('Missing RIFE model collection')
     for family in ('75','86','89','120'):
         if not list((ST/'animejanai/inference').glob('nvinfer_builder_resource_sm'+family+'*')):raise RuntimeError('Missing kernel family '+family)
     licenses=[p for p in (ST/'animejanai/inference').iterdir() if 'LICENSE' in p.name.upper()]
-    if not any('TENSORRT' in p.name.upper() for p in licenses) or not any('CUDA' in p.name.upper() for p in licenses):raise RuntimeError('Missing NVIDIA license texts')
-    if any(p.suffix.lower() in FONTS for p in ST.rglob('*') if p.is_file()):raise RuntimeError('Unexpected standalone font file')
-    dump(E/'payload.json',{'required_files':required,'preset_models':sorted(models),'rife_models':len(rife),
+    texts={p.name:p.read_text(encoding='utf-8',errors='replace') for p in licenses if p.is_file()}
+    dump(E/'license-inventory.json',texts)
+    trt=any('TENSORRT' in n.upper() or ('TensorRT' in t and 'AGREEMENT' in t and 'NVIDIA' in t) for n,t in texts.items())
+    cuda=any('CUDA' in n.upper() or ('CUDA' in t and 'AGREEMENT' in t and 'NVIDIA' in t) for n,t in texts.items())
+    if not trt or not cuda:raise RuntimeError('Missing NVIDIA license texts; inspect license-inventory.json')
+    if any(p.suffix.lower() in FONTS for p in files):raise RuntimeError('Unexpected standalone font file')
+    dump(E/'payload.json',{'required_files':required,'preset_models':sorted(models),'rife_models':len(rife),'required_rife_files':sorted(rife_required),
        'license_files':[p.relative_to(ST).as_posix() for p in licenses],
-       'files':len([p for p in ST.rglob('*') if p.is_file()]),'unpacked_bytes':sum(p.stat().st_size for p in ST.rglob('*') if p.is_file()),
-       'gpu_inference_tested':False})
+       'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
 
 def package():
     for name,marker in [('manager-tests.txt','PASS Manager language suite'),('player-tests.txt','PASS Player language suite'),('parser-tests.txt','PASS')]:
@@ -204,25 +218,26 @@ def package():
     dump(info/'provenance.json',{'version':META['version'],'input_commit':os.environ['GITHUB_SHA'],
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,
       'gpu_inference_tested':False,'player_ui_server_tested':False})
-    hashes={p.relative_to(ST).as_posix():sha(p) for p in ST.rglob('*') if p.is_file() and p!=info/'SHA256.json'}
-    dump(info/'SHA256.json',hashes)
+    dump(info/'SHA256.json',{p.relative_to(ST).as_posix():sha(p) for p in ST.rglob('*') if p.is_file() and p!=info/'SHA256.json'})
     archive=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-win-x64-full.7z'
-    # Archiving the contents of a clean app directory, not a patch.
     run(SEVEN,'a','-t7z','-mx=3','-mmt=2','-bd',archive,'.',cwd=ST,stdout=subprocess.DEVNULL)
     run(SEVEN,'t',archive,stdout=subprocess.DEVNULL)
+    archives=[archive]
     if archive.stat().st_size>=2*1024**3:
-        parts=[]
+        archives=[]
         with archive.open('rb') as f:
-            i=1
-            while True:
-                data=f.read(1900*1024**2)
-                if not data:break
-                part=Path(str(archive)+f'.{i:03}');part.write_bytes(data);parts.append(part);i+=1
-        archive.unlink();archives=parts
-    else:archives=[archive]
+            index=1
+            while f.tell()<archive.stat().st_size:
+                part=Path(str(archive)+f'.{index:03}')
+                with part.open('wb') as out:
+                    remaining=1900*1024**2
+                    while remaining:
+                        data=f.read(min(remaining,1024*1024))
+                        if not data:break
+                        out.write(data);remaining-=len(data)
+                archives.append(part);index+=1
+        archive.unlink()
     dump(DIST/'artifacts.json',[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
-    # Test what users actually extract. Remove the staging tree first so it cannot
-    # accidentally supply any files to this independent installation.
     shutil.rmtree(ST);extract(archives[0],R/'clean-install')
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
@@ -230,63 +245,16 @@ def package():
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
         for folder in ('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES'):
             for p in (R/folder).rglob('*'):
-                if p.is_file() and not any(x in ('bin','obj','__pycache__','.git') for x in p.relative_to(R/folder).parts) and p.suffix.lower() not in FONTS:
-                    z.write(p,p.relative_to(R).as_posix())
+                if p.is_file() and not any(x in ('bin','obj','__pycache__','.git') for x in p.relative_to(R/folder).parts) and p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
         for n in ('LICENSE','release.json','docs/standalone.md'):z.write(R/n,n)
-    files=archives+[sourcezip]
-    (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in files),encoding='utf-8')
+    (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[sourcezip]),encoding='utf-8')
     cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')
     print('FULL PACKAGE VERIFIED',[(p.name,p.stat().st_size) for p in archives],flush=True)
 
 def api(endpoint,payload=None,method=None):
     cmd=['gh','api',endpoint]
-    if payload is not None:
-        cmd+=['--method',method or 'POST','--input','-']
-        result=subprocess.check_output(cmd,input=json.dumps(payload).encode())
+    if payload is not None:result=subprocess.check_output(cmd+['--method',method or 'POST','--input','-'],input=json.dumps(payload).encode())
     else:result=subprocess.check_output(cmd)
     return json.loads(result)
 
-def publish():
-    for line in (DIST/'SHA256SUMS.txt').read_text().splitlines():
-        h,n=line.split('  ',1)
-        if sha(DIST/n)!=h:raise RuntimeError('Publication hash mismatch '+n)
-    fresh=json.loads((E/'fresh-install/results.json').read_text())
-    if not all(x['passed'] for x in fresh):raise RuntimeError('Fresh installation failed')
-    head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
-    if head!=os.environ['GITHUB_SHA']:raise RuntimeError('Main changed during build; refusing a stale source import/release')
-    # Save complete UI sources and switch future packaging to our own runtime seed.
-    LOCK['runtime_seed']={'assets':json.loads((DIST/'artifacts.json').read_text()),'version':META['version']}
-    dump(H/'dependencies.json',LOCK)
-    readme=R/'README.md';text=readme.read_text(encoding='utf-8')
-    note=f'\n> **完整便携版 {META["version"]}**：[下载独立完整包](https://github.com/{REPO}/releases/tag/{META["tag"]})。解压到空目录即可使用，不再下载原项目或叠加覆盖包。包含程序、运行库、模型、语言和预设。[说明与验证范围](docs/standalone.md)。下方 r2/r3/r4 覆盖说明仅作为历史记录。\n'
-    first,rest=text.split('\n',1);readme.write_text(first+'\n'+note+'\n'+rest,encoding='utf-8')
-    # Commit only reviewed build inputs, with no executable/font/runtime binaries.
-    paths=[p for p in (R/'src').rglob('*') if p.is_file() and not any(x in ('bin','obj','.git') for x in p.relative_to(R/'src').parts)]
-    paths+=[H/'dependencies.json',readme]
-    tree=[]
-    for p in paths:
-        if p.suffix.lower() in FONTS or p.suffix.lower() in ('.exe','.dll'):raise RuntimeError('Binary in UI source import: '+str(p))
-        data=p.read_bytes()
-        blob=api(f'repos/{REPO}/git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})['sha']
-        tree.append({'path':p.relative_to(R).as_posix(),'mode':'100644','type':'blob','sha':blob})
-    base_tree=api(f'repos/{REPO}/git/commits/{head}')['tree']['sha']
-    newtree=api(f'repos/{REPO}/git/trees',{'base_tree':base_tree,'tree':tree})['sha']
-    commit=api(f'repos/{REPO}/git/commits',{'message':'完整便携版：保存已验证的独立 UI 源码、固定本仓库运行库种子与下载入口','tree':newtree,'parents':[head]})['sha']
-    # Publish a draft by ID; do not query a non-existent draft tag.
-    old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==META['tag']]
-    if old:raise RuntimeError('Version already exists; no overwriting published releases')
-    notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')+'\n\n构建来源：`'+head+'`；源码保存提交：`'+commit+'`。\n'
-    rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,'name':f'AnimeJaNai-zh-CN {META["version"]} 完整便携版','body':notes,'draft':True,'prerelease':META['prerelease']})
-    # Upload only finished deliverables, not intermediate test recordings.
-    run('gh','release','upload',META['tag'],'-R',REPO,*[p for p in DIST.iterdir() if p.is_file()])
-    uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
-    for item in LOCK['runtime_seed']['assets']:
-        found=next(a for a in uploaded['assets'] if a['name']==item['name'])
-        if found.get('digest')!='sha256:'+item['sha256']:raise RuntimeError('Uploaded full archive has the wrong hash')
-    api(f'repos/{REPO}/git/refs/heads/main',{'sha':commit,'force':False},'PATCH')
-    api(f'repos/{REPO}/releases/{rel["id"]}',{'draft':False},'PATCH')
-    dump(DIST/'publication.json',{'release_id':rel['id'],'source_commit':commit,'build_commit':head,'url':rel['html_url']})
-    print('PUBLISHED',META['tag'],commit)
-
-if __name__=='__main__':
-    {'prepare':prepare,'stage':stage,'package':package,'publish':publish}[sys.argv[1]]()
+if __name__=='__main__':{'prepare':prepare,'stage':stage,'package':package}[sys.argv[1]]()
