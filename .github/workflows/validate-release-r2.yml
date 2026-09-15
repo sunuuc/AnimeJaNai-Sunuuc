@@ -1,90 +1,11 @@
-name: Validate and package Chinese r2
+# The original r2 pipeline is retained in git history; no new overlay is produced.
+name: Legacy r2 archive (disabled)
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/validate-release-r2.yml'
-      - 'tools/stage_r2.py'
-      - 'tests/test_windows_r2.py'
-      - 'tests/test_stats.lua'
-      - 'tests/test_controls.lua'
-      - 'tests/test_smoke.lua'
-      - 'tests/test_script_suite.py'
-      - 'portable_config/scripts/animejanaistats.lua'
-      - 'portable_config/scripts/animejanai_session.lua'
-      - 'portable_config/scripts/animejanai_engine_monitor.lua'
-      - 'portable_config/scripts/animejanai_update.lua'
 permissions:
   contents: read
-  actions: read
-concurrency:
-  group: chinese-r2-validation
-  cancel-in-progress: false
 jobs:
-  validate:
-    runs-on: windows-2022
-    timeout-minutes: 20
-    env:
-      PYTHONUTF8: '1'
+  notice:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: the-database/mpv-AnimeJaNai
-          ref: 2151166dec7945d161f45cea5e8c5724731fb949
-          path: upstream
-          persist-credentials: false
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.x'
-      - name: Stage verified native and UI builds; apply reviewed updater changes
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python tools/stage_r2.py prepare
-      - name: Updater migration and component-selection regressions
-        run: |
-          python upstream/tests/updater-regressions/generate.py updater-tests
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project updater-tests/Checks.csproj -c Release 2>&1 | Tee-Object stage/build-info/updater-tests.txt
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Build reviewed updater
-        run: |
-          dotnet publish upstream/AnimeJaNaiUpdater/AnimeJaNaiUpdater.csproj -c Release -r win-x64 --self-contained true -p:InformationalVersion=3.6.0-zh-CN-r2 -o updater-output
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item updater-output/AnimeJaNaiUpdater.exe stage/AnimeJaNaiUpdater.exe
-          & stage/AnimeJaNaiUpdater.exe --check | Tee-Object stage/build-info/updater-check.txt
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Select-String -Path stage/build-info/updater-check.txt -Pattern 'MANUAL_UPDATE')) { throw 'Incorrect update channel' }
-      - name: Windows native, Lua and external-playlist regressions
-        run: |
-          Start-Service AudioEndpointBuilder
-          Start-Service Audiosrv
-          python tests/test_windows_r2.py stage stage/build-info/runtime-r2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Packaged controller logic and real Lua API smoke test
-        run: python tests/test_script_suite.py stage stage/build-info/runtime-r2
-      - name: Package and verify every ZIP entry
-        run: python tools/stage_r2.py finish
-      - uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: Chinese-r2-verified-package
-          path: dist/
-          if-no-files-found: error
-          retention-days: 14
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Chinese-r2-validation-evidence
-          path: |
-            stage/build-info/runtime-r2/*.log
-            stage/build-info/runtime-r2/results.json
-            stage/build-info/runtime-r2/scripts-results.json
-            stage/build-info/updater-tests.txt
-            stage/build-info/updater-check.txt
-            stage/build-info/provenance.json
-          if-no-files-found: warn
-          retention-days: 14
+      - run: echo 'Use standalone.yml for the complete portable distribution.'

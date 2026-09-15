@@ -1,0 +1,92 @@
+name: Standalone complete portable release
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        type: boolean
+        description: Publish the verified complete package
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/standalone.yml'
+      - 'release.json'
+      - 'src/**'
+      - 'portable_config/**'
+      - 'animejanai/**'
+      - 'tools/standalone/**'
+      - 'tools/language-r3/**'
+      - 'tests/**'
+      - 'docs/standalone.md'
+permissions:
+  contents: write
+concurrency:
+  group: animejanai-standalone
+  cancel-in-progress: false
+jobs:
+  full:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.x'}
+      - name: Prepare independently maintained UI sources
+        run: python tools/standalone/build.py prepare
+      - name: Verify Chinese, language settings, presets and external argument parser
+        run: |
+          dotnet run --project player/tests/ScopedCommandLine -c Release 2>&1 | Tee-Object language-evidence/parser-tests.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests-generated/manager-tests/ManagerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/manager-tests.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests-generated/player-tests/PlayerTests.csproj -c Release -- language-evidence 2>&1 | Tee-Object language-evidence/player-tests.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile self-contained Windows player, manager and offline component tool
+        run: |
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-1.0.0 -o publish-player
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-1.0.0 -o publish-manager
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish tools/standalone/Updater.csproj -c Release -o publish-updater
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Assemble complete runtime, models, defaults and licenses
+        run: python tools/standalone/build.py stage
+      - name: CPU, FPS, external playlist/subtitle and controller regressions
+        run: |
+          Start-Service AudioEndpointBuilder
+          Start-Service Audiosrv
+          python tests/test_windows_r2.py stage complete-evidence/runtime
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/test_script_suite.py stage complete-evidence/runtime
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Package, extract into an empty directory and test the exact delivered files
+        run: python tools/standalone/build.py package
+      - name: Publish complete deliverables and save their source; no upstream overlay release
+        if: ${{ success() && ((github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')) || (github.event_name == 'workflow_dispatch' && inputs.publish)) }}
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: python tools/standalone/publish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: standalone-validation
+          path: |
+            complete-evidence/**/*.json
+            complete-evidence/**/*.log
+            language-evidence/*.txt
+            language-evidence/*.png
+            dist/*.json
+            dist/*.txt
+            dist/RELEASE.md
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ success() && !(github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')) && !inputs.publish }}
+        with:
+          name: standalone-complete-package
+          path: dist/*full.7z*
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3
