@@ -22,7 +22,7 @@ permissions:
   contents: write
 concurrency:
   group: animejanai-standalone
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   full:
     runs-on: windows-2022
