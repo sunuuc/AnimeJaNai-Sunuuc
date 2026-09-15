@@ -1,18 +1,30 @@
-"""Validate the exact unpacked full application without any prior player/.NET install."""
+"""Validate exact unpacked deliverables without using a previous player/.NET install."""
 from pathlib import Path
-import ctypes, json, os, subprocess, sys, time, uuid
+import ctypes as C
+from ctypes import wintypes as W
+import json, os, subprocess, sys, time, traceback, uuid
+from runtime_probe import verify_process
+
 APP=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(parents=True,exist_ok=True)
 ROOT=Path(__file__).resolve().parents[2]
 results=[]
 def record(name,fn):
     try:detail=fn() or {};results.append({'case':name,'passed':True,**detail})
-    except Exception as e:results.append({'case':name,'passed':False,'error':repr(e)})
+    except Exception as e:
+        (OUT/(name+'-failure.log')).write_text(traceback.format_exc(),encoding='utf-8')
+        results.append({'case':name,'passed':False,'error':repr(e)})
     print(json.dumps(results[-1],ensure_ascii=False),flush=True)
 ENV=os.environ.copy();empty=OUT/'no-dotnet';empty.mkdir(exist_ok=True)
 ENV.update({'DOTNET_ROOT':str(empty),'DOTNET_ROOT_X64':str(empty),'DOTNET_MULTILEVEL_LOOKUP':'0',
     'DOTNET_BUNDLE_EXTRACT_BASE_DIR':str(OUT/'bundles')})
 for key in ('MPVNET_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR'):ENV.pop(key,None)
 ENV['PATH']=str(APP)+os.pathsep+str(APP/'animejanai/inference')+os.pathsep+os.environ.get('SystemRoot',r'C:\Windows')+r'\System32'
+
+def stop(proc):
+    if proc.poll() is None:
+        proc.terminate()
+        try:proc.wait(5)
+        except subprocess.TimeoutExpired:proc.kill();proc.wait(5)
 
 def components():
     cp=subprocess.run([str(APP/'AnimeJaNaiUpdater.exe'),'--components','--json'],env=ENV,cwd=OUT,capture_output=True,timeout=40)
@@ -25,6 +37,7 @@ def components():
 
 def own_channel():
     cp=subprocess.run([str(APP/'AnimeJaNaiUpdater.exe'),'--check'],env=ENV,cwd=OUT,capture_output=True,timeout=30)
+    (OUT/'update-channel.log').write_bytes(cp.stdout+cp.stderr)
     assert cp.returncode==0 and b'sunuuc/AnimeJaNai-zh-CN/releases' in cp.stdout and b'the-database' not in cp.stdout
     return {'upstream_install_required':False}
 
@@ -38,71 +51,98 @@ def production_scripts():
     assert b'stack traceback' not in log.lower(),log[-7000:]
     return {'cpu_playback':True,'gpu_inference':False}
 
+class JsonPipe:
+    """Bounded IPC reads: a dead frontend must fail rather than hang the job."""
+    def __init__(self,fp,proc):
+        import msvcrt
+        self.fp,self.proc,self.buffer,self.seq=fp,proc,b'',0
+        self.handle=W.HANDLE(msvcrt.get_osfhandle(fp.fileno()))
+        self.peek=C.WinDLL('kernel32',use_last_error=True).PeekNamedPipe
+        self.peek.argtypes=[W.HANDLE,C.c_void_p,W.DWORD,C.POINTER(W.DWORD),C.POINTER(W.DWORD),C.POINTER(W.DWORD)]
+        self.peek.restype=W.BOOL
+    def get(self,name):
+        self.seq+=1
+        self.fp.write((json.dumps({'command':['get_property',name],'request_id':self.seq})+'\n').encode())
+        until=time.monotonic()+10
+        while time.monotonic()<until:
+            while b'\n' in self.buffer:
+                line,self.buffer=self.buffer.split(b'\n',1)
+                data=json.loads(line)
+                if data.get('request_id')==self.seq:
+                    assert data.get('error')=='success',data
+                    return data.get('data')
+            if self.proc.poll() is not None:raise RuntimeError('Player exited during IPC')
+            available=W.DWORD()
+            if not self.peek(self.handle,None,0,None,C.byref(available),None):
+                raise C.WinError(C.get_last_error())
+            if available.value:
+                self.buffer+=self.fp.read(min(available.value,65536))
+                if len(self.buffer)>1024*1024:raise RuntimeError('Oversized IPC response')
+            else:time.sleep(.02)
+        raise TimeoutError('No IPC response for '+name)
+
 def frontend():
     pipe=r'\\.\pipe\ajn-full-'+uuid.uuid4().hex
     args=[str(APP/'mpvnet.exe'),'--config-dir='+str(APP/'portable_config'),'--vo=null','--ao=null',
         '--hwdec=no','--vf=','--idle=yes','--input-ipc-server='+pipe,'--log-file='+str(OUT/'frontend.mpv.log'),str(sample)]
-    proc=subprocess.Popen(args,env=ENV,cwd=OUT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-    f=None
-    try:
-        end=time.monotonic()+35
-        while time.monotonic()<end:
-            assert proc.poll() is None,('Player exited',proc.returncode)
-            try:f=open(pipe,'r+b',buffering=0);break
-            except OSError:time.sleep(.15)
-        assert f is not None,'No IPC from self-contained player'
-        def get(name):
-            f.write((json.dumps({'command':['get_property',name],'request_id':72})+'\n').encode())
-            while True:
-                d=json.loads(f.readline())
-                if d.get('request_id')==72:
-                    assert d.get('error')=='success',d
-                    return d.get('data')
-        time.sleep(1)
-        assert get('vo-presented-frame-count')>0
-        assert Path(get('path')).name==sample.name
+    with (OUT/'frontend.console.log').open('wb') as console:
+        proc=subprocess.Popen(args,env=ENV,cwd=OUT,stdout=console,stderr=subprocess.STDOUT)
+        f=None
+        try:
+            end=time.monotonic()+35
+            while time.monotonic()<end:
+                assert proc.poll() is None,('Player exited',proc.returncode)
+                try:f=open(pipe,'r+b',buffering=0);break
+                except OSError:time.sleep(.15)
+            assert f is not None,'No IPC from self-contained player'
+            ipc=JsonPipe(f,proc)
+            end=time.monotonic()+10
+            while time.monotonic()<end:
+                n0=ipc.get('vo-presented-frame-count')
+                if n0>0:break
+                time.sleep(.1)
+            else:raise RuntimeError('No video frames from the standalone player')
+            assert Path(ipc.get('path')).name==sample.name
+            time.sleep(.4)
+            assert ipc.get('vo-presented-frame-count')>n0,'Video stopped advancing'
+            detail=verify_process(proc.pid,APP/'mpvnet.exe',APP,OUT/'bundles',OUT/'self-contained-player-modules.json')
+            return {**detail,'started_outside_install_directory':True,'video_frames_advancing':True}
+        finally:
+            if f:f.close()
+            stop(proc)
 
-        # The test environment deliberately points DOTNET_ROOT at an empty
-        # directory and removes dotnet from PATH. Reaching a working IPC/video
-        # loop therefore already proves the delivered executable can start
-        # without an installed .NET runtime. Inspect loaded modules as an
-        # additional guard against accidentally borrowing the runner's SDK.
-        # .NET single-file native libraries are allowed to be bundle-loaded in
-        # ways that are not always exposed as a separate coreclr.dll module, so
-        # do not require coreclr.dll to appear in this diagnostic list.
-        ps=Path(os.environ['SystemRoot'])/'System32/WindowsPowerShell/v1.0/powershell.exe'
-        cp=subprocess.run([str(ps),'-NoProfile','-Command',f'(Get-Process -Id {proc.pid}).Modules.FileName | ConvertTo-Json -Compress'],capture_output=True,timeout=15)
-        assert cp.returncode==0,cp.stderr
-        raw=cp.stdout.decode('utf-8-sig').strip()
-        parsed=json.loads(raw) if raw else []
-        mods=[parsed] if isinstance(parsed,str) else (parsed or [])
-        mods=[str(m) for m in mods]
-        lower=[m.lower() for m in mods]
-        forbidden=[m for m in mods if 'program files\\dotnet' in m.lower() or 'hostedtoolcache' in m.lower()]
-        assert not forbidden,forbidden
-        clrs=[m for m in mods if m.lower().endswith('coreclr.dll')]
-        (OUT/'self-contained-modules.json').write_text(json.dumps({
-            'modules':mods,'coreclr_modules':clrs,'forbidden_external_dotnet_modules':forbidden,
-            'dotnet_root':ENV['DOTNET_ROOT'],'path':ENV['PATH']},indent=2),encoding='utf-8')
-        return {'coreclr_modules':clrs,'external_dotnet_modules':0,
-                'dotnet_root_forced_empty':True,'started_outside_install_directory':True}
-    finally:
-        if f:f.close()
-        if proc.poll() is None:
-            proc.terminate()
-            try:proc.wait(5)
-            except subprocess.TimeoutExpired:proc.kill();proc.wait(5)
+def windows_for(pid):
+    user=C.WinDLL('user32',use_last_error=True)
+    callback_type=C.WINFUNCTYPE(W.BOOL,W.HWND,W.LPARAM)
+    user.EnumWindows.argtypes=[callback_type,W.LPARAM];user.EnumWindows.restype=W.BOOL
+    user.GetWindowThreadProcessId.argtypes=[W.HWND,C.POINTER(W.DWORD)];user.GetWindowThreadProcessId.restype=W.DWORD
+    user.IsWindowVisible.argtypes=[W.HWND];user.IsWindowVisible.restype=W.BOOL
+    user.GetWindowTextW.argtypes=[W.HWND,W.LPWSTR,C.c_int];user.GetWindowTextW.restype=C.c_int
+    windows=[]
+    @callback_type
+    def visit(hwnd,param):
+        owner=W.DWORD();user.GetWindowThreadProcessId(hwnd,C.byref(owner))
+        if owner.value==pid and user.IsWindowVisible(hwnd):
+            text=C.create_unicode_buffer(2048);user.GetWindowTextW(hwnd,text,len(text))
+            windows.append(text.value)
+        return True
+    if not user.EnumWindows(visit,0):raise C.WinError(C.get_last_error())
+    return windows
 
 def manager():
-    proc=subprocess.Popen([str(APP/'AnimeJaNaiManager.exe')],env=ENV,cwd=OUT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-    try:
-        time.sleep(5);assert proc.poll() is None,('Manager exited',proc.returncode)
-        return {'launched':True,'external_dotnet_disabled':True}
-    finally:
-        if proc.poll() is None:
-            proc.terminate()
-            try:proc.wait(5)
-            except subprocess.TimeoutExpired:proc.kill();proc.wait(5)
+    with (OUT/'manager.console.log').open('wb') as console:
+        proc=subprocess.Popen([str(APP/'AnimeJaNaiManager.exe')],env=ENV,cwd=OUT,stdout=console,stderr=subprocess.STDOUT)
+        try:
+            end=time.monotonic()+20;windows=[]
+            while time.monotonic()<end:
+                assert proc.poll() is None,('Manager exited',proc.returncode)
+                windows=windows_for(proc.pid)
+                if any('AnimeJaNai' in title for title in windows):break
+                time.sleep(.2)
+            else:raise RuntimeError('Manager did not create its visible main window: '+repr(windows))
+            detail=verify_process(proc.pid,APP/'AnimeJaNaiManager.exe',APP,OUT/'bundles',OUT/'self-contained-manager-modules.json')
+            return {**detail,'launched':True,'visible_windows':windows,'external_dotnet_disabled':True}
+        finally:stop(proc)
 
 record('offline-included-components',components)
 record('own-update-channel',own_channel)

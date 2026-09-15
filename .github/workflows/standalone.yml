@@ -32,6 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
+      - name: Test static and bundled runtime verification; reject external runtime dependencies
+        run: |
+          New-Item -ItemType Directory -Force complete-evidence | Out-Null
+          python tools/standalone/test_runtime_probe.py 2>&1 | Tee-Object complete-evidence/runtime-verifier-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/setup-dotnet@v4
         with: {dotnet-version: '10.x'}
       - name: Prepare independently maintained UI sources
