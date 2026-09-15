@@ -201,18 +201,7 @@ if (sub_render_mode or ''):lower() == 'gpu' then
     apply_subs_gpu()
 end
 
-local current_slot = default_slot
-mp.register_script_message('aji-slot', function(slot)
-    local n = tonumber(slot)
-    if n then
-        current_slot = n
-    end
-end)
-mp.register_event('file-loaded', function()
-    if current_slot then
-        msg.info('正在应用配置槽位 ' .. current_slot)
-        mp.commandv('script-message', 'aji-slot', tostring(current_slot))
-    end
-end)
+-- Slot selection is owned by animejanai_slot.lua before the first frame.
+-- Never apply a second slot here on file-loaded.
 
 check_components(backend, rife_configured)
