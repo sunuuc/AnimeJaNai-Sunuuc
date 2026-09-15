@@ -126,6 +126,8 @@ def stage():
         dump(E/'vc-runtime.json',{'directory':str(crt),'files':{p.name:sha(p) for p in crt.glob('*.dll')}})
     for p in list(ST.rglob('*')):
         if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
+    from vendor_notices import collect
+    collect(ST,E)
     p=ST/'portable_config/scripts/modernx.lua';s=p.read_text(encoding='utf-8')
     s=s.replace("local iconfont = 'fluent-system-icons'","local iconfont = 'Segoe UI Symbol'")
     marker='-- Localization'
@@ -176,8 +178,6 @@ def inspect_payload():
     models=set(re.findall(r'^chain_\d+_model_\d+_name=(.+)$',conf,re.M))
     for n in models:
         if not (ST/'animejanai/onnx'/(n.strip()+'.onnx')).is_file():raise RuntimeError('Missing preset model: '+n)
-    # Numeric code 426 is named rife_v4.26.onnx by the actual inference shim.
-    # Match every configured model and ensemble variant, not a substring '426'.
     parser=configparser.ConfigParser(interpolation=None,strict=False);parser.read_string(conf)
     rife_required=set()
     for section in parser.values():
