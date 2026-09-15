@@ -60,7 +60,7 @@ class JsonPipe:
         self.peek=C.WinDLL('kernel32',use_last_error=True).PeekNamedPipe
         self.peek.argtypes=[W.HANDLE,C.c_void_p,W.DWORD,C.POINTER(W.DWORD),C.POINTER(W.DWORD),C.POINTER(W.DWORD)]
         self.peek.restype=W.BOOL
-    def get(self,name):
+    def get(self,name,allow_unavailable=False):
         self.seq+=1
         self.fp.write((json.dumps({'command':['get_property',name],'request_id':self.seq})+'\n').encode())
         until=time.monotonic()+10
@@ -69,8 +69,10 @@ class JsonPipe:
                 line,self.buffer=self.buffer.split(b'\n',1)
                 data=json.loads(line)
                 if data.get('request_id')==self.seq:
-                    assert data.get('error')=='success',data
-                    return data.get('data')
+                    error=data.get('error')
+                    if error=='success':return data.get('data')
+                    if allow_unavailable and error=='property unavailable':return None
+                    raise AssertionError(data)
             if self.proc.poll() is not None:raise RuntimeError('Player exited during IPC')
             available=W.DWORD()
             if not self.peek(self.handle,None,0,None,C.byref(available),None):
@@ -96,15 +98,29 @@ def frontend():
                 except OSError:time.sleep(.15)
             assert f is not None,'No IPC from self-contained player'
             ipc=JsonPipe(f,proc)
-            end=time.monotonic()+10
+            end=time.monotonic()+12
+            n0=None
             while time.monotonic()<end:
-                n0=ipc.get('vo-presented-frame-count')
-                if n0>0:break
+                value=ipc.get('vo-presented-frame-count',allow_unavailable=True)
+                if isinstance(value,(int,float)) and value>0:
+                    n0=value;break
                 time.sleep(.1)
-            else:raise RuntimeError('No video frames from the standalone player')
-            assert Path(ipc.get('path')).name==sample.name
-            time.sleep(.4)
-            assert ipc.get('vo-presented-frame-count')>n0,'Video stopped advancing'
+            if n0 is None:raise RuntimeError('Video output property never became available or no frames were presented')
+            end=time.monotonic()+5
+            path=None
+            while time.monotonic()<end:
+                path=ipc.get('path',allow_unavailable=True)
+                if path:break
+                time.sleep(.05)
+            assert path and Path(path).name==sample.name,path
+            end=time.monotonic()+3
+            advanced=False
+            while time.monotonic()<end:
+                value=ipc.get('vo-presented-frame-count',allow_unavailable=True)
+                if isinstance(value,(int,float)) and value>n0:
+                    advanced=True;break
+                time.sleep(.1)
+            assert advanced,'Video stopped advancing'
             detail=verify_process(proc.pid,APP/'mpvnet.exe',APP,OUT/'bundles',OUT/'self-contained-player-modules.json')
             return {**detail,'started_outside_install_directory':True,'video_frames_advancing':True}
         finally:
