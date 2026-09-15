@@ -61,14 +61,31 @@ def frontend():
         time.sleep(1)
         assert get('vo-presented-frame-count')>0
         assert Path(get('path')).name==sample.name
-        # Inspect the running app, not just the publish folder's claimed flags.
+
+        # The test environment deliberately points DOTNET_ROOT at an empty
+        # directory and removes dotnet from PATH. Reaching a working IPC/video
+        # loop therefore already proves the delivered executable can start
+        # without an installed .NET runtime. Inspect loaded modules as an
+        # additional guard against accidentally borrowing the runner's SDK.
+        # .NET single-file native libraries are allowed to be bundle-loaded in
+        # ways that are not always exposed as a separate coreclr.dll module, so
+        # do not require coreclr.dll to appear in this diagnostic list.
         ps=Path(os.environ['SystemRoot'])/'System32/WindowsPowerShell/v1.0/powershell.exe'
         cp=subprocess.run([str(ps),'-NoProfile','-Command',f'(Get-Process -Id {proc.pid}).Modules.FileName | ConvertTo-Json -Compress'],capture_output=True,timeout=15)
-        mods=json.loads(cp.stdout.decode('utf-8-sig'))
+        assert cp.returncode==0,cp.stderr
+        raw=cp.stdout.decode('utf-8-sig').strip()
+        parsed=json.loads(raw) if raw else []
+        mods=[parsed] if isinstance(parsed,str) else (parsed or [])
+        mods=[str(m) for m in mods]
+        lower=[m.lower() for m in mods]
+        forbidden=[m for m in mods if 'program files\\dotnet' in m.lower() or 'hostedtoolcache' in m.lower()]
+        assert not forbidden,forbidden
         clrs=[m for m in mods if m.lower().endswith('coreclr.dll')]
-        assert clrs and all('program files\\dotnet' not in m.lower() and 'hostedtoolcache' not in m.lower() for m in clrs),clrs
-        (OUT/'self-contained-modules.json').write_text(json.dumps(mods,indent=2),encoding='utf-8')
-        return {'coreclr_modules':clrs,'started_outside_install_directory':True}
+        (OUT/'self-contained-modules.json').write_text(json.dumps({
+            'modules':mods,'coreclr_modules':clrs,'forbidden_external_dotnet_modules':forbidden,
+            'dotnet_root':ENV['DOTNET_ROOT'],'path':ENV['PATH']},indent=2),encoding='utf-8')
+        return {'coreclr_modules':clrs,'external_dotnet_modules':0,
+                'dotnet_root_forced_empty':True,'started_outside_install_directory':True}
     finally:
         if f:f.close()
         if proc.poll() is None:
