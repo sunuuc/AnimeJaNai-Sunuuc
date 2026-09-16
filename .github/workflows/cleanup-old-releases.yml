@@ -13,27 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove Ctrl+U release-page update behavior
+      - name: Remove Ctrl+U release-page behavior
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
           import json, re
-
           root = Path('.')
 
-          # Remove the shortcut/menu command from both managed input files.
           for rel in ('portable_config/input.conf', 'portable_config/input-animejanai.conf'):
               p = root / rel
               lines = p.read_text(encoding='utf-8-sig').splitlines()
-              lines = [line for line in lines if 'animejanai-update' not in line]
-              p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+              p.write_text('\n'.join(line for line in lines if 'animejanai-update' not in line) + '\n', encoding='utf-8')
 
-          # The script existed only to open GitHub Releases; remove it completely.
           (root / 'portable_config/scripts/animejanai_update.lua').unlink(missing_ok=True)
 
-          # Keep the helper executable only for local component inventory and file verification.
           updater = root / 'tools/standalone/Updater.cs'
           updater.write_text(r'''using System.Management;
           using System.Text.Json;
@@ -76,29 +71,14 @@ jobs:
                       {
                           string relative = entry.GetProperty("path").GetString()!;
                           string file = Path.GetFullPath(Path.Combine(root, relative));
-                          if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
-                              throw new InvalidDataException("Invalid component path");
+                          if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Invalid component path");
                           long size = entry.GetProperty("bytes").GetInt64();
                           bytes += size;
                           installed &= File.Exists(file) && new FileInfo(file).Length == size;
                       }
-                      packs.Add(new
-                      {
-                          name = id,
-                          bytes,
-                          installed,
-                          recommended = id == "rife" || (nvidia && id == "trt-runtime"),
-                          preselect = installed
-                      });
+                      packs.Add(new { name = id, bytes, installed, recommended = id == "rife" || (nvidia && id == "trt-runtime"), preselect = installed });
                   }
-                  Console.WriteLine(JsonSerializer.Serialize(new
-                  {
-                      gpu = new { name, nvidia },
-                      packs,
-                      version_mismatch = (string?)null,
-                      distribution = "full-portable",
-                      offline = true
-                  }));
+                  Console.WriteLine(JsonSerializer.Serialize(new { gpu = new { name, nvidia }, packs, version_mismatch = (string?)null, distribution = "full-portable", offline = true }));
                   return 0;
               }
 
@@ -108,20 +88,12 @@ jobs:
                   var bad = new List<string>();
                   foreach (var p in doc.RootElement.EnumerateObject())
                   {
-                      if (p.Name.EndsWith(".conf", StringComparison.OrdinalIgnoreCase) ||
-                          p.Name.EndsWith("interface-language.json", StringComparison.OrdinalIgnoreCase))
-                          continue;
+                      if (p.Name.EndsWith(".conf", StringComparison.OrdinalIgnoreCase) || p.Name.EndsWith("interface-language.json", StringComparison.OrdinalIgnoreCase)) continue;
                       string file = Path.GetFullPath(Path.Combine(root, p.Name));
-                      if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
-                          throw new InvalidDataException("Invalid manifest path");
-                      if (!File.Exists(file))
-                      {
-                          bad.Add(p.Name);
-                          continue;
-                      }
+                      if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Invalid manifest path");
+                      if (!File.Exists(file)) { bad.Add(p.Name); continue; }
                       using var f = File.OpenRead(file);
-                      if (!Convert.ToHexString(SHA256.HashData(f)).Equals(p.Value.GetString(), StringComparison.OrdinalIgnoreCase))
-                          bad.Add(p.Name);
+                      if (!Convert.ToHexString(SHA256.HashData(f)).Equals(p.Value.GetString(), StringComparison.OrdinalIgnoreCase)) bad.Add(p.Name);
                   }
                   Console.WriteLine(JsonSerializer.Serialize(new { ok = bad.Count == 0, failed = bad }));
                   return bad.Count == 0 ? 0 : 1;
@@ -137,13 +109,11 @@ jobs:
           }
           ''', encoding='utf-8')
 
-          # No build-time recreation or relabeling of the removed command.
           build = root / 'tools/standalone/build.py'
           s = build.read_text(encoding='utf-8')
           s = s.replace("        s=s.replace('#menu: AnimeJaNai > 安装更新','#menu: AnimeJaNai > 检查本项目更新')\n", '')
           build.write_text(s, encoding='utf-8')
 
-          # Publishing must not inject release/history banners into README.
           publish = root / 'tools/standalone/publish.py'
           s = publish.read_text(encoding='utf-8')
           s = re.sub(
@@ -156,61 +126,34 @@ jobs:
               raise SystemExit('publish.py README injection removal failed')
           publish.write_text(s, encoding='utf-8')
 
-          # Remove the obsolete shortcut from the standalone notes as well.
           doc = root / 'docs/standalone.md'
-          s = doc.read_text(encoding='utf-8')
-          s = s.replace('Ctrl+U 打开本仓库发布页，不会安装上游整包。', '')
+          s = doc.read_text(encoding='utf-8').replace('Ctrl+U 打开本仓库发布页，不会安装上游整包。', '')
           doc.write_text(s, encoding='utf-8')
 
-          # Ship the program fix as 1.0.1 rather than mutating the existing binary release.
           release = root / 'release.json'
           meta = json.loads(release.read_text(encoding='utf-8'))
           meta['version'] = '1.0.1'
           meta['tag'] = 'standalone-v1.0.1'
           release.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          workflow = root / '.github/workflows/standalone.yml'
-          s = workflow.read_text(encoding='utf-8')
-          s = s.replace('full-1.0.0', 'full-1.0.1')
-          marker = "      - name: Test static and bundled runtime verification; reject external runtime dependencies\n"
-          check = "      - name: Verify release-page shortcut is absent\n        run: python tests/test_no_release_shortcut.py\n"
-          if check not in s:
-              if marker not in s:
-                  raise SystemExit('standalone workflow insertion point not found')
-              s = s.replace(marker, check + marker, 1)
-          workflow.write_text(s, encoding='utf-8')
-
           test = root / 'tests/test_no_release_shortcut.py'
           test.write_text(r'''from pathlib import Path
-
           root = Path(__file__).resolve().parents[1]
-
           for rel in ("portable_config/input.conf", "portable_config/input-animejanai.conf"):
               text = (root / rel).read_text(encoding="utf-8-sig").lower()
               assert "animejanai-update" not in text, rel
               assert "ctrl+u" not in text, rel
-
           assert not (root / "portable_config/scripts/animejanai_update.lua").exists()
-
           updater = (root / "tools/standalone/Updater.cs").read_text(encoding="utf-8")
           for token in ("--open-releases", "MANUAL_UPDATE", "github.com/sunuuc/AnimeJaNai-zh-CN/releases"):
               assert token not in updater, token
-
           publish = (root / "tools/standalone/publish.py").read_text(encoding="utf-8")
           assert "readme=R/'README.md'" not in publish
           print("release-page shortcut absent")
           ''', encoding='utf-8')
-
-          # Fail before committing if any runtime hook survived.
-          for rel in ('portable_config/input.conf', 'portable_config/input-animejanai.conf'):
-              text = (root / rel).read_text(encoding='utf-8').lower()
-              assert 'animejanai-update' not in text and 'ctrl+u' not in text
-          assert not (root / 'portable_config/scripts/animejanai_update.lua').exists()
-          assert 'github.com/sunuuc/AnimeJaNai-zh-CN/releases' not in updater.read_text(encoding='utf-8')
           PY
 
           python tests/test_no_release_shortcut.py
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
