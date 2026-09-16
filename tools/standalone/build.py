@@ -154,7 +154,6 @@ local texts=language[ui_language] or language["en"]'''
     for n in ('input.conf','input-animejanai.conf'):
         p=ST/'portable_config'/n;s=p.read_text(encoding='utf-8')
         s=s.replace('apply-profile upscale-on; script-message aji-slot','script-message aji-slot')
-        s=s.replace('#menu: AnimeJaNai > 安装更新','#menu: AnimeJaNai > 检查本项目更新')
         p.write_text(s,encoding='utf-8')
     dump(ST/'build-info/standalone/components.json',records)
     dump(ST/'manifest.json',{'version':META['version'],'distribution':'full-portable','repository':REPO,'component_version':'3.6.0'})

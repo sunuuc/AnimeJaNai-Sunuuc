@@ -16,11 +16,8 @@ assets=json.loads((DIST/'artifacts.json').read_text())
 assert assets and all(x['repo']==REPO for x in assets)
 LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
-readme=R/'README.md';text=readme.read_text(encoding='utf-8')
-line=f'\n> **完整便携版 {META["version"]}**：[下载本仓库完整包](https://github.com/{REPO}/releases/tag/{META["tag"]})。解压到空目录即可运行，不需要原项目或覆盖补丁。包含程序、运行库、模型、语言与预设。[说明和测试范围](docs/standalone.md)。以下覆盖包说明仅为历史记录。\n'
-first,rest=text.split('\n',1);readme.write_text(first+'\n'+line+'\n'+rest,encoding='utf-8')
 paths=[p for p in (R/'src').rglob('*') if p.is_file() and not any(x in ('bin','obj','.git') for x in p.relative_to(R/'src').parts)]
-paths+=[H/'dependencies.json',readme]
+paths+=[H/'dependencies.json']
 tree=[]
 for p in paths:
     assert p.suffix.lower() not in FONTS|{'.exe','.dll'},p
