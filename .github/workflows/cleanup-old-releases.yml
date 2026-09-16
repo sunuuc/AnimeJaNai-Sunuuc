@@ -1,0 +1,55 @@
+name: Remove obsolete releases
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/cleanup-old-releases.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete every obsolete release and its tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP_TAG: standalone-v1.0.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+
+          gh api --paginate "repos/$repo/releases?per_page=100" \
+            --jq '.[] | [.id, .tag_name] | @tsv' > /tmp/releases.tsv
+
+          keep_seen=0
+          while IFS=$'\t' read -r id tag; do
+            [ -n "$id" ] || continue
+            if [ "$tag" = "$KEEP_TAG" ]; then
+              keep_seen=$((keep_seen + 1))
+              echo "KEEP release $id tag $tag"
+              continue
+            fi
+
+            echo "DELETE release $id tag $tag"
+            gh api --method DELETE "repos/$repo/releases/$id"
+
+            # Remove the obsolete release tag too, so old versions are not
+            # presented as supported/downloadable tagged snapshots.
+            encoded_tag=$(python -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$tag")
+            gh api --method DELETE "repos/$repo/git/refs/tags/$encoded_tag" || true
+          done < /tmp/releases.tsv
+
+          [ "$keep_seen" -eq 1 ] || {
+            echo "Expected exactly one kept release, got $keep_seen" >&2
+            exit 1
+          }
+
+          remaining=$(gh api --paginate "repos/$repo/releases?per_page=100" --jq '.[].tag_name')
+          count=$(printf '%s\n' "$remaining" | sed '/^$/d' | wc -l | tr -d ' ')
+          printf 'Remaining releases:\n%s\n' "$remaining"
+          [ "$count" -eq 1 ]
+          [ "$remaining" = "$KEEP_TAG" ]
