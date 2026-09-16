@@ -1,4 +1,4 @@
-name: Remove obsolete releases
+name: Release maintenance
 
 on:
   push:
@@ -10,10 +10,10 @@ permissions:
   contents: write
 
 jobs:
-  cleanup:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete every obsolete release and its tag
+      - name: Keep release page clean
         env:
           GH_TOKEN: ${{ github.token }}
           KEEP_TAG: standalone-v1.0.0
@@ -30,26 +30,83 @@ jobs:
             [ -n "$id" ] || continue
             if [ "$tag" = "$KEEP_TAG" ]; then
               keep_seen=$((keep_seen + 1))
-              echo "KEEP release $id tag $tag"
+              release_id="$id"
               continue
             fi
-
-            echo "DELETE release $id tag $tag"
             gh api --method DELETE "repos/$repo/releases/$id"
-
-            # Remove the obsolete release tag too, so old versions are not
-            # presented as supported/downloadable tagged snapshots.
             encoded_tag=$(python -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$tag")
             gh api --method DELETE "repos/$repo/git/refs/tags/$encoded_tag" || true
           done < /tmp/releases.tsv
 
-          [ "$keep_seen" -eq 1 ] || {
-            echo "Expected exactly one kept release, got $keep_seen" >&2
-            exit 1
-          }
+          [ "$keep_seen" -eq 1 ]
+
+          cat > /tmp/release.md <<'EOF'
+          # AnimeJaNai-zh-CN 1.0.0
+
+          Windows x64 版本。
+
+          ## 下载
+
+          下载 `AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z`，解压后直接运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
+
+          SHA-256：
+
+          `9f90139201edbd61ca0aa7840bef21e8e3e4010e31d80cbab644acecde1e3352`
+
+          ## 功能
+
+          - 简体中文、English、跟随系统三种界面语言
+          - 2K / 4K AI 超分与 RIFE 补帧预设
+          - TensorRT 11.1、DirectML / ONNX Runtime
+          - ModernX 控制栏与 thumbfast 缩略图
+          - `Ctrl+J` 显示实际视频输出 FPS 与目标 FPS
+          - 外部播放列表、多字幕和分集参数处理
+          - `Ctrl+U` 打开本项目 Release 页面
+
+          ## 使用
+
+          1. 将压缩包解压到任意新目录。
+          2. 运行 `mpvnet.exe` 播放视频。
+          3. 需要调整 AI 配置时运行 `AnimeJaNaiManager.exe`。
+
+          包内已经包含播放器、模型和运行库，不需要另外安装 .NET、Python 或 VapourSynth。NVIDIA 显卡驱动由系统安装。
+
+          首次使用某个模型或分辨率时，TensorRT 可能需要生成一次引擎缓存，之后会直接复用。
+
+          ## 文件
+
+          - `AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z`：Windows x64 完整包
+          - `AnimeJaNai-zh-CN-1.0.0-sources.zip`：对应源码
+          - `SHA256SUMS.txt`：文件校验值
+
+          ## 许可证
+
+          AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、ModernX、thumbfast、TensorRT 及其他组件按各自许可证分发。许可证和第三方声明随程序包提供。
+          EOF
+
+          gh api --method PATCH "repos/$repo/releases/$release_id" \
+            -f name='AnimeJaNai-zh-CN 1.0.0' \
+            --raw-field body="$(cat /tmp/release.md)" \
+            -F prerelease=true >/dev/null
+
+          gh api "repos/$repo/releases/$release_id/assets?per_page=100" \
+            --jq '.[] | [.id, .name] | @tsv' > /tmp/assets.tsv
+          while IFS=$'\t' read -r asset_id asset_name; do
+            case "$asset_name" in
+              artifacts.json|payload-verification.json|RELEASE.md)
+                gh api --method DELETE "repos/$repo/releases/assets/$asset_id"
+                ;;
+            esac
+          done < /tmp/assets.tsv
 
           remaining=$(gh api --paginate "repos/$repo/releases?per_page=100" --jq '.[].tag_name')
           count=$(printf '%s\n' "$remaining" | sed '/^$/d' | wc -l | tr -d ' ')
-          printf 'Remaining releases:\n%s\n' "$remaining"
           [ "$count" -eq 1 ]
           [ "$remaining" = "$KEEP_TAG" ]
+
+          names=$(gh api "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[].name' | sort)
+          expected=$(printf '%s\n' \
+            'AnimeJaNai-zh-CN-1.0.0-sources.zip' \
+            'AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z' \
+            'SHA256SUMS.txt' | sort)
+          [ "$names" = "$expected" ]
