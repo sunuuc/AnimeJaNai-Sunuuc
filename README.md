@@ -4,15 +4,15 @@ AnimeJaNai 的 Windows 中文整合版，包含播放器、配置管理器、AI 
 
 ## 下载
 
-- [Release 页面](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/tag/standalone-v1.0.0)
-- [Windows x64 完整包](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/download/standalone-v1.0.0/AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z)
+- [Release 页面](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/tag/standalone-v1.0.1)
+- [Windows x64 完整包](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases/download/standalone-v1.0.1/AnimeJaNai-zh-CN-1.0.1-win-x64-full.7z)
 
 完整包约 1.59 GiB。
 
 SHA-256：
 
 ```text
-9f90139201edbd61ca0aa7840bef21e8e3e4010e31d80cbab644acecde1e3352
+f18b66a21af9a526f1d1d0491b1aee2b62f24b51b2c5d210e8ba6be4586873fb
 ```
 
 ## 使用
