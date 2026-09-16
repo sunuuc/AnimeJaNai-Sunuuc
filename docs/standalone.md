@@ -1,29 +1,59 @@
-# AnimeJaNai-zh-CN 1.0.0 完整便携版
+# AnimeJaNai-zh-CN 1.0.1
 
-本版替代以前的 r2/r3/r4 覆盖包。下载本发布页的完整压缩包，解压到一个新的空目录，直接打开 mpvnet.exe；配置管理器为 AnimeJaNaiManager.exe。不需要安装原版，不需要先覆盖任何文件，不需要另外安装 Python、VapourSynth 或 .NET。
+Windows x64 版本。
 
-播放器、中文管理器、完整中英语言资源、现代控制栏、缩略图脚本、默认快捷键、Sharp1/2K/4K 预设、超分模型、RIFE 模型、TensorRT 11.1 运行库、RTX 20/30/40/50 系列构建内核及 PTX 后备内核一起发行。DirectML/ONNX Runtime 也在包内。NVIDIA 显卡驱动仍须由系统正常安装；旧显卡或其他厂商显卡请在全局设置中选择适用后端，性能受实际硬件限制。
+## 使用
 
-首次使用某个模型/分辨率仍会在本机生成 TensorRT 引擎，这不是下载缺失组件。生成的缓存不能由 CI 为不同显卡预先打包。它需要时间和磁盘空间，后续可复用。默认方案和 Ctrl+0～9、Shift+1～3 保留；语言选择在管理器全局设置中。
+1. 解压 `AnimeJaNai-zh-CN-1.0.1-win-x64-full.7z`。
+2. 运行 `mpvnet.exe` 播放视频。
+3. 需要调整 AI 配置时运行 `AnimeJaNaiManager.exe`。
 
-这是基于开源项目的独立发行版，不是假称从零编写的新视频引擎，也未移除原作者署名或第三方许可证。安装、发布、更新渠道和维护源码由 sunuuc/AnimeJaNai-zh-CN 管理。最初构建仅一次取用有固定哈希的上游组件；第一份完整包发布后，构建依赖锁改指向本仓库的完整包，UI 源码保存在本仓库 src/player 和 src/manager。
+播放器、AI 模型和运行库均包含在压缩包内，不需要另外安装 .NET、Python 或 VapourSynth。NVIDIA 显卡驱动由系统安装。
 
-## 使用与更新
+首次使用某个模型或分辨率时，TensorRT 可能需要生成一次引擎缓存，之后会直接复用。
 
-不要把本完整包当旧版覆盖补丁使用。解压到新目录，可以保留旧版目录用于回退。需要迁移个人预设时，在旧版管理器导出配置，再在新管理器导入；不要把旧目录整套 scripts/DLL/更新器复制过来。组件页显示本地内置组件状态，不依赖联网检查，也不再从上游单独安装/删除组件。
+## 包含内容
 
-本版控制栏使用 Windows 系统符号显示按钮，不要求用户另装图标字体。第三方字体文件不随包散装分发。
+- mpv / mpv.net 播放器
+- AnimeJaNai 配置管理器
+- 简体中文、English、跟随系统三种界面语言
+- ModernX 控制栏和 thumbfast 缩略图
+- 2K / 4K AI 超分与 RIFE 补帧预设
+- TensorRT 11.1 运行库
+- RTX 20 / 30 / 40 / 50 系列构建内核与 PTX 后备内核
+- DirectML / ONNX Runtime
 
-压缩包若超过 GitHub 单文件容量限制会自动分卷；这只是同一份完整压缩包的分卷，把所有卷放在同一目录并从 .001 解压，不是多个覆盖包。
+## 快捷键
 
-## 验证范围
+| 快捷键 | 功能 |
+|---|---|
+| `Ctrl+1` | 补帧 2× |
+| `Ctrl+2` | 补帧 3× |
+| `Ctrl+3` | 2K 超分｜极速 |
+| `Ctrl+4` | 2K 超分｜高质量 |
+| `Ctrl+5` | 4K 超分｜高质量 |
+| `Ctrl+6` | 2×补帧 + 2K｜极速 |
+| `Ctrl+7` | 2×补帧 + 2K｜高质量 |
+| `Ctrl+8` | 2×补帧 + 4K｜极速 |
+| `Ctrl+9` | 3×补帧 + 2K｜极速 |
+| `Ctrl+0` | 关闭 AI |
+| `Ctrl+J` | 显示 / 隐藏 AnimeJaNai 状态 |
+| `Ctrl+E` | 打开 AnimeJaNai 管理器 |
 
-构建会重新编译自包含的 Windows 播放器和管理器，核验全部下载哈希、配置引用、模型完整性与应用依赖，进行中英界面、配置读写、FPS、外部播放列表/字幕和脚本回归；最终从生成的压缩包解压到空目录，再运行程序和本地视频。
+## Ctrl+J
 
-CI 没有用户的 NVIDIA GPU 或 Player UI 账户，因此 GPU 超分/补帧实测与实际服务器播放不属于已完成验证，不把 CPU/控制脚本通过描述为显卡性能通过。初版标记为预发布。
+状态栏显示实际视频输出 FPS 与目标 FPS，例如：
 
-## 许可
+```text
+当前实际 FPS: 47.82 / 目标 47.95
+```
 
-程序修改、mpv、mpv.net、管理器、模型和 NVIDIA/Microsoft 运行库分别遵守各自许可证，不能用某一个项目的许可证概括全部文件。原生库配套来源/构建记录与许可证随包保留。
-NVIDIA TensorRT/CUDA 运行库仅作为本应用的组成部分使用，遵守随附 TensorRT_LICENSE、CUDA_LICENSE 等文件中的授权和限制；不授予重分发独立 SDK、逆向或改动厂商二进制的额外权限。
-This software contains source code provided by NVIDIA Corporation.
+## 文件
+
+- `AnimeJaNai-zh-CN-1.0.1-win-x64-full.7z`：Windows x64 完整包
+- `AnimeJaNai-zh-CN-1.0.1-sources.zip`：对应源码
+- `SHA256SUMS.txt`：文件校验值
+
+## 许可证
+
+AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、ModernX、thumbfast、TensorRT 及其他组件按各自许可证分发。许可证和第三方声明随程序包提供。
