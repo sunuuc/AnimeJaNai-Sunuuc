@@ -1,111 +1,218 @@
-name: Release maintenance
+name: Remove release shortcut
 
 on:
   push:
     branches: [main]
     paths: ['.github/workflows/cleanup-old-releases.yml']
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Keep release page clean
-        env:
-          GH_TOKEN: ${{ github.token }}
-          KEEP_TAG: standalone-v1.0.0
+      - uses: actions/checkout@v4
+      - name: Remove Ctrl+U release-page update behavior
         shell: bash
         run: |
           set -euo pipefail
-          repo="$GITHUB_REPOSITORY"
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
 
-          gh api --paginate "repos/$repo/releases?per_page=100" \
-            --jq '.[] | [.id, .tag_name] | @tsv' > /tmp/releases.tsv
+          root = Path('.')
 
-          keep_seen=0
-          while IFS=$'\t' read -r id tag; do
-            [ -n "$id" ] || continue
-            if [ "$tag" = "$KEEP_TAG" ]; then
-              keep_seen=$((keep_seen + 1))
-              release_id="$id"
-              continue
-            fi
-            gh api --method DELETE "repos/$repo/releases/$id"
-            encoded_tag=$(python -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$tag")
-            gh api --method DELETE "repos/$repo/git/refs/tags/$encoded_tag" || true
-          done < /tmp/releases.tsv
+          # Remove the shortcut/menu command from both managed input files.
+          for rel in ('portable_config/input.conf', 'portable_config/input-animejanai.conf'):
+              p = root / rel
+              lines = p.read_text(encoding='utf-8-sig').splitlines()
+              lines = [line for line in lines if 'animejanai-update' not in line]
+              p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
-          [ "$keep_seen" -eq 1 ]
+          # The script existed only to open GitHub Releases; remove it completely.
+          (root / 'portable_config/scripts/animejanai_update.lua').unlink(missing_ok=True)
 
-          cat > /tmp/release.md <<'EOF'
-          # AnimeJaNai-zh-CN 1.0.0
+          # Keep the helper executable only for local component inventory and file verification.
+          updater = root / 'tools/standalone/Updater.cs'
+          updater.write_text(r'''using System.Management;
+          using System.Text.Json;
+          using System.Security.Cryptography;
 
-          Windows x64 版本。
+          string root = AppContext.BaseDirectory;
+          string mode = args.FirstOrDefault()?.ToLowerInvariant() ?? "--components";
+          try
+          {
+              if (mode == "--components")
+              {
+                  string name = "Unknown";
+                  bool nvidia = false;
+                  try
+                  {
+                      using var query = new ManagementObjectSearcher("SELECT Name,PNPDeviceID FROM Win32_VideoController");
+                      using var found = query.Get();
+                      foreach (ManagementObject item in found)
+                      {
+                          using (item)
+                          {
+                              string n = item["Name"]?.ToString() ?? "Unknown";
+                              bool nv = (item["PNPDeviceID"]?.ToString() ?? "").Contains("VEN_10DE", StringComparison.OrdinalIgnoreCase);
+                              if (name == "Unknown" || nv) name = n;
+                              nvidia |= nv;
+                          }
+                      }
+                  }
+                  catch (ManagementException) { }
+                  catch (UnauthorizedAccessException) { }
 
-          ## 下载
+                  using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "build-info", "standalone", "components.json")));
+                  var packs = new List<object>();
+                  foreach (var item in doc.RootElement.EnumerateArray())
+                  {
+                      string id = item.GetProperty("name").GetString()!;
+                      bool installed = true;
+                      long bytes = 0;
+                      foreach (var entry in item.GetProperty("files").EnumerateArray())
+                      {
+                          string relative = entry.GetProperty("path").GetString()!;
+                          string file = Path.GetFullPath(Path.Combine(root, relative));
+                          if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+                              throw new InvalidDataException("Invalid component path");
+                          long size = entry.GetProperty("bytes").GetInt64();
+                          bytes += size;
+                          installed &= File.Exists(file) && new FileInfo(file).Length == size;
+                      }
+                      packs.Add(new
+                      {
+                          name = id,
+                          bytes,
+                          installed,
+                          recommended = id == "rife" || (nvidia && id == "trt-runtime"),
+                          preselect = installed
+                      });
+                  }
+                  Console.WriteLine(JsonSerializer.Serialize(new
+                  {
+                      gpu = new { name, nvidia },
+                      packs,
+                      version_mismatch = (string?)null,
+                      distribution = "full-portable",
+                      offline = true
+                  }));
+                  return 0;
+              }
 
-          下载 `AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z`，解压后直接运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
+              if (mode == "--verify")
+              {
+                  using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "build-info", "standalone", "SHA256.json")));
+                  var bad = new List<string>();
+                  foreach (var p in doc.RootElement.EnumerateObject())
+                  {
+                      if (p.Name.EndsWith(".conf", StringComparison.OrdinalIgnoreCase) ||
+                          p.Name.EndsWith("interface-language.json", StringComparison.OrdinalIgnoreCase))
+                          continue;
+                      string file = Path.GetFullPath(Path.Combine(root, p.Name));
+                      if (!file.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+                          throw new InvalidDataException("Invalid manifest path");
+                      if (!File.Exists(file))
+                      {
+                          bad.Add(p.Name);
+                          continue;
+                      }
+                      using var f = File.OpenRead(file);
+                      if (!Convert.ToHexString(SHA256.HashData(f)).Equals(p.Value.GetString(), StringComparison.OrdinalIgnoreCase))
+                          bad.Add(p.Name);
+                  }
+                  Console.WriteLine(JsonSerializer.Serialize(new { ok = bad.Count == 0, failed = bad }));
+                  return bad.Count == 0 ? 0 : 1;
+              }
 
-          SHA-256：
+              Console.Error.WriteLine("Unsupported command: " + mode);
+              return 2;
+          }
+          catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+          {
+              Console.Error.WriteLine("Component check failed: " + e.Message);
+              return 1;
+          }
+          ''', encoding='utf-8')
 
-          `9f90139201edbd61ca0aa7840bef21e8e3e4010e31d80cbab644acecde1e3352`
+          # No build-time recreation or relabeling of the removed command.
+          build = root / 'tools/standalone/build.py'
+          s = build.read_text(encoding='utf-8')
+          s = s.replace("        s=s.replace('#menu: AnimeJaNai > 安装更新','#menu: AnimeJaNai > 检查本项目更新')\n", '')
+          build.write_text(s, encoding='utf-8')
 
-          ## 功能
+          # Publishing must not inject release/history banners into README.
+          publish = root / 'tools/standalone/publish.py'
+          s = publish.read_text(encoding='utf-8')
+          s = re.sub(
+              r"readme=R/'README\.md';text=readme\.read_text\(encoding='utf-8'\)\n"
+              r"line=f'.*?\n"
+              r"first,rest=text\.split\('\\n',1\);readme\.write_text\(first\+'\\n'\+line\+'\\n'\+rest,encoding='utf-8'\)\n",
+              '', s, flags=re.S)
+          s = s.replace("paths+=[H/'dependencies.json',readme]", "paths+=[H/'dependencies.json']")
+          if "readme=R/'README.md'" in s or "dependencies.json',readme" in s:
+              raise SystemExit('publish.py README injection removal failed')
+          publish.write_text(s, encoding='utf-8')
 
-          - 简体中文、English、跟随系统三种界面语言
-          - 2K / 4K AI 超分与 RIFE 补帧预设
-          - TensorRT 11.1、DirectML / ONNX Runtime
-          - ModernX 控制栏与 thumbfast 缩略图
-          - `Ctrl+J` 显示实际视频输出 FPS 与目标 FPS
-          - 外部播放列表、多字幕和分集参数处理
+          # Remove the obsolete shortcut from the standalone notes as well.
+          doc = root / 'docs/standalone.md'
+          s = doc.read_text(encoding='utf-8')
+          s = s.replace('Ctrl+U 打开本仓库发布页，不会安装上游整包。', '')
+          doc.write_text(s, encoding='utf-8')
 
-          ## 使用
+          # Ship the program fix as 1.0.1 rather than mutating the existing binary release.
+          release = root / 'release.json'
+          meta = json.loads(release.read_text(encoding='utf-8'))
+          meta['version'] = '1.0.1'
+          meta['tag'] = 'standalone-v1.0.1'
+          release.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          1. 将压缩包解压到任意新目录。
-          2. 运行 `mpvnet.exe` 播放视频。
-          3. 需要调整 AI 配置时运行 `AnimeJaNaiManager.exe`。
+          workflow = root / '.github/workflows/standalone.yml'
+          s = workflow.read_text(encoding='utf-8')
+          s = s.replace('full-1.0.0', 'full-1.0.1')
+          marker = "      - name: Test static and bundled runtime verification; reject external runtime dependencies\n"
+          check = "      - name: Verify release-page shortcut is absent\n        run: python tests/test_no_release_shortcut.py\n"
+          if check not in s:
+              if marker not in s:
+                  raise SystemExit('standalone workflow insertion point not found')
+              s = s.replace(marker, check + marker, 1)
+          workflow.write_text(s, encoding='utf-8')
 
-          包内已经包含播放器、模型和运行库，不需要另外安装 .NET、Python 或 VapourSynth。NVIDIA 显卡驱动由系统安装。
+          test = root / 'tests/test_no_release_shortcut.py'
+          test.write_text(r'''from pathlib import Path
 
-          首次使用某个模型或分辨率时，TensorRT 可能需要生成一次引擎缓存，之后会直接复用。
+          root = Path(__file__).resolve().parents[1]
 
-          ## 文件
+          for rel in ("portable_config/input.conf", "portable_config/input-animejanai.conf"):
+              text = (root / rel).read_text(encoding="utf-8-sig").lower()
+              assert "animejanai-update" not in text, rel
+              assert "ctrl+u" not in text, rel
 
-          - `AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z`：Windows x64 完整包
-          - `AnimeJaNai-zh-CN-1.0.0-sources.zip`：对应源码
-          - `SHA256SUMS.txt`：文件校验值
+          assert not (root / "portable_config/scripts/animejanai_update.lua").exists()
 
-          ## 许可证
+          updater = (root / "tools/standalone/Updater.cs").read_text(encoding="utf-8")
+          for token in ("--open-releases", "MANUAL_UPDATE", "github.com/sunuuc/AnimeJaNai-zh-CN/releases"):
+              assert token not in updater, token
 
-          AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、ModernX、thumbfast、TensorRT 及其他组件按各自许可证分发。许可证和第三方声明随程序包提供。
-          EOF
+          publish = (root / "tools/standalone/publish.py").read_text(encoding="utf-8")
+          assert "readme=R/'README.md'" not in publish
+          print("release-page shortcut absent")
+          ''', encoding='utf-8')
 
-          gh api --method PATCH "repos/$repo/releases/$release_id" \
-            -f name='AnimeJaNai-zh-CN 1.0.0' \
-            --raw-field body="$(cat /tmp/release.md)" \
-            -F prerelease=true >/dev/null
+          # Fail before committing if any runtime hook survived.
+          for rel in ('portable_config/input.conf', 'portable_config/input-animejanai.conf'):
+              text = (root / rel).read_text(encoding='utf-8').lower()
+              assert 'animejanai-update' not in text and 'ctrl+u' not in text
+          assert not (root / 'portable_config/scripts/animejanai_update.lua').exists()
+          assert 'github.com/sunuuc/AnimeJaNai-zh-CN/releases' not in updater.read_text(encoding='utf-8')
+          PY
 
-          gh api "repos/$repo/releases/$release_id/assets?per_page=100" \
-            --jq '.[] | [.id, .name] | @tsv' > /tmp/assets.tsv
-          while IFS=$'\t' read -r asset_id asset_name; do
-            case "$asset_name" in
-              artifacts.json|payload-verification.json|RELEASE.md)
-                gh api --method DELETE "repos/$repo/releases/assets/$asset_id"
-                ;;
-            esac
-          done < /tmp/assets.tsv
+          python tests/test_no_release_shortcut.py
 
-          remaining=$(gh api --paginate "repos/$repo/releases?per_page=100" --jq '.[].tag_name')
-          count=$(printf '%s\n' "$remaining" | sed '/^$/d' | wc -l | tr -d ' ')
-          [ "$count" -eq 1 ]
-          [ "$remaining" = "$KEEP_TAG" ]
-
-          names=$(gh api "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[].name' | sort)
-          expected=$(printf '%s\n' \
-            'AnimeJaNai-zh-CN-1.0.0-sources.zip' \
-            'AnimeJaNai-zh-CN-1.0.0-win-x64-full.7z' \
-            'SHA256SUMS.txt' | sort)
-          [ "$names" = "$expected" ]
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m '[release] 1.0.1：移除 Ctrl+U 发布页更新逻辑'
+          git push
