@@ -35,11 +35,22 @@ def components():
     assert all(x['installed'] for x in data['packs']),data
     return {'packs':[x['name'] for x in data['packs']]}
 
-def own_channel():
-    cp=subprocess.run([str(APP/'AnimeJaNaiUpdater.exe'),'--check'],env=ENV,cwd=OUT,capture_output=True,timeout=30)
-    (OUT/'update-channel.log').write_bytes(cp.stdout+cp.stderr)
-    assert cp.returncode==0 and b'sunuuc/AnimeJaNai-zh-CN/releases' in cp.stdout and b'the-database' not in cp.stdout
-    return {'upstream_install_required':False}
+def no_release_update_logic():
+    script=APP/'portable_config/scripts/animejanai_update.lua'
+    assert not script.exists(),script
+    for rel in ('portable_config/input.conf','portable_config/input-animejanai.conf'):
+        text=(APP/rel).read_text(encoding='utf-8-sig').lower()
+        assert 'animejanai-update' not in text,rel
+        assert 'ctrl+u' not in text,rel
+    checks={}
+    for arg in ('--check','--open-releases'):
+        cp=subprocess.run([str(APP/'AnimeJaNaiUpdater.exe'),arg],env=ENV,cwd=OUT,capture_output=True,timeout=30)
+        log=cp.stdout+cp.stderr
+        (OUT/('unsupported-'+arg[2:]+'.log')).write_bytes(log)
+        assert cp.returncode==2,(arg,cp.returncode,log)
+        assert b'github.com' not in log.lower(),(arg,log)
+        checks[arg]=cp.returncode
+    return {'release_page_shortcut':False,'application_update_command':False,'unsupported':checks}
 
 sample=OUT/'blank.y4m';sample.write_bytes(b'YUV4MPEG2 W16 H16 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+bytes([100])*256+bytes([128])*128)*24*20)
 def production_scripts():
@@ -161,7 +172,7 @@ def manager():
         finally:stop(proc)
 
 record('offline-included-components',components)
-record('own-update-channel',own_channel)
+record('no-release-update-logic',no_release_update_logic)
 record('all-production-scripts-on-local-video',production_scripts)
 record('self-contained-player',frontend)
 record('self-contained-manager',manager)
