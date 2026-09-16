@@ -61,7 +61,6 @@ jobs:
           - ModernX 控制栏与 thumbfast 缩略图
           - `Ctrl+J` 显示实际视频输出 FPS 与目标 FPS
           - 外部播放列表、多字幕和分集参数处理
-          - `Ctrl+U` 打开本项目 Release 页面
 
           ## 使用
 
