@@ -128,26 +128,8 @@ def stage():
         if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
     from vendor_notices import collect
     collect(ST,E)
-    p=ST/'portable_config/scripts/modernx.lua';s=p.read_text(encoding='utf-8')
-    s=s.replace("local iconfont = 'fluent-system-icons'","local iconfont = 'Segoe UI Symbol'")
-    marker='-- Localization'
-    icons='''-- System-font fallback: no separately installed icon font is required.
-icons = {play="▶",pause="Ⅱ",replay="↻",previous="|◀",next="▶|",rewind="◀◀",forward="▶▶",
- audio="♫",subtitle="CC",volume={mute="×",quiet="♪",low="♫",high="♫"},download="↓",download_initiated="✓",
- loop_off="↪",loop_on="↻",info="ⓘ",pinned_off="◇",pinned_on="◆",screenshot="▣",playlist="≡",
- fullscreen="□",fullscreen_exit="▣",jumpicons={[5]={"↶","↷"},[10]={"↶","↷"},[30]={"↶","↷"},default={"↶","↶"}},
- window={maximize="□",unmaximize="▣",minimize="−",close="×"},emoticon={view="◉",comment="…",like="+"}}
-'''
-    if s.count(marker)!=1:raise RuntimeError('ModernX source changed')
-    s=s.replace(marker,icons+'\n'+marker)
-    old='local texts = language[user_opts.language] or language["en"]'
-    extra='''language["zh-CN"]={welcome="拖入视频文件或链接开始播放",off="关闭",na="不可用",none="无",video="视频",audio="音频",subtitle="字幕",nosub="没有可用字幕",noaudio="没有可用音轨",track=" 个轨道：",playlist="播放列表",playlistshuffled="已打乱播放列表",nolist="播放列表为空",chapter="章节",nochapter="没有章节",ontop="窗口置顶",ontopdisable="取消置顶",loopenable="已开启循环",loopdisable="已关闭循环",screenshot="截图",statsinfo="信息",download="下载",download_in_progress="正在下载",downloading="下载中",downloaded="已下载"}
-local ui_language="zh-CN"
-local pref=io.open(mp.command_native({"expand-path","~~/interface-language.json"}),"r")
-if pref then local data=require("mp.utils").parse_json(pref:read("*a"));pref:close();if data and data.language=="en" then ui_language="en" elseif data and data.language=="system" then ui_language=user_opts.language end end
-local texts=language[ui_language] or language["en"]'''
-    if old not in s:raise RuntimeError('ModernX localization context changed')
-    p.write_text(s.replace(old,extra),encoding='utf-8')
+    (ST/'portable_config/scripts/modernx.lua').unlink(missing_ok=True)
+    (ST/'portable_config/script-opts/modernx.conf').unlink(missing_ok=True)
     p=ST/'portable_config/scripts/thumbfast.lua';s=p.read_text(encoding='utf-8')
     s=s.replace('local mpv_path = options.mpv_path','local mpv_path = options.mpv_path == "mpv" and mp.command_native({"expand-path", "~~/../mpv.exe"}) or options.mpv_path')
     p.write_text(s,encoding='utf-8')
@@ -167,7 +149,8 @@ def inspect_payload():
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/modernx.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
        'animejanai/inference/aji_dml.dll','animejanai/inference/onnxruntime.dll','animejanai/inference/DirectML.dll',
        'animejanai/inference/nvinfer_11.dll','animejanai/inference/trtexec.exe','Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
@@ -239,6 +222,7 @@ def package():
     dump(DIST/'artifacts.json',[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
     shutil.rmtree(ST);extract(archives[0],R/'clean-install')
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
+    run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
     sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:

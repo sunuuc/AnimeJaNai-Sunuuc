@@ -50,7 +50,7 @@ end
 function M.layout(pw,ph,count)
     pw,ph=math.max(1,pw),math.max(1,ph)
     local scale=M.clamp(math.min(ph/720,pw/1080),.55,2.5)
-    scale=math.min(scale,pw/860) -- very small windows scale the entire row, never overlap controls
+    scale=math.min(scale,pw/860,ph/360) -- very small windows scale the entire row, never overlap controls
     local w,h=pw/scale,ph/scale
     local compact=w<1100
     local small=w<940
