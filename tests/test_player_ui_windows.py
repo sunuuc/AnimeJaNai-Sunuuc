@@ -14,8 +14,8 @@ def run(name,args,marker,timeout=60):
         log=(e.stdout or b'')+(e.stderr or b'');result={'case':name,'passed':False,'error':'timeout'}
     (OUT/(name+'.log')).write_bytes(log);results.append(result)
     if not result['passed']:print(log[-8000:].decode('utf-8',errors='replace'))
-base=['--no-config','--load-scripts=no','--osc=no','--ao=null','--hwdec=no','--vf=','--idle=yes']
-run('player_ui-logic',base+['--vo=null','--script='+str(ROOT/'tests/test_player_ui_logic.lua'),
+base=['--load-scripts=no','--osc=no','--ao=null','--hwdec=no','--vf=','--idle=yes']
+run('player_ui-logic',['--no-config',*base,'--vo=null','--script='+str(ROOT/'tests/test_player_ui_logic.lua'),
     '--script-opts=playeruiroot='+str(APP)],b'PASS Player UI logic:')
 header=b'YUV4MPEG2 W320 H180 F24:1 Ip A1:1 C420jpeg\n'
 for name,value in [('first.y4m',65),('second.y4m',85)]:
@@ -31,6 +31,8 @@ scripts=[APP/'portable_config/scripts'/x for x in ['player_ui.lua','player_ui_da
 scripts.append(ROOT/'tests/test_player_ui_runtime.lua')
 for p in scripts:assert p.is_file(),p
 assert not (APP/'portable_config/scripts/modernx.lua').exists(),'Two control bars packaged'
+# Exercise the delivered config directory; --no-config also disables mpv's ~~
+# configuration-root lookup and is deliberately limited to the pure mock suite.
 run('player_ui-windows-ui',base+['--vo=gpu','--gpu-api=d3d11','--gpu-context=d3d11','--d3d11-warp=yes',
     '--geometry=1280x720','--border=no','--pause=yes','--keep-open=yes',
     '--config-dir='+str(APP/'portable_config'),'--input-conf='+str(APP/'portable_config/input.conf'),
