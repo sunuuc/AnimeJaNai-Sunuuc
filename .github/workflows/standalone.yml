@@ -32,8 +32,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
-      - name: Prepare Player UI controller defaults
-        run: python tools/standalone/integrate_player_ui.py
+      - name: Prepare Player UI controller defaults and menu layout
+        run: |
+          python tools/standalone/integrate_player_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/standalone/finalize_player_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify release-page shortcut is absent
         run: python tests/test_no_release_shortcut.py
       - name: Test runtime verification
@@ -55,9 +59,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile self-contained Windows applications
         run: |
-          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-1.1.0 -o publish-player
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-1.1.1 -o publish-player
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-1.1.0 -o publish-manager
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-1.1.1 -o publish-manager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet publish tools/standalone/Updater.csproj -c Release -o publish-updater
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
