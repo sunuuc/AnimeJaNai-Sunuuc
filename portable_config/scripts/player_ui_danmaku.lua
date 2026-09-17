@@ -5,6 +5,9 @@ local core=dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_
 local options=require 'mp.options'
 local o={enabled=true,opacity=85,area=50,font_size=26}
 options.read_options(o,'player_ui_danmaku')
+o.opacity=core.clamp(tonumber(o.opacity) or 85,10,100)
+o.area=core.clamp(tonumber(o.area) or 50,25,70)
+o.font_size=core.clamp(tonumber(o.font_size) or 26,16,40)
 local overlay=mp.create_osd_overlay('ass-events');overlay.z=5
 local events,active,lanes,index,last,loaded={}, {}, {},1,nil,''
 local timer,wake,picker,generation=nil,nil,nil,0
@@ -101,8 +104,8 @@ local function choose()
     picker=mp.command_native_async({name='subprocess',args={'powershell.exe','-NoProfile','-STA','-Command',ps},playback_only=false,capture_stdout=true,capture_stderr=true},function(ok,result)
         picker=nil
         if g~=generation then return end
-        if ok and result.status==0 and result.stdout~='' then load(result.stdout:gsub('[\r\n]+$',''))
-        elseif not ok or result.status~=0 then mp.osd_message('文件选择器不可用；可通过 player_ui-danmaku-load 传入本地 XML 路径',4) end
+        if ok and result and result.status==0 and result.stdout~='' then load(result.stdout:gsub('[\r\n]+$',''))
+        elseif not ok or not result or result.status~=0 then mp.osd_message('文件选择器不可用；可通过 player_ui-danmaku-load 传入本地 XML 路径',4) end
     end)
 end
 mp.register_script_message('player_ui-danmaku-load',load)
