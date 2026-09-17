@@ -20,6 +20,7 @@ public class CommandLine
     {
         foreach (var pair in Arguments)
         {
+            if (IsLaunchOption(pair.Name)) continue;
             if (pair.Name.EndsWith("-add") || pair.Name.EndsWith("-set") ||
                 pair.Name.EndsWith("-pre") || pair.Name.EndsWith("-clr") ||
                 pair.Name.EndsWith("-append") || pair.Name.EndsWith("-remove") ||
@@ -34,7 +35,7 @@ public class CommandLine
     {
         foreach (var pair in Arguments)
         {
-            if (_preInitProperties.Contains(pair.Name)) continue;
+            if (_preInitProperties.Contains(pair.Name) || IsLaunchOption(pair.Name)) continue;
             if (pair.Name.EndsWith("-add"))
                 Player.CommandV("change-list", pair.Name[..^4], "add", pair.Value);
             else if (pair.Name.EndsWith("-set"))
@@ -58,29 +59,41 @@ public class CommandLine
         }
     }
 
+    static bool IsLaunchOption(string name) => name is "playlist" or "playlist-start" or "shuffle";
+
     public static void ProcessCommandLineFiles()
     {
-        if (!Parsed.HasGroups)
+        bool shuffle = GetValue("shuffle") == "yes";
+        string playlist = GetValue("playlist");
+        if (!Parsed.HasGroups && playlist.Length == 0 && !Contains("playlist-start") && !shuffle)
+        {
             Player.LoadFiles(Parsed.Entries.Select(e => e.Path).ToArray(), !App.Queue, App.Queue);
-        else
-        {
-            // Keep scoped external playlists out of the one-second append
-            // heuristic and extension-based global subtitle attachment.
-            for (int i = 0; i < Parsed.Entries.Count; i++)
-            {
-                var entry = Parsed.Entries[i];
-                string mode = i == 0 && !App.Queue ? "replace" : "append";
-                Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), mode,
-                    "-1", ScopedCommandLine.FileOptions(entry.Options));
-            }
-            if (int.TryParse(GetValue("playlist-start"), out int start) &&
-                start >= 0 && start < Parsed.Entries.Count && !App.Queue)
-                Player.SetPropertyInt("playlist-pos", start);
+            return;
         }
-        if (App.CommandLine.Contains("--shuffle"))
+        if (Parsed.Entries.Count == 0 && playlist.Length == 0) return;
+
+        // Assemble while stopped: no temporary request to the first episode.
+        bool keepPlaying = App.Queue && Player.GetPropertyInt("playlist-count") > 0
+            && Player.GetPropertyInt("playlist-pos") >= 0;
+        if (!App.Queue)
         {
-            Player.Command("playlist-shuffle");
-            Player.SetPropertyInt("playlist-pos", 0);
+            Player.CommandV("stop");
+            Player.CommandV("playlist-clear");
+        }
+        int offset = Player.GetPropertyInt("playlist-count");
+        if (playlist.Length > 0)
+            Player.CommandV("loadlist", MainPlayer.ConvertFilePath(playlist), "append");
+        foreach (var entry in Parsed.Entries)
+            Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), "append",
+                "-1", ScopedCommandLine.FileOptions(entry.Options));
+
+        if (shuffle) Player.CommandV("playlist-shuffle");
+        int count = Player.GetPropertyInt("playlist-count");
+        if (!keepPlaying && count > offset)
+        {
+            int start = int.TryParse(GetValue("playlist-start"), out int selected) ? selected : 0;
+            start = Math.Clamp(start, 0, count - offset - 1);
+            Player.SetPropertyInt("playlist-pos", shuffle ? 0 : offset + start);
         }
     }
 
