@@ -1,21 +1,39 @@
 local mp=require 'mp'
 local msg=require 'mp.msg'
+local utils=require 'mp.utils'
 local out=assert(mp.get_property('script-opts',''):match('playeruiout=([^,]+)'))
 local checks,done=0,false
+local function ui()return mp.get_property_native('user-data/player_ui/ui',{})end
 local function finish(ok,err)
  if done then return end;done=true
- if ok then msg.info('PASS Player UI Windows UI: '..checks..' checks')else msg.error(tostring(err))end
+ if ok then msg.info('PASS Player UI Windows UI: '..checks..' checks')
+ else
+  msg.error(tostring(err))
+  local x,y=mp.get_mouse_pos()
+  local state={ui=ui(),mouse={x=x,y=y},error=tostring(err)}
+  local f=io.open(out..'/failure-state.json','wb');if f then f:write(utils.format_json(state));f:close()end
+  mp.commandv('screenshot-to-file',out..'/failure-window.png','window')
+ end
  mp.commandv('quit',ok and 0 or 1)
 end
 local function guard(fn)if not done then local ok,e=xpcall(fn,debug.traceback);if not ok then finish(false,e)end end end
 local function after(delay,fn)mp.add_timeout(delay,function()guard(fn)end)end
 local function check(ok,m)checks=checks+1;assert(ok,m);msg.info('PASS '..m)end
-local function ui()return mp.get_property_native('user-data/player_ui/ui',{})end
 local function button(id)for _,b in ipairs(ui().controls or {})do if b.id==id then return b end end end
 local function click(id,then_)
  local u=ui();local b=assert(button(id),'missing UI control: '..id)
- mp.commandv('mouse',math.floor((b.x0+b.x1)*u.scale/2),math.floor((b.y0+b.y1)*u.scale/2))
- after(.06,function()mp.commandv('keypress','MBTN_LEFT');after(.15,then_)end)
+ local x=math.floor((b.x0+b.x1)*u.scale/2);local y=math.floor((b.y0+b.y1)*u.scale/2)
+ mp.commandv('mouse',x,y)
+ local deadline=mp.get_time()+1.5
+ local function ready()
+  local current=ui()
+  assert(current.overlay_ok,'overlay was not accepted: '..tostring(current.overlay_error))
+  if current.hover==id then
+   mp.commandv('keypress','MBTN_LEFT');after(.15,then_)
+  elseif mp.get_time()<deadline then after(.025,ready)
+  else error('mouse did not reach '..id..': '..utils.format_json(current))end
+ end
+ after(.04,ready)
 end
 local function row(key)
  for i,r in ipairs(ui().rows or {})do if r.key==key or r.target==key or r.text==key then return 'row-'..i end end
@@ -24,6 +42,7 @@ end
 local function menu(kind,then_)mp.commandv('script-message','player_ui-menu',kind);after(.15,then_)end
 local function close(then_)mp.commandv('script-message','player_ui-hide');after(.1,function()mp.commandv('script-message','player_ui-show');after(.1,then_)end)end
 local function shot(name)
+ check(ui().overlay_ok,'native overlay accepted before screenshot '..name)
  local ok,err=mp.commandv('screenshot-to-file',out..'/'..name..'.png','window');check(ok,'screenshot '..name..' '..tostring(err or ''))
 end
 local steps={}
@@ -168,7 +187,8 @@ mp.register_event('file-loaded',function()
  if started then return end;started=true;local attempts=0
  local function wait()
   attempts=attempts+1
-  if ui().version and mp.get_property_number('vo-presented-frame-count',0)>0 then next_step()
+  if ui().overlay_error then error('native overlay rejected: '..ui().overlay_error)end
+  if ui().version and ui().overlay_ok and mp.get_property_number('vo-presented-frame-count',0)>0 then next_step()
   elseif attempts<30 then after(.2,wait)else error('UI initialization timeout')end
  end
  after(.5,wait)
