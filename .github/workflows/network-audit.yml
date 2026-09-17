@@ -1,0 +1,48 @@
+name: Network playback source audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/network-audit.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: windows-2022
+    timeout-minutes: 12
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Snapshot exact sources and packaged settings
+        shell: python
+        run: |
+          from pathlib import Path
+          import json, zipfile, subprocess, urllib.request, shutil, hashlib
+          root=Path.cwd(); out=root/'network-audit'; out.mkdir()
+          files=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          with zipfile.ZipFile(out/'source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in files:
+                  p=Path(name)
+                  if p.is_file() and p.suffix.lower() not in ('.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'):
+                      z.write(p,name)
+          lock=json.loads(Path('tools/standalone/dependencies.json').read_text())
+          a=lock['runtime_seed']['assets'][0]
+          url=f'https://github.com/{a["repo"]}/releases/download/{a["tag"]}/{a["name"]}'
+          archive=root/'runtime.7z'
+          with urllib.request.urlopen(url,timeout=90) as src,archive.open('wb') as dst: shutil.copyfileobj(src,dst,1024*1024)
+          with archive.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==a['sha256']
+          subprocess.run(['7z','x','-y',str(archive),'-o'+str(root/'runtime'),'portable_config/*','mpv.exe'],check=True,stdout=subprocess.DEVNULL)
+          configs=root/'runtime/portable_config'
+          with zipfile.ZipFile(out/'packaged-config.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in configs.rglob('*'):
+                  if p.is_file() and p.suffix.lower() in ('.conf','.lua','.json','.txt'): z.write(p,p.relative_to(configs))
+          p=subprocess.run([str(root/'runtime/mpv.exe'),'--no-config','--list-options'],capture_output=True)
+          (out/'options.txt').write_bytes(p.stdout+p.stderr)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: network-audit-source
+          path: network-audit/
+          retention-days: 3
+          if-no-files-found: error
