@@ -7,9 +7,19 @@ p=ROOT/'portable_config/script-modules/player_ui_menu.lua';s=p.read_text(encodin
 s=s.replace("    function M.wheel(delta,x,y)\n        for", "    function M.wheel(delta,x,y)\n        if not s.menu then return false end\n        for")
 s=s.replace("    function M.hover(b)\n        local", "    function M.hover(b)\n        if not s.menu then close_timer();return end\n        local")
 s=s.replace("        close_timer();s.menu=nil;", "        close_timer();M.boxes={};M.rows={};s.menu=nil;")
+# Escape means back even if the pointer remains over the parent menu item.
+s=s.replace("        close_timer()\n        if s.menu==kind", "        close_timer();M.hover_blocked=nil\n        if s.menu==kind")
+s=s.replace("        if s.parent then s.menu=s.parent;", "        if s.parent then M.hover_blocked=s.menu;s.menu=s.parent;")
+old="        local target=r and r.target\n"
+new=old+"        if target~=M.hover_blocked then M.hover_blocked=nil end\n        if target and target==M.hover_blocked then close_timer();return end\n"
+if new not in s:
+    assert s.count(old)==1
+    s=s.replace(old,new)
 p.write_text(s,encoding='utf-8')
 p=ROOT/'portable_config/scripts/player_ui.lua';s=p.read_text(encoding='utf-8')
-s=s.replace("    state.x=-1;state.y=-1;state.hover=nil;", "    menus.hover(nil);state.x=-1;state.y=-1;state.hover=nil;")
+old="    state.x=-1;state.y=-1;state.hover=nil;"
+new="    menus.hover(nil);state.x=-1;state.y=-1;state.hover=nil;"
+if new not in s:s=s.replace(old,new)
 s=s.replace("function()state.menu=nil;state.hover=nil;hide()end", "function()menus.close();state.hover=nil;hide()end")
 # ASS PlayRes is an integer even when DPI/layout calculations are fractional.
 s=s.replace('ui.res_x=layout.w;ui.res_y=layout.h;',
@@ -48,10 +58,33 @@ new=old+"""    local px,py=mp.get_mouse_pos()
 if new not in s:
     if s.count(old)!=1:raise RuntimeError('Mouse event context changed')
     s=s.replace(old,new)
+# Do not redefine the same input section on every pause, volume or OSD change.
+old="    if state.menu then mp.add_forced_key_binding('ESC','player_ui-menu-escape',escape) else mp.remove_key_binding('player_ui-menu-escape') end"
+new="""    local menu_open=state.menu~=nil
+    if menu_open~=menu_escape_bound then
+        menu_escape_bound=menu_open
+        if menu_open then mp.add_forced_key_binding('ESC','player_ui-menu-escape',escape)
+        else mp.remove_key_binding('player_ui-menu-escape') end
+    end"""
+if old in s:
+    s=s.replace('sync_timers=function()', 'local menu_escape_bound=false\nsync_timers=function()',1)
+    s=s.replace(old,new)
+elif new not in s:raise RuntimeError('Menu key binding context changed')
 p.write_text(s,encoding='utf-8')
 p=ROOT/'tools/standalone/build.py';s=p.read_text(encoding='utf-8')
 old="'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',"
 new=old+"\n       'portable_config/script-modules/player_ui_menu.lua',"
+if new not in s:
+    assert old in s
+    s=s.replace(old,new)
+# A runtime seed and staged tests may contain resume records. They are not defaults.
+old="    shutil.rmtree(ST/'portable_config/scripts',ignore_errors=True)"
+new="    shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)\n"+old
+if new not in s:
+    assert old in s
+    s=s.replace(old,new)
+old='    inspect_payload();DIST.mkdir(exist_ok=True)'
+new="    shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)\n"+old
 if new not in s:
     assert old in s
     s=s.replace(old,new)

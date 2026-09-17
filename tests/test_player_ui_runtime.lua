@@ -19,6 +19,15 @@ end
 local function guard(fn)if not done then local ok,e=xpcall(fn,debug.traceback);if not ok then finish(false,e)end end end
 local function after(delay,fn)mp.add_timeout(delay,function()guard(fn)end)end
 local function check(ok,m)checks=checks+1;assert(ok,m);msg.info('PASS '..m)end
+local function wait_for(predicate,message,then_)
+ local deadline=mp.get_time()+2.5
+ local function poll()
+  if predicate()then then_()
+  elseif mp.get_time()<deadline then after(.025,poll)
+  else error(message..': '..utils.format_json(ui()))end
+ end
+ after(.025,poll)
+end
 local function button(id)for _,b in ipairs(ui().controls or {})do if b.id==id then return b end end end
 local function click(id,then_)
  local u=ui();local b=assert(button(id),'missing UI control: '..id)
@@ -150,7 +159,12 @@ steps[#steps+1]=function(next_)
    after(2,function()
     local fps=(ui().performance or {}).fps;check(type(fps)=='number' and fps>0,'playing actual FPS')
     mp.set_property_bool('pause',true);mp.commandv('keypress','ESC')
-    after(.1,function()check(ui().menu=='settings','Esc returns to settings');close(next_)end)
+    wait_for(function()return ui().menu=='settings'end,'Esc returns to settings',function()
+     check(ui().menu=='settings','Esc returns to settings')
+     after(.3,function()
+      check(ui().menu=='settings','escaped submenu stays closed under stationary pointer');close(next_)
+     end)
+    end)
    end)
   end)
  end)end)
