@@ -47,33 +47,42 @@ function M.title(title,path)
     if title=='' then title='视频播放' end
     return title
 end
-function M.layout(pw,ph,count)
+-- Anchored Player UI layout 1.1.1: physical DPI, not a percentage of the video height.
+function M.layout(pw,ph,count,dpi)
     pw,ph=math.max(1,pw),math.max(1,ph)
-    local scale=M.clamp(math.min(ph/720,pw/1080),.55,2.5)
-    scale=math.min(scale,pw/860,ph/360) -- very small windows scale the entire row, never overlap controls
-    local w,h=pw/scale,ph/scale
-    local compact=w<1100
-    local small=w<940
-    local size=48;local y=h-66;local controls={}
-    local function button(id,x,wide)
-        local bw=wide or size
+    local scale=math.min(M.clamp(tonumber(dpi) or 1,.5,3),pw/920,ph/620)
+    local w,h=pw/scale,ph/scale;local compact=w<1100
+    local step=compact and 58 or 84;local y=h-66;local controls={}
+    local function button(id,x,bw)
+        bw=bw or 48
         controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-25,y1=y+25}
     end
-    local step=compact and 58 or 80
-    button('previous',60);button('play',60+step);button('next',60+2*step);button('volume',60+3*step)
+    button('previous',64);button('play',64+step);button('next',64+2*step);button('volume',64+3*step)
     local right={'fullscreen'}
     if count>1 then right[#right+1]='playlist' end
-    if small then right[#right+1]='more' else right[#right+1]='performance';right[#right+1]='stats' end
-    for _,id in ipairs({'ai','danmaku','sub','audio'}) do right[#right+1]=id end
-    local rx=w-64;local gap=compact and 58 or 68
-    for _,id in ipairs(right) do button(id,rx);rx=rx-gap end
-    button('speed',rx-10,68)
-    local volstart=60+3*step+44
-    local volend=math.min(volstart+120,rx-70)
-    local volume=volend-volstart>=70 and {x0=volstart,x1=volend,y0=y-18,y1=y+18,y=y} or nil
+    for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
+    local x=w-64
+    for _,id in ipairs(right) do button(id,x);x=x-step end
+    button('speed',x,72)
+    local vx=64+3*step+38;local ex=math.min(vx+146,x-62)
+    local volume=ex-vx>=60 and {x0=vx,x1=ex,y0=y-18,y1=y+18,y=y} or nil
     return {w=w,h=h,scale=scale,controls=controls,volume=volume,
-        seek={x0=122,x1=w-122,y0=h-156,y1=h-120,y=h-138},
-        title_y=h-251,detail_y=h-206,margin=36,compact=compact,small=small}
+        seek={x0=122,x1=w-122,y0=h-158,y1=h-122,y=h-140},
+        title_y=h-254,detail_y=h-204,margin=36,compact=compact,small=false}
+end
+function M.wrap(value,width,size,maxlines)
+    local chars=M.chars(value);local out,line,used={},'',0
+    maxlines=maxlines or 2
+    for i,c in ipairs(chars) do
+        local cw=(#c>1 and 1 or (c:match('[ilI.,! :;|]') and .3 or .6))*size
+        if used+cw>width and line~='' then
+            if #out==maxlines-1 then out[#out+1]=M.ellipsize(line..table.concat(chars,'',i),width,size);return out end
+            out[#out+1]=line;line='';used=0
+        end
+        line=line..c;used=used+cw
+    end
+    if line~='' or #out==0 then out[#out+1]=line end
+    return out
 end
 function M.inside(b,x,y) return b and x>=b.x0 and x<=b.x1 and y>=b.y0 and y<=b.y1 end
 function M.parse_presets(text)

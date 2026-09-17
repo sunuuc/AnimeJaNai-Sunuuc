@@ -112,6 +112,7 @@ def stage():
             records.append({'name':item['id'],'source':item,'files':files})
             shutil.rmtree(temp);archive.unlink()
     dump(E/'component-inputs.json',records)
+    shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     shutil.rmtree(ST/'portable_config/scripts',ignore_errors=True)
     cp(R/'portable_config',ST/'portable_config')
     cp(R/'animejanai/animejanai.conf',ST/'animejanai/animejanai.conf')
@@ -151,6 +152,7 @@ def inspect_payload():
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
        'portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
+       'portable_config/script-modules/player_ui_menu.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
        'animejanai/inference/aji_dml.dll','animejanai/inference/onnxruntime.dll','animejanai/inference/DirectML.dll',
        'animejanai/inference/nvinfer_11.dll','animejanai/inference/trtexec.exe','Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
@@ -195,6 +197,7 @@ def package():
     for n in ('results.json','scripts-results.json'):
         results=json.loads((E/'runtime'/n).read_text(encoding='utf-8'))
         if not results or not all(r['passed'] for r in results):raise RuntimeError('Runtime tests failed')
+    shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     inspect_payload();DIST.mkdir(exist_ok=True)
     info=ST/'build-info/standalone';cp(E,info/'validation');cp(R/'language-evidence',info/'ui-validation')
     dump(info/'provenance.json',{'version':META['version'],'input_commit':os.environ['GITHUB_SHA'],

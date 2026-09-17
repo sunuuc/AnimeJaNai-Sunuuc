@@ -9,11 +9,11 @@ return function(c)
         M.hover_target=nil
     end
     function M.close()
-        close_timer();s.menu=nil;s.parent=nil;s.scroll=0;s.parent_scroll=0;s.menu_drag=nil
+        close_timer();M.boxes={};M.rows={};s.menu=nil;s.parent=nil;s.scroll=0;s.parent_scroll=0;s.menu_drag=nil
     end
     function M.open(kind,parent)
         if not M.allowed[kind] then return end
-        close_timer()
+        close_timer();M.hover_blocked=nil
         if s.menu==kind and not parent then M.close();return end
         if parent then s.parent=parent else s.parent=nil;s.parent_scroll=0 end
         s.menu=kind;s.scroll=0;s.menu_drag=nil
@@ -22,7 +22,7 @@ return function(c)
     end
     function M.back()
         if not s.menu then return false end
-        if s.parent then s.menu=s.parent;s.parent=nil;s.scroll=s.parent_scroll or 0;s.parent_scroll=0;close_timer()
+        if s.parent then M.hover_blocked=s.menu;s.menu=s.parent;s.parent=nil;s.scroll=s.parent_scroll or 0;s.parent_scroll=0;close_timer()
         else M.close() end
         return true
     end
@@ -288,14 +288,18 @@ return function(c)
         else local b=p.box;s[b.scroll_key]=core.clamp((y-b.start-p.grab)/math.max(1,b.range),0,1)*b.max end
     end
     function M.wheel(delta,x,y)
+        if not s.menu then return false end
         for i=#M.boxes,1,-1 do local b=M.boxes[i]
             if core.inside(b,x,y) then s[b.scroll_key]=core.clamp((s[b.scroll_key] or 0)-delta*(b.drawer and 72 or 60),0,math.max(0,b.total-b.view));return true end
         end
         return s.menu~=nil
     end
     function M.hover(b)
+        if not s.menu then close_timer();return end
         local r=b and b.index and M.rows[b.index]
         local target=r and r.target
+        if target~=M.hover_blocked then M.hover_blocked=nil end
+        if target and target==M.hover_blocked then close_timer();return end
         if target==s.menu then close_timer();return end
         if target==M.hover_target then return end
         close_timer()
