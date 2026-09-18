@@ -67,9 +67,12 @@ def run_case(tag,option_name):
     diagnostic=APP/'portable_config/startup-diagnostic.json';diagnostic.unlink(missing_ok=True)
     payload=f'handoff-url={uri},handoff-tag={tag}'
     args=[str(APP/'mpvnet.exe'),*FLAGS,'--script='+str(BOOT),'--{',f'--{option_name}='+payload,'--}']
-    started=time.monotonic()
-    with (OUT/f'{tag}.log').open('wb') as log:
+    started=time.monotonic();log_path=OUT/f'{tag}.log'
+    with log_path.open('wb') as log:
         cp=subprocess.run(args,cwd=CALLER,env=ENV,stdout=log,stderr=subprocess.STDOUT,timeout=15)
+    log_text=log_path.read_text(encoding='utf-8',errors='replace')
+    assert 'Lua error' not in log_text,(tag,'production Lua error',log_text[-2000:])
+    assert 'script-modules' not in log_text,(tag,'runtime attempted external module load',log_text[-2000:])
     assert cp.returncode==0,(tag,cp.returncode)
     assert result.is_file(),(tag,'startup script did not receive its URL options')
     data=json.loads(result.read_text(encoding='utf-8-sig'))
@@ -86,7 +89,8 @@ def run_case(tag,option_name):
     saved=OUT/f'{tag}-diagnostic.json';saved.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     return {'case':tag,'passed':True,'option':option_name,'requests':count(path),
             'first_playback_seconds':round(time.monotonic()-started,3),
-            'previous_installation':False,'system_only_path':True}
+            'previous_installation':False,'system_only_path':True,'unicode_portable_path':True,
+            'production_lua_errors':0}
 
 try:
     for tag,option in [('player_ui-legacy-script-opt','script-opt'),('player_ui-base-script-opts','script-opts')]:
