@@ -123,7 +123,7 @@ public class MainPlayer : MpvClient
         if (processCommandLine)
             CommandLine.ProcessCommandLineArgsPreInit();
 
-        if (CommandLine.Contains("config-dir"))
+        if (CommandLine.Contains("config-dir") && !CommandLine.Contains("input-conf"))
         {
             string configDir = CommandLine.GetValue("config-dir");
             string fullPath = System.IO.Path.GetFullPath(configDir);
@@ -247,6 +247,10 @@ public class MainPlayer : MpvClient
         get {
             if (_configFolder == null)
             {
+                string explicitConfig = CommandLine.GetValue("config-dir");
+                if (explicitConfig.Length > 0)
+                    return _configFolder = System.IO.Path.GetFullPath(explicitConfig).AddSep();
+
                 string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");
 
                 if (Directory.Exists(mpvnet_home))

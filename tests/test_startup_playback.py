@@ -120,12 +120,13 @@ def count(path):
 def case(name,fn):
     try:detail=fn() or {};RESULTS.append({'case':name,'passed':True,**detail});print('PASS',name,flush=True)
     except Exception as e:RESULTS.append({'case':name,'passed':False,'error':repr(e)});print('FAIL',name,repr(e),flush=True)
-def options(uri):
-    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first','--script-opts-append','handoff-tag=ready']
+def options(uri,native=False):
+    tail=['--script-opts-append=handoff-tag=ready'] if native else ['--script-opts-append','handoff-tag=ready']
+    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first',*tail]
 
 def script_launch(exe,flag,name,repeated=False):
     path='/'+name+'.y4m';uri=BASE+path
-    args=[flag+BOOT.name,*options(uri)]
+    args=[flag+BOOT.name,*options(uri,exe=='mpv.exe')]
     if repeated:args+=['--script='+EXTRA.name,'--sub-file='+SUB1.name,'--sub-file='+SUB2.name]
     with Player(args,name,exe) as p:
         elapsed=p.playing(uri)

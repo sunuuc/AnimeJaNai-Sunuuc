@@ -147,12 +147,19 @@ def stage():
         (ST/name).write_text('完整便携版：直接运行 mpvnet.exe。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n首次生成 AI 引擎需要等待，显卡驱动仍由系统提供。\n',encoding='utf-8')
     inspect_payload()
 
+def clean_session_files(app):
+    for folder in ('cache','watch_later'):
+        shutil.rmtree(app/'portable_config'/folder,ignore_errors=True)
+    for name in ('settings.xml','saved-props.json','startup-diagnostic.json','startup-diagnostic.json.tmp','playback-diagnostic.json'):
+        (app/'portable_config'/name).unlink(missing_ok=True)
+
 def inspect_payload():
+    clean_session_files(ST)
     files=[p for p in ST.rglob('*') if p.is_file()]
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
        'portable_config/script-modules/player_ui_menu.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
@@ -233,6 +240,7 @@ def package():
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')
     run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')
+    run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
     sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
