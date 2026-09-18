@@ -27,6 +27,15 @@ p='src/player/src/MpvNet.Windows/Program.cs'
 edit(p,'            App.Init();','            StartupDiagnostics.Begin();\n            App.Init();')
 edit(p,'            Terminal.WriteError(ex);','            StartupDiagnostics.Failed();\n            Terminal.WriteError(ex);')
 
+p='tests/test_startup_playback.py'
+edit(p,"""def options(uri):
+    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first','--script-opts-append','handoff-tag=ready']
+""", """def options(uri,native=False):
+    tail=['--script-opts-append=handoff-tag=ready'] if native else ['--script-opts-append','handoff-tag=ready']
+    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first',*tail]
+""")
+edit(p,"    args=[flag+BOOT.name,*options(uri)]", "    args=[flag+BOOT.name,*options(uri,exe=='mpv.exe')]")
+
 p='tools/standalone/build.py'
 edit(p,'def inspect_payload():', '''def clean_session_files(app):
     for folder in ('cache','watch_later'):
