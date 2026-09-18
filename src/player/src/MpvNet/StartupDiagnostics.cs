@@ -57,20 +57,34 @@ public static class StartupDiagnostics
                 ScopedCommandLine? parsed;
                 try { parsed = CommandLine.Parsed; } catch { parsed = null; }
                 var options = parsed?.GlobalOptions ?? [];
+                var playlistStarts = options.Where(o => o.Name == "playlist-start").ToList();
+                string? rawStart = playlistStarts.LastOrDefault()?.Value;
+                int? startIndex = int.TryParse(rawStart, out int selected) ? selected : null;
+                string startKind = rawStart == null ? "none"
+                    : startIndex.HasValue ? "index"
+                    : rawStart is "auto" or "no" ? "auto" : "other";
                 string configuration = options.Any(o => o.Name == "config-dir") ? "explicit"
                     : Directory.Exists(Environment.GetEnvironmentVariable("MPVNET_HOME")) ? "environment"
                     : Directory.Exists(Path.Combine(Folder.Startup, "portable_config")) ? "portable" : "appdata";
                 var data = new
                 {
-                    version = 2,
+                    version = 3,
                     phases = Phases.ToArray(),
                     argument_count = Environment.GetCommandLineArgs().Length - 1,
                     media_arguments = parsed?.Entries.Count,
                     scoped_playlist = parsed?.HasGroups,
+                    empty_scope_count = parsed?.EmptyGroupCount,
                     empty_scope_options_promoted = parsed?.EmptyGroupOptionsPromoted,
+                    promoted_option_names = parsed?.PromotedOptions.Select(o => o.Name)
+                        .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray(),
                     legacy_script_handoff = parsed?.LegacyScriptHandoff,
                     global_option_count = options.Count,
                     playlist_option = options.Any(o => o.Name == "playlist"),
+                    playlist_option_count = options.Count(o => o.Name == "playlist"),
+                    playlist_start_option_count = playlistStarts.Count,
+                    playlist_start_kind = startKind,
+                    playlist_start_index = startIndex,
+                    native_playlist_handoff = options.Any(o => o.Name == "playlist"),
                     script_options = options.Count(o => ScopedCommandLine.BaseName(ScopedCommandLine.CanonicalName(o.Name)) == "scripts"),
                     script_payload_options = options.Count(o => ScopedCommandLine.BaseName(ScopedCommandLine.CanonicalName(o.Name)) == "script-opts"),
                     missing_scripts = parsed == null ? (int?)null : MissingScripts(),
@@ -79,6 +93,7 @@ public static class StartupDiagnostics
                     native_initialized = nativeReady,
                     has_media = nativeReady && Player.GetPropertyString("path").Length > 0,
                     playlist_count = nativeReady ? Player.GetPropertyInt("playlist-count") : 0,
+                    playlist_current_pos = nativeReady ? Player.GetPropertyInt("playlist-pos") : -1,
                     file_loaded = sawFile,
                     option_error = optionError
                 };
