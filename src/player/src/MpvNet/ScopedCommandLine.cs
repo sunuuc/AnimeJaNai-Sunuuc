@@ -11,17 +11,26 @@ public sealed class ScopedCommandLine
     public List<Entry> Entries { get; } = [];
     public bool HasGroups { get; private set; }
     public bool NeedsDedicatedProcess => HasGroups ||
-        GlobalOptions.Any(o => o.Name is "input-ipc-server" or "sub-file" or "sub-files"
-            or "force-media-title" or "start" or "audio-file" or "audio-files"
-            or "http-header-fields" or "referrer" or "user-agent" or "playlist" or "playlist-start"
-            or "external-file" or "external-files");
+        GlobalOptions.Any(o => BaseName(CanonicalName(o.Name)) is
+            "input-ipc-server" or "input-ipc-client" or "input-commands" or
+            "scripts" or "script-opts" or "include" or "config-dir" or
+            "sub-files" or "audio-files" or "external-files" or
+            "force-media-title" or "start" or "http-header-fields" or
+            "referrer" or "user-agent" or "playlist" or "playlist-start");
+
+    public static string BaseName(string name)
+    {
+        foreach (string suffix in new[] { "-append", "-remove", "-toggle", "-add", "-set", "-pre", "-clr" })
+            if (name.EndsWith(suffix, StringComparison.Ordinal)) return name[..^suffix.Length];
+        return name;
+    }
 
     static readonly HashSet<string> ValueOptions = new(StringComparer.Ordinal) {
         "sub-file", "sub-files", "audio-file", "audio-files", "external-file",
         "external-files", "force-media-title", "title", "start", "end", "length",
         "sid", "aid", "vid", "slang", "alang", "sub-delay", "audio-delay",
         "http-header-fields", "referrer", "user-agent", "input-ipc-server",
-        "config-dir", "input-conf", "script", "scripts", "script-opt",
+        "input-ipc-client", "input-commands", "include", "config-dir", "input-conf", "script", "scripts", "script-opt",
         "script-opts", "playlist", "playlist-start", "profile", "log-file", "o"
     };
 
@@ -61,7 +70,7 @@ public sealed class ScopedCommandLine
                 if (eq >= 0) value = body[(eq + 1)..];
                 else if (name.StartsWith("no-", StringComparison.Ordinal))
                 { name = name[3..]; value = "no"; }
-                else if (ValueOptions.Contains(name))
+                else if (ValueOptions.Contains(BaseName(name)) && !name.EndsWith("-clr", StringComparison.Ordinal))
                 {
                     if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal))
                         throw new ArgumentException($"选项 --{name} 缺少值；请使用 --{name}=值。");
@@ -99,8 +108,6 @@ public sealed class ScopedCommandLine
         foreach (var raw in options)
         {
             string name = CanonicalName(raw.Name);
-            // Fold repeated singular subtitles into one Windows path-list add;
-            // otherwise mpv's option map keeps only the last identical key.
             bool fileAppend = name is "sub-files-append" or "audio-files-append" or "external-files-append";
             if (fileAppend)
             {
