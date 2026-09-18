@@ -42,13 +42,23 @@ public class CommandLine
         return result;
     }
 
+    static void SetStartupOption(string name, string value)
+    {
+        int error = MpvNet.Native.LibMpv.mpv_set_option_string(Player.Handle,
+            MpvNet.Native.LibMpv.GetUtf8Bytes(name), MpvNet.Native.LibMpv.GetUtf8Bytes(value));
+        if (error < 0)
+        {
+            StartupDiagnostics.OptionError(error);
+            // Values may contain media-server credentials; never include them.
+            throw new ArgumentException($"播放器不接受启动选项 --{name}（错误 {error}）。");
+        }
+    }
+
     public static void ProcessCommandLineArgsPreInit()
     {
-        // Ordinary options can be set on the pre-initialized mpv handle. List
-        // mutations are commands, not libmpv option names, so most of them must
-        // wait until after initialization. Scripts are the exception: they must
-        // be assembled into their base options before mpv_initialize or they
-        // will never start.
+        // The startup script may issue loadfile during mpv_initialize. Therefore
+        // caller options such as --vf=, --hwdec and authentication fields must be
+        // native mpv options before scripts start, not late runtime properties.
         foreach (var pair in Arguments)
         {
             if (IsLaunchOption(pair.Name) || IsStartupList(pair.Name) || IsListOperation(pair.Name))
@@ -56,14 +66,14 @@ public class CommandLine
 
             Player.ProcessProperty(pair.Name, pair.Value);
             if (!App.ProcessProperty(pair.Name, pair.Value))
-                Player.SetPropertyString(pair.Name, pair.Value);
+                SetStartupOption(pair.Name, pair.Value);
         }
 
         if (TryBuildStartupList("script-opts", ',', out string scriptOptions))
-            Player.SetPropertyString("script-opts", scriptOptions);
+            SetStartupOption("script-opts", scriptOptions);
 
         if (TryBuildStartupList("scripts", Path.PathSeparator, out string scripts))
-            Player.SetPropertyString("scripts", scripts);
+            SetStartupOption("scripts", scripts);
     }
 
     public static void ProcessCommandLineArgsPostInit()
@@ -89,9 +99,8 @@ public class CommandLine
                 Player.CommandV("change-list", pair.Name[..^7], "toggle", pair.Value);
             else if (!_preInitProperties.Contains(pair.Name))
             {
-                // Runtime properties such as volume and media title are applied
-                // once more after initialization so caller values win over saved
-                // frontend settings, while IPC and scripts are never restarted.
+                // Reapply mutable properties after initialization so saved
+                // frontend state cannot override explicit caller values.
                 Player.ProcessProperty(pair.Name, pair.Value);
                 if (!App.ProcessProperty(pair.Name, pair.Value))
                     Player.SetPropertyString(pair.Name, pair.Value);
@@ -150,9 +159,6 @@ public class CommandLine
             }
             else
             {
-                // Removing or toggling startup scripts after they have already
-                // been selected is ambiguous before mpv initializes. Refuse the
-                // request rather than silently starting the wrong script.
                 throw new ArgumentException($"启动阶段不支持列表操作 --{pair.Name}。");
             }
         }
@@ -171,7 +177,6 @@ public class CommandLine
         }
         if (Parsed.Entries.Count == 0 && playlist.Length == 0) return;
 
-        // Assemble while stopped: no temporary request to the first episode.
         bool keepPlaying = App.Queue && Player.GetPropertyInt("playlist-count") > 0
             && Player.GetPropertyInt("playlist-pos") >= 0;
         if (!App.Queue)
