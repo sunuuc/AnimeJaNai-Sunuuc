@@ -8,6 +8,7 @@ R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
 REPO='sunuuc/AnimeJaNai-zh-CN'
+from gpu_target import TARGET, prune, validate as validate_gpu_target
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
 
@@ -138,8 +139,9 @@ def stage():
         p=ST/'portable_config'/n;s=p.read_text(encoding='utf-8')
         s=s.replace('apply-profile upscale-on; script-message aji-slot','script-message aji-slot')
         p.write_text(s,encoding='utf-8')
+    records=prune(ST,records,E)
     dump(ST/'build-info/standalone/components.json',records)
-    dump(ST/'manifest.json',{'version':META['version'],'distribution':'full-portable','repository':REPO,'component_version':'3.6.0'})
+    dump(ST/'manifest.json',{'version':META['version'],'distribution':'full-portable','repository':REPO,'component_version':'3.6.0','gpu_target':TARGET})
     cp(R/'docs/standalone.md',ST/'使用说明.md')
     for name in ('准备使用.txt','README-full.txt'):
         (ST/name).write_text('完整便携版：直接运行 mpvnet.exe。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n首次生成 AI 引擎需要等待，显卡驱动仍由系统提供。\n',encoding='utf-8')
@@ -150,11 +152,10 @@ def inspect_payload():
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
        'portable_config/script-modules/player_ui_menu.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
-       'animejanai/inference/aji_dml.dll','animejanai/inference/onnxruntime.dll','animejanai/inference/DirectML.dll',
        'animejanai/inference/nvinfer_11.dll','animejanai/inference/trtexec.exe','Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
     for name in required:
         if not (ST/name).is_file() or (ST/name).stat().st_size==0:raise RuntimeError('Incomplete package: '+name)
@@ -178,7 +179,7 @@ def inspect_payload():
         if not (ST/'animejanai/rife'/name).is_file():raise RuntimeError('Missing configured RIFE file: '+name)
     rife=list((ST/'animejanai/rife').glob('*.onnx'))
     if not rife or not rife_required:raise RuntimeError('Missing RIFE model collection')
-    for family in ('75','86','89','120'):
+    for family in ('120',):
         if not list((ST/'animejanai/inference').glob('nvinfer_builder_resource_sm'+family+'*')):raise RuntimeError('Missing kernel family '+family)
     licenses=[p for p in (ST/'animejanai/inference').iterdir() if 'LICENSE' in p.name.upper()]
     texts={p.name:p.read_text(encoding='utf-8',errors='replace') for p in licenses if p.is_file()}
@@ -187,6 +188,7 @@ def inspect_payload():
     cuda=any('CUDA' in n.upper() or ('CUDA' in t and 'AGREEMENT' in t and 'NVIDIA' in t) for n,t in texts.items())
     if not trt or not cuda:raise RuntimeError('Missing NVIDIA license texts; inspect license-inventory.json')
     if any(p.suffix.lower() in FONTS for p in files):raise RuntimeError('Unexpected standalone font file')
+    validate_gpu_target(ST,E)
     dump(E/'payload.json',{'required_files':required,'preset_models':sorted(models),'rife_models':len(rife),'required_rife_files':sorted(rife_required),
        'license_files':[p.relative_to(ST).as_posix() for p in licenses],
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
@@ -199,12 +201,15 @@ def package():
         if not results or not all(r['passed'] for r in results):raise RuntimeError('Runtime tests failed')
     shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     inspect_payload();DIST.mkdir(exist_ok=True)
-    info=ST/'build-info/standalone';cp(E,info/'validation');cp(R/'language-evidence',info/'ui-validation')
+    info=ST/'build-info/standalone'
+    shutil.rmtree(info/'validation',ignore_errors=True)
+    shutil.rmtree(info/'ui-validation',ignore_errors=True)
+    cp(E,info/'validation');cp(R/'language-evidence',info/'ui-validation')
     dump(info/'provenance.json',{'version':META['version'],'input_commit':os.environ['GITHUB_SHA'],
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,
       'gpu_inference_tested':False,'player_ui_server_tested':False})
     dump(info/'SHA256.json',{p.relative_to(ST).as_posix():sha(p) for p in ST.rglob('*') if p.is_file() and p!=info/'SHA256.json'})
-    archive=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-win-x64-full.7z'
+    archive=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-rtx5080-laptop-win-x64-full.7z'
     run(SEVEN,'a','-t7z','-mx=3','-mmt=2','-bd',archive,'.',cwd=ST,stdout=subprocess.DEVNULL)
     run(SEVEN,'t',archive,stdout=subprocess.DEVNULL)
     archives=[archive]
@@ -224,6 +229,7 @@ def package():
         archive.unlink()
     dump(DIST/'artifacts.json',[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
     shutil.rmtree(ST);extract(archives[0],R/'clean-install')
+    run(sys.executable,R/'tests/test_gpu_target.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')
     run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')

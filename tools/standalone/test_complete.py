@@ -31,7 +31,7 @@ def components():
     (OUT/'components.log').write_bytes(cp.stdout+cp.stderr)
     assert cp.returncode==0,cp.stderr
     data=json.loads(cp.stdout)
-    assert data['offline'] and len(data['packs'])>=7,data
+    assert data['offline'] and {x['name'] for x in data['packs']}=={'trt-runtime','trt-sm120','rife'},data
     assert all(x['installed'] for x in data['packs']),data
     return {'packs':[x['name'] for x in data['packs']]}
 

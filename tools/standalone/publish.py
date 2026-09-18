@@ -10,6 +10,10 @@ fresh=json.loads((E/'fresh-install/results.json').read_text())
 assert len(fresh)==5 and all(x['passed'] for x in fresh)
 for p in (E/'player_ui/results.json',E/'fresh-install/player_ui/results.json'):
     tests=json.loads(p.read_text());assert len(tests)==2 and all(t['passed'] for t in tests),p
+for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
+    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
+for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
+    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
 head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 assert head==os.environ['GITHUB_SHA'],'Main changed during the build'
 assets=json.loads((DIST/'artifacts.json').read_text())
@@ -31,7 +35,8 @@ checksums=DIST/'SHA256SUMS.txt'
 checksums.write_text(''.join(sha(p)+'  '+p.name+'\n' for p in user_assets+[sourcezip]),encoding='utf-8')
 paths=[p for p in (R/'src').rglob('*') if p.is_file() and not any(x in ('bin','obj','.git') for x in p.relative_to(R/'src').parts)]
 paths += [p for p in (R/'portable_config').rglob('*') if p.is_file()]
-paths += [H/'dependencies.json',H/'build.py']
+paths += [p for p in (R/'tests').rglob('*') if p.is_file() and p.suffix in ('.py','.lua')]
+paths += [H/'dependencies.json',H/'build.py',H/'publish.py',H/'test_complete.py',R/'tools/language-r3/ManagerTests.cs']
 tree=[]
 for p in paths:
     assert p.suffix.lower() not in FONTS|{'.exe','.dll'},p
@@ -58,9 +63,21 @@ assert {a['name'] for a in uploaded['assets']}=={p.name for p in user_assets+[so
 api(f'repos/{REPO}/git/refs/heads/main',{'sha':commit,'force':False},'PATCH')
 api(f'repos/{REPO}/releases/{rel["id"]}',{'draft':False},'PATCH')
 published=api(f'repos/{REPO}/releases/tags/{META["tag"]}');assert published['id']==rel['id'] and not published['draft']
-# The owner requested that superseded releases no longer be distributed.
+# Validate the public artifact before retiring superseded downloads.
+import hashlib, urllib.request
+public_assets=[]
+for file in user_assets+[sourcezip,checksums]:
+    asset=next(a for a in published['assets'] if a['name']==file.name)
+    digest=hashlib.sha256();count=0
+    request=urllib.request.Request(asset['browser_download_url'],headers={'User-Agent':'AnimeJaNai-release-verification'})
+    with urllib.request.urlopen(request,timeout=120) as response:
+        while chunk:=response.read(1024*1024):
+            digest.update(chunk);count+=len(chunk)
+    assert count==file.stat().st_size and digest.hexdigest()==sha(file),file.name
+    public_assets.append({'name':file.name,'bytes':count,'sha256':digest.hexdigest()})
+dump(DIST/'public-downloads.json',{'passed':True,'assets':public_assets})
 for previous in api(f'repos/{REPO}/releases?per_page=100'):
-    if previous['tag_name']=='standalone-v1.0.1' and META['tag']=='standalone-v1.1.0':
+    if not previous['draft'] and previous['tag_name'].startswith('standalone-v') and previous['tag_name']!=META['tag']:
         run('gh','release','delete',previous['tag_name'],'-R',REPO,'--yes','--cleanup-tag')
 dump(DIST/'publication.json',{'release_id':rel['id'],'source_commit':commit,'build_commit':head,'tag':META['tag'],'assets':assets})
 print('PUBLISHED',META['tag'],commit)

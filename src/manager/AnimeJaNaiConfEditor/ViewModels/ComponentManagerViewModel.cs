@@ -48,7 +48,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public string Description => Name switch
         {
-            "trt-runtime" => AnimeJaNai.Localization.UiText.T("NVIDIA GPU 上最快的超分后端。未安装时，NVIDIA 用户将回退到速度更慢的 DirectML 后端。"),
+            "trt-runtime" => MainWindowViewModel.TensorRtOnly ? "TensorRT" : AnimeJaNai.Localization.UiText.T("NVIDIA GPU 上最快的超分后端。未安装时，NVIDIA 用户将回退到速度更慢的 DirectML 后端。"),
             "rife" => AnimeJaNai.Localization.UiText.T("视频补帧（例如 24 → 48 fps）。如果只使用超分则不需要。"),
             "trt-ptx" => AnimeJaNai.Localization.UiText.T("用于没有专用内核包的 NVIDIA GPU 的后备内核。首次构建引擎会更慢。"),
             _ when Name.StartsWith("trt-sm") => AnimeJaNai.Localization.UiText.T("与该代 GPU 匹配的引擎构建内核，仅对应 GPU 需要安装。"),
@@ -155,7 +155,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 bool nvidia = gpu.GetProperty("nvidia").GetBoolean();
                 GpuText = nvidia
                     ? AnimeJaNai.Localization.UiText.F($"GPU：{gpu.GetProperty("name").GetString()}")
-                    : AnimeJaNai.Localization.UiText.T("GPU：未检测到 NVIDIA 设备；内置 DirectML 后端可用于 AMD 和 Intel GPU");
+                    : MainWindowViewModel.TensorRtOnly ? AnimeJaNai.Localization.UiText.T("TensorRT requires an NVIDIA GPU.") : AnimeJaNai.Localization.UiText.T("GPU：未检测到 NVIDIA 设备；内置 DirectML 后端可用于 AMD 和 Intel GPU");
                 GpuNvidia = nvidia;
 
                 Packs.Clear();

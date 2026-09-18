@@ -50,6 +50,10 @@ namespace AnimeJaNaiConfEditor.ViewModels
         // Install state comes from the disk (works offline); GPU identity comes from the
         // component engine once its refresh completes.
 
+        public static bool TensorRtOnly =>
+            File.Exists(Path.Combine(DataDir, "inference", "gpu-target.json"));
+        public bool DirectMlAvailable => !TensorRtOnly;
+
         public static bool TrtOnDisk() =>
             File.Exists(Path.Combine(DataDir, "inference", "nvinfer_11.dll"));
 
@@ -92,7 +96,19 @@ namespace AnimeJaNaiConfEditor.ViewModels
             TrtSelectable = trtUsable;
 
             string notice = "";
-            if (trtUsable && AnimeJaNaiConf != null && AnimeJaNaiConf.DirectMlSelected &&
+            if (TensorRtOnly)
+            {
+                if (AnimeJaNaiConf != null)
+                {
+                    AnimeJaNaiConf.BackendAutoFallback = false;
+                    AnimeJaNaiConf.SetTensorRtSelected();
+                }
+                if (!trtUsable)
+                    notice = AnimeJaNai.Localization.UiText.T(nvidia == false
+                        ? "TensorRT requires an NVIDIA GPU."
+                        : "TensorRT is not installed.");
+            }
+            else if (trtUsable && AnimeJaNaiConf != null && AnimeJaNaiConf.DirectMlSelected &&
                 AnimeJaNaiConf.BackendAutoFallback)
             {
                 // TensorRT is the natural path on NVIDIA: the DirectML selection was
@@ -1572,6 +1588,7 @@ chain_2_rife=no";
 
         public void UserSelectDirectMl()
         {
+            if (MainWindowViewModel.TensorRtOnly) return;
             BackendAutoFallback = false;
             SetDirectMlSelected();
         }

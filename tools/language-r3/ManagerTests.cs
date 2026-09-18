@@ -79,4 +79,11 @@ selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
 Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"selector saves correct stable language ID "+selected);
 Check(InterfaceLanguage.IsChinese==zh,"selection does not partially relocalize current window "+selected);
 w.Close();Dispatcher.UIThread.RunJobs();
+File.WriteAllText(Path.Combine(fixture,"inference","gpu-target.json"),"{}");
+var targetVm=new MainWindowViewModel();targetVm.RefreshComponentAwareness();
+Check(!targetVm.DirectMlAvailable && targetVm.AnimeJaNaiConf.TensorRtSelected &&
+      !targetVm.AnimeJaNaiConf.BackendAutoFallback,"target package never falls back to missing DirectML");
+targetVm.AnimeJaNaiConf.UserSelectDirectMl();
+Check(targetVm.AnimeJaNaiConf.TensorRtSelected && !targetVm.AnimeJaNaiConf.DirectMlSelected,
+      "unavailable backend cannot be selected");
 Console.WriteLine("PASS Manager language process "+selected);
