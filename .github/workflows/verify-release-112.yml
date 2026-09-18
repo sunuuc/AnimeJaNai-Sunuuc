@@ -1,0 +1,76 @@
+name: Verify published 1.1.2
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-release-112.yml']
+permissions:
+  contents: write
+concurrency:
+  group: verify-release-112
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify public downloads before removing the superseded release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import base64, hashlib, json, subprocess, urllib.request
+          from pathlib import Path
+          repo='sunuuc/AnimeJaNai-zh-CN'
+          tag='standalone-v1.1.2'
+          expected='bddf5e1c06c49eb92e6653d2fbdb2653245b1da3d53803105dc004008f6dfb54'
+          name='AnimeJaNai-zh-CN-1.1.2-win-x64-full.7z'
+          def api(path):
+              return json.loads(subprocess.check_output(['gh','api',path]))
+          release=api(f'repos/{repo}/releases/tags/{tag}')
+          assert release['id']==391160427 and not release['draft']
+          asset=next(a for a in release['assets'] if a['name']==name)
+          assert asset['state']=='uploaded' and asset['digest']=='sha256:'+expected
+          assert asset['size']==1712778567
+          contents=api(f'repos/{repo}/contents/tools/standalone/dependencies.json?ref=main')
+          seed=json.loads(base64.b64decode(contents['content']))['runtime_seed']
+          assert seed['version']=='1.1.2' and seed['assets'][0]['sha256']==expected
+          base=f'https://github.com/{repo}/releases/download/{tag}/'
+          # Deliberately unauthenticated HTTPS, exactly as for a public downloader.
+          def public_request(url):
+              return urllib.request.Request(url,headers={'User-Agent':'AnimeJaNai-release-verification'})
+          with urllib.request.urlopen(public_request(base+'SHA256SUMS.txt'),timeout=90) as response:
+              assert response.status==200
+              sums=dict((n,h) for h,n in (line.split('  ',1) for line in response.read().decode().splitlines()))
+          assert sums[name]==expected
+          proof={'tag':tag,'release_id':release['id'],'public_downloads':[],'runtime_seed_version':seed['version']}
+          for filename in (name,'AnimeJaNai-zh-CN-1.1.2-sources.zip'):
+              info=next(a for a in release['assets'] if a['name']==filename)
+              hasher=hashlib.sha256();length=0
+              with urllib.request.urlopen(public_request(base+filename),timeout=90) as response:
+                  assert response.status==200
+                  while True:
+                      data=response.read(1024*1024)
+                      if not data:break
+                      hasher.update(data);length+=len(data)
+              assert length==info['size'] and hasher.hexdigest()==sums[filename]
+              assert info['digest']=='sha256:'+hasher.hexdigest()
+              proof['public_downloads'].append({'file':filename,'http_status':200,'bytes':length,'sha256':hasher.hexdigest()})
+              print('VERIFIED PUBLIC DOWNLOAD',filename,length,hasher.hexdigest(),flush=True)
+          # The owner requested that obsolete packages not remain available.
+          old=[r for r in api(f'repos/{repo}/releases?per_page=100') if r['tag_name']=='standalone-v1.1.1']
+          for previous in old:
+              assert previous['id']==390758227
+              subprocess.run(['gh','release','delete','standalone-v1.1.1','-R',repo,'--yes','--cleanup-tag'],check=True)
+          remaining=api(f'repos/{repo}/releases?per_page=100')
+          assert any(r['id']==release['id'] and not r['draft'] for r in remaining)
+          assert not any(r['tag_name']=='standalone-v1.1.1' for r in remaining)
+          proof['remaining_releases']=[r['tag_name'] for r in remaining]
+          Path('release-download-verification.json').write_text(json.dumps(proof,indent=2),encoding='utf-8')
+          print(json.dumps(proof,indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-download-verification-1.1.2
+          path: release-download-verification.json
+          retention-days: 14
+          if-no-files-found: error
