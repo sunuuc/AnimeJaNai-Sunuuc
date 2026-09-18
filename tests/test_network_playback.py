@@ -2,6 +2,7 @@
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
+from capture_window import capture_client
 import concurrent.futures, json, os, subprocess, sys, threading, time, uuid
 ROOT=Path(__file__).resolve().parents[1]
 APP=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(parents=True,exist_ok=True)
@@ -64,7 +65,8 @@ class Frontend:
         self.proc=subprocess.Popen([str(APP/'mpvnet.exe'),*flags,*args],cwd=APP,stdout=self.log,stderr=self.log)
         end=time.monotonic()+15
         while time.monotonic()<end:
-            if self.proc.poll() is not None:raise RuntimeError('frontend exited: '+name)
+            if self.proc.poll() is not None:
+                self.close();raise RuntimeError('frontend exited: '+name)
             try:self.fp=open(self.pipe,'r+b',buffering=0);break
             except OSError:time.sleep(.1)
         if self.fp is None:self.close();raise RuntimeError('no frontend IPC: '+name)
@@ -91,7 +93,15 @@ class Frontend:
         raise AssertionError(label+'; '+json.dumps(self.get('user-data/player_ui/playback',{}),ensure_ascii=False))
     def loaded(self,path):
         self.wait(lambda:self.get('path')==path and self.get('time-pos') is not None and (self.get('vo-presented-frame-count',0) or 0)>0,'video did not begin')
-    def shot(self,name):self.command('screenshot-to-file',str(OUT/(name+'.png')),'window')
+    def shot(self,name):
+        self.wait(lambda:self.get('user-data/player_ui/ui',{}).get('overlay_ok') is True,'overlay not rendered')
+        target=OUT/(name+'.png')
+        if self.get('idle-active'):
+            evidence=capture_client(self.proc.pid,target)
+            (OUT/(name+'-capture.json')).write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+        else:
+            self.command('screenshot-to-file',str(target),'window')
+        check(target.is_file() and target.stat().st_size>1024,'captured visible client '+name)
     def close(self):
         if hasattr(self,'proc') and self.proc.poll() is None:
             self.proc.terminate()
@@ -118,9 +128,16 @@ def idle_and_ipc():
 def direct_and_ui():
     uri=BASE+'/auth/direct.y4m?api_key=a|b&MediaSourceId=test'
     with Frontend([uri,'--http-header-fields=Authorization: LocalTest sample'],'direct') as p:
-        p.loaded(uri);p.command('set_property','pause',True)
-        p.wait(lambda:ACTIVE.get('/auth/direct.y4m',0)==0,'initial read stalled')
+        p.loaded(uri)
+        initial=p.get('time-pos',0)
+        p.wait(lambda:(p.get('time-pos',0) or 0)>initial+.5,'real playback does not advance')
+        p.command('set_property','pause',True)
+        p.wait(lambda:p.get('pause') is True,'pause not applied')
+        # A bounded paused cache may retain one blocked HTTP response. Requiring
+        # that response to finish would force whole-file downloading and defeat
+        # the production cache limit. Test request counts and playback instead.
         time.sleep(.4);before=len(requests('/auth/direct.y4m'))
+        check(before==1,'direct playback starts one media request')
         p.command('loadfile',BASE+'/never/next.y4m','append')
         p.command('script-message-to','thumbfast','thumb','12','30','30')
         for kind in ('speed','audio','sub','settings','playlist','performance'):
@@ -136,6 +153,10 @@ def direct_and_ui():
         check(all(r['authorization']=='LocalTest sample' for r in requests('/auth/direct.y4m')),'caller authorization retained')
         check(MAX_ACTIVE.get('/auth/direct.y4m')==1,'direct video has no concurrent readers')
         check(p.get('path')==uri,'pipe and signed query preserved')
+        paused_position=p.get('time-pos',0)
+        p.command('set_property','pause',False)
+        p.wait(lambda:(p.get('time-pos',0) or 0)>paused_position+.5,'bounded cache does not resume playback')
+        check(len(requests('/auth/direct.y4m'))==before,'resume reuses the original media request')
         RESULTS.append({'case':'direct-request-count','passed':True,'before_ui':before,'after_ui':after,'max_concurrent':MAX_ACTIVE.get('/auth/direct.y4m')})
 def grouped():
     first=BASE+'/never/group-first.y4m';second=BASE+'/media/group-selected.y4m'
@@ -151,6 +172,7 @@ def playlist_file():
 def refused():
     with Frontend([BASE+'/denied/video.y4m'],'denied') as p:
         p.wait(lambda:p.get('user-data/player_ui/playback',{}).get('phase')=='failed','failed URL not reported')
+        check(p.get('user-data/player_ui/playback',{}).get('http_status')==403,'HTTP refusal code retained')
         count=len(requests('/denied/video.y4m'));time.sleep(2)
         check(count>0 and len(requests('/denied/video.y4m'))==count,'403 has no scripted retry loop')
         p.shot('http-error')
