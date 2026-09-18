@@ -10,6 +10,9 @@ public sealed class ScopedCommandLine
     public List<Option> GlobalOptions { get; } = [];
     public List<Entry> Entries { get; } = [];
     public bool HasGroups { get; private set; }
+    public int EmptyGroupOptionsPromoted { get; private set; }
+    public bool LegacyScriptHandoff => EmptyGroupOptionsPromoted > 0 &&
+        GlobalOptions.Any(o => BaseName(CanonicalName(o.Name)) is "scripts" or "script-opts");
     public bool NeedsDedicatedProcess => HasGroups ||
         GlobalOptions.Any(o => BaseName(CanonicalName(o.Name)) is
             "input-ipc-server" or "input-ipc-client" or "input-commands" or
@@ -55,8 +58,20 @@ public sealed class ScopedCommandLine
             if (!literal && arg == "--}")
             {
                 if (groupFiles == null) throw new ArgumentException("--} 没有对应的 --{。");
-                foreach (var path in groupFiles)
-                    result.Entries.Add(new Entry(path, new List<Option>(groupOptions!)));
+                if (groupFiles.Count == 0)
+                {
+                    // Some Windows media clients use an empty mpv scope only as
+                    // a transport envelope for a startup script and its private
+                    // options. mpv.net historically treated those options as
+                    // global. Preserve that handoff instead of dropping the URL.
+                    result.GlobalOptions.AddRange(groupOptions!);
+                    result.EmptyGroupOptionsPromoted += groupOptions!.Count;
+                }
+                else
+                {
+                    foreach (var path in groupFiles)
+                        result.Entries.Add(new Entry(path, new List<Option>(groupOptions!)));
+                }
                 groupFiles = null; groupOptions = null;
                 continue;
             }
