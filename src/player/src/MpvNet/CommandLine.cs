@@ -7,56 +7,35 @@ public class CommandLine
     public static ScopedCommandLine Parsed => _parsed ??=
         ScopedCommandLine.Parse(Environment.GetCommandLineArgs().Skip(1));
 
-    static string[] _preInitProperties { get; } = {
-        "input-terminal", "terminal", "input-file", "config", "o", "config-dir", "input-conf",
-        "load-scripts", "scripts", "script-opts", "player-operation-mode", "idle", "log-file",
-        "msg-color", "dump-stats", "msg-level", "really-quiet" };
-
     public static List<StringPair> Arguments => _arguments ??=
         Parsed.GlobalOptions.Select(o =>
             new StringPair(ScopedCommandLine.CanonicalName(o.Name), o.Value)).ToList();
 
     public static void ProcessCommandLineArgsPreInit()
     {
+        // Native startup options (including list operations) must be installed
+        // before mpv_initialize. A later scripts-append does not start a script.
         foreach (var pair in Arguments)
         {
             if (IsLaunchOption(pair.Name)) continue;
-            if (pair.Name.EndsWith("-add") || pair.Name.EndsWith("-set") ||
-                pair.Name.EndsWith("-pre") || pair.Name.EndsWith("-clr") ||
-                pair.Name.EndsWith("-append") || pair.Name.EndsWith("-remove") ||
-                pair.Name.EndsWith("-toggle")) continue;
             Player.ProcessProperty(pair.Name, pair.Value);
-            if (!App.ProcessProperty(pair.Name, pair.Value))
-                Player.SetPropertyString(pair.Name, pair.Value);
+            if (App.ProcessProperty(pair.Name, pair.Value)) continue;
+            int error = MpvNet.Native.LibMpv.mpv_set_option_string(Player.Handle,
+                MpvNet.Native.LibMpv.GetUtf8Bytes(pair.Name), MpvNet.Native.LibMpv.GetUtf8Bytes(pair.Value));
+            if (error < 0)
+            {
+                StartupDiagnostics.OptionError(error);
+                // Option values may contain server credentials. Do not log them.
+                throw new ArgumentException($"播放器不接受启动选项 --{pair.Name}（错误 {error}）。");
+            }
         }
     }
 
     public static void ProcessCommandLineArgsPostInit()
     {
-        foreach (var pair in Arguments)
-        {
-            if (_preInitProperties.Contains(pair.Name) || IsLaunchOption(pair.Name)) continue;
-            if (pair.Name.EndsWith("-add"))
-                Player.CommandV("change-list", pair.Name[..^4], "add", pair.Value);
-            else if (pair.Name.EndsWith("-set"))
-                Player.CommandV("change-list", pair.Name[..^4], "set", pair.Value);
-            else if (pair.Name.EndsWith("-append"))
-                Player.CommandV("change-list", pair.Name[..^7], "append", pair.Value);
-            else if (pair.Name.EndsWith("-pre"))
-                Player.CommandV("change-list", pair.Name[..^4], "pre", pair.Value);
-            else if (pair.Name.EndsWith("-clr"))
-                Player.CommandV("change-list", pair.Name[..^4], "clr", "");
-            else if (pair.Name.EndsWith("-remove"))
-                Player.CommandV("change-list", pair.Name[..^7], "remove", pair.Value);
-            else if (pair.Name.EndsWith("-toggle"))
-                Player.CommandV("change-list", pair.Name[..^7], "toggle", pair.Value);
-            else
-            {
-                Player.ProcessProperty(pair.Name, pair.Value);
-                if (!App.ProcessProperty(pair.Name, pair.Value))
-                    Player.SetPropertyString(pair.Name, pair.Value);
-            }
-        }
+        // Do not replay options here: that restarts IPC listeners and can erase
+        // work performed by an external script while the window initializes.
+        StartupDiagnostics.Ready();
     }
 
     static bool IsLaunchOption(string name) => name is "playlist" or "playlist-start" or "shuffle";
