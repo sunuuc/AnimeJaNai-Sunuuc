@@ -10,7 +10,8 @@ public class CommandLine
     static string[] _preInitProperties { get; } = {
         "input-terminal", "terminal", "input-file", "config", "o", "config-dir", "input-conf",
         "load-scripts", "scripts", "script-opts", "player-operation-mode", "idle", "log-file",
-        "msg-color", "dump-stats", "msg-level", "really-quiet" };
+        "msg-color", "dump-stats", "msg-level", "really-quiet",
+        "playlist", "playlist-start", "shuffle" };
 
     public static List<StringPair> Arguments => _arguments ??= BuildArguments();
 
@@ -56,12 +57,13 @@ public class CommandLine
 
     public static void ProcessCommandLineArgsPreInit()
     {
-        // The startup script may issue loadfile during mpv_initialize. Therefore
-        // caller options such as --vf=, --hwdec and authentication fields must be
-        // native mpv options before scripts start, not late runtime properties.
+        // Player UI transports its playlist and selected index in an empty
+        // --{ ... --} scope. mpv must receive --playlist and --playlist-start
+        // before mpv_initialize; replaying them later with loadlist can start
+        // the wrong entry before the requested index is known.
         foreach (var pair in Arguments)
         {
-            if (IsLaunchOption(pair.Name) || IsStartupList(pair.Name) || IsListOperation(pair.Name))
+            if (IsStartupList(pair.Name) || IsListOperation(pair.Name))
                 continue;
 
             Player.ProcessProperty(pair.Name, pair.Value);
@@ -80,7 +82,7 @@ public class CommandLine
     {
         foreach (var pair in Arguments)
         {
-            if (IsLaunchOption(pair.Name) || IsStartupList(pair.Name))
+            if (IsStartupList(pair.Name) || IsNativePlaylistStartupOption(pair.Name))
                 continue;
 
             if (pair.Name.EndsWith("-add", StringComparison.Ordinal))
@@ -110,7 +112,8 @@ public class CommandLine
         StartupDiagnostics.Ready();
     }
 
-    static bool IsLaunchOption(string name) => name is "playlist" or "playlist-start" or "shuffle";
+    static bool IsNativePlaylistStartupOption(string name) =>
+        name is "playlist" or "playlist-start" or "shuffle";
 
     static bool IsListOperation(string name) =>
         name.EndsWith("-add", StringComparison.Ordinal) ||
@@ -168,14 +171,23 @@ public class CommandLine
 
     public static void ProcessCommandLineFiles()
     {
+        // --playlist was already expanded by native mpv during initialization,
+        // together with --playlist-start. Never clear and rebuild it here.
+        if (Contains("playlist"))
+        {
+            foreach (var entry in Parsed.Entries)
+                Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), "append",
+                    "-1", ScopedCommandLine.FileOptions(entry.Options));
+            return;
+        }
+
         bool shuffle = GetValue("shuffle") == "yes";
-        string playlist = GetValue("playlist");
-        if (!Parsed.HasGroups && playlist.Length == 0 && !Contains("playlist-start") && !shuffle)
+        if (!Parsed.HasGroups && !Contains("playlist-start") && !shuffle)
         {
             Player.LoadFiles(Parsed.Entries.Select(e => e.Path).ToArray(), !App.Queue, App.Queue);
             return;
         }
-        if (Parsed.Entries.Count == 0 && playlist.Length == 0) return;
+        if (Parsed.Entries.Count == 0) return;
 
         bool keepPlaying = App.Queue && Player.GetPropertyInt("playlist-count") > 0
             && Player.GetPropertyInt("playlist-pos") >= 0;
@@ -185,8 +197,6 @@ public class CommandLine
             Player.CommandV("playlist-clear");
         }
         int offset = Player.GetPropertyInt("playlist-count");
-        if (playlist.Length > 0)
-            Player.CommandV("loadlist", MainPlayer.ConvertFilePath(playlist), "append");
         foreach (var entry in Parsed.Entries)
             Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), "append",
                 "-1", ScopedCommandLine.FileOptions(entry.Options));
@@ -195,9 +205,10 @@ public class CommandLine
         int count = Player.GetPropertyInt("playlist-count");
         if (!keepPlaying && count > offset)
         {
-            int start = int.TryParse(GetValue("playlist-start"), out int selected) ? selected : 0;
+            string requested = GetValue("playlist-start");
+            int start = int.TryParse(requested, out int selected) ? selected : 0;
             start = Math.Clamp(start, 0, count - offset - 1);
-            Player.SetPropertyInt("playlist-pos", shuffle ? 0 : offset + start);
+            Player.CommandV("playlist-play-index", (shuffle ? 0 : offset + start).ToString());
         }
     }
 
