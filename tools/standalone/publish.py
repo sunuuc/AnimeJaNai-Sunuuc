@@ -1,4 +1,4 @@
-"""Publish the tested full package and corresponding source tree."""
+"Publish the tested full package and corresponding source tree."
 from pathlib import Path
 import base64,json,os,subprocess,zipfile
 from build import R,H,E,DIST,REPO,META,LOCK,FONTS,sha,dump,run,api
@@ -6,20 +6,12 @@ from build import R,H,E,DIST,REPO,META,LOCK,FONTS,sha,dump,run,api
 for line in (DIST/'SHA256SUMS.txt').read_text().splitlines():
     h,n=line.split('  ',1)
     if sha(DIST/n)!=h:raise RuntimeError('Publication checksum mismatch: '+n)
+
 fresh=json.loads((E/'fresh-install/results.json').read_text())
 assert len(fresh)==5 and all(x['passed'] for x in fresh)
-for p in (E/'player_ui/results.json',E/'fresh-install/player_ui/results.json'):
-    tests=json.loads(p.read_text());assert len(tests)==2 and all(t['passed'] for t in tests),p
-for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
-    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
-for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
-    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
-for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
-    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
-for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
-    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
-for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
-    result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
+
+for path in (E/'player_ui/results.json',E/'fresh-install/player_ui/results.json'):
+    result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
 for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
     result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
 for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
@@ -27,7 +19,10 @@ for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
 for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
     result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
 for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-handoff/results.json'):
-    result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
+    result=json.loads(path.read_text());assert len(result)==3 and all(t['passed'] for t in result),path
+    playlist=next(t for t in result if t['case']=='player_ui-playlist-selected')
+    assert playlist['wrong_episode_requests']==0 and playlist['selected_episode_requests']==1,playlist
+
 head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 assert head==os.environ['GITHUB_SHA'],'Main changed during the build'
 assets=json.loads((DIST/'artifacts.json').read_text())
@@ -35,6 +30,7 @@ assert assets and all(x['repo']==REPO for x in assets)
 LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
 sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
+
 # Keep source rebuild inputs available after superseded downloads are removed.
 temp=sourcezip.with_suffix('.pending.zip')
 with zipfile.ZipFile(sourcezip) as src,zipfile.ZipFile(temp,'w',zipfile.ZIP_DEFLATED) as dst:
@@ -44,6 +40,7 @@ with zipfile.ZipFile(sourcezip) as src,zipfile.ZipFile(temp,'w',zipfile.ZIP_DEFL
     dst.write(R/'README.md','README.md')
     dst.write(R/'.github/workflows/standalone.yml','.github/workflows/standalone.yml')
 temp.replace(sourcezip)
+
 user_assets=[DIST/x['name'] for x in assets]
 checksums=DIST/'SHA256SUMS.txt'
 checksums.write_text(''.join(sha(p)+'  '+p.name+'\n' for p in user_assets+[sourcezip]),encoding='utf-8')
@@ -67,7 +64,8 @@ commit=api(f'repos/{REPO}/git/commits',{'message':f'Release {META["version"]} so
 old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==META['tag']]
 assert not old,'Release tag already exists; refusing to overwrite'
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')
-rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,'name':f'AnimeJaNai-zh-CN {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
+rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
+    'name':f'AnimeJaNai-zh-CN {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
 run('gh','release','upload',META['tag'],'-R',REPO,*user_assets,sourcezip,checksums)
 uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
 for p in user_assets+[sourcezip,checksums]:
@@ -76,7 +74,9 @@ for p in user_assets+[sourcezip,checksums]:
 assert {a['name'] for a in uploaded['assets']}=={p.name for p in user_assets+[sourcezip,checksums]}
 api(f'repos/{REPO}/git/refs/heads/main',{'sha':commit,'force':False},'PATCH')
 api(f'repos/{REPO}/releases/{rel["id"]}',{'draft':False},'PATCH')
-published=api(f'repos/{REPO}/releases/tags/{META["tag"]}');assert published['id']==rel['id'] and not published['draft']
+published=api(f'repos/{REPO}/releases/tags/{META["tag"]}')
+assert published['id']==rel['id'] and not published['draft']
+
 # Validate the public artifact before retiring superseded downloads.
 import hashlib, urllib.request
 public_assets=[]
