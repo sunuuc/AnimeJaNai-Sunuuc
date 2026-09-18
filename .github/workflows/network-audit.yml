@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
-      - name: Snapshot exact sources and packaged settings
+      - name: Snapshot standalone startup sources and packaged settings
         shell: python
         run: |
           from pathlib import Path
@@ -38,8 +38,9 @@ jobs:
           with zipfile.ZipFile(out/'packaged-config.zip','w',zipfile.ZIP_DEFLATED) as z:
               for p in configs.rglob('*'):
                   if p.is_file() and p.suffix.lower() in ('.conf','.lua','.json','.txt'): z.write(p,p.relative_to(configs))
-          p=subprocess.run([str(root/'runtime/mpv.exe'),'--no-config','--list-options'],capture_output=True)
-          (out/'options.txt').write_bytes(p.stdout+p.stderr)
+          for flag,name in [('--list-options','options.txt'),('--input-cmdlist','commands.txt')]:
+              p=subprocess.run([str(root/'runtime/mpv.exe'),'--no-config',flag],capture_output=True)
+              (out/name).write_bytes(p.stdout+p.stderr)
       - uses: actions/upload-artifact@v4
         with:
           name: network-audit-source
