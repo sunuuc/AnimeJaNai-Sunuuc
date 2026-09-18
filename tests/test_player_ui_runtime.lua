@@ -48,7 +48,10 @@ local function row(key)
  for i,r in ipairs(ui().rows or {})do if r.key==key or r.target==key or r.text==key then return 'row-'..i end end
  error('missing row '..key)
 end
-local function menu(kind,then_)mp.commandv('script-message','player_ui-menu',kind);after(.15,then_)end
+local function menu(kind,then_)
+ mp.commandv('script-message','player_ui-menu',kind)
+ wait_for(function()return ui().menu==kind end,'menu did not open: '..kind,then_)
+end
 local function close(then_)mp.commandv('script-message','player_ui-hide');after(.1,function()mp.commandv('script-message','player_ui-show');after(.1,then_)end)end
 local function shot(name)
  check(ui().overlay_ok,'native overlay accepted before screenshot '..name)
@@ -186,12 +189,21 @@ steps[#steps+1]=function(next_)
 end
 steps[#steps+1]=function(next_)
  mp.set_property_number('window-scale',2);mp.commandv('script-message','player_ui-show')
- after(.3,function()
+ wait_for(function()
+  local u=ui();return u.width>0 and u.height>0 and u.overlay_ok
+ end,'compact window did not settle',function()
   check(ui().width>0 and ui().height>0,'compact window resized')
-  click('settings',function()click(row('ai'),function()
-   for _,b in ipairs(ui().menu_boxes)do check(b.x0>=0 and b.y0>=0 and b.x1*ui().scale<=ui().width+1 and b.y1*ui().scale<=ui().height+1,'compact menu fits screen')end
-   shot('player_ui-compact');next_()
-  end)end)
+  -- Physical mouse movement during a Win32 resize is nondeterministic on WARP.
+  -- All real mouse paths were exercised above; use the public menu messages here
+  -- to validate only the compact geometry after the resize has settled.
+  menu('settings',function()
+   menu('ai',function()
+    for _,b in ipairs(ui().menu_boxes)do
+     check(b.x0>=0 and b.y0>=0 and b.x1*ui().scale<=ui().width+1 and b.y1*ui().scale<=ui().height+1,'compact menu fits screen')
+    end
+    shot('player_ui-compact');next_()
+   end)
+  end)
  end)
 end
 local index=0
