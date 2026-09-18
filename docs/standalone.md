@@ -1,14 +1,14 @@
-# AnimeJaNai-zh-CN 1.1.4
+# AnimeJaNai-zh-CN 1.1.5
 
 Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持动漫 AI 超分和 RIFE 补帧。
 
 ## 使用
 
-解压 `AnimeJaNai-zh-CN-1.1.4-rtx5080-laptop-win-x64-full.7z`，运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
+解压 `AnimeJaNai-zh-CN-1.1.5-rtx5080-laptop-win-x64-full.7z`，运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
 
 包内包含 TensorRT 运行库、SM120 内核、超分与补帧模型。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
-支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。启动脚本和脚本参数在播放器初始化前加载。
+支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。兼容 Player UI 把媒体链接参数放在空 `--{ ... --}` 参数组中的外部播放器调用方式；启动脚本和脚本参数会在播放器初始化前加载。
 
 ## 播放界面
 
@@ -33,8 +33,8 @@ Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持
 
 ## 文件
 
-- `AnimeJaNai-zh-CN-1.1.4-rtx5080-laptop-win-x64-full.7z`：完整程序
-- `AnimeJaNai-zh-CN-1.1.4-sources.zip`：源码
+- `AnimeJaNai-zh-CN-1.1.5-rtx5080-laptop-win-x64-full.7z`：完整程序
+- `AnimeJaNai-zh-CN-1.1.5-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
 
 ## 许可证
