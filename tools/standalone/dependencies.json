@@ -4,13 +4,13 @@
     "assets": [
       {
         "repo": "sunuuc/AnimeJaNai-zh-CN",
-        "tag": "standalone-v1.1.4",
-        "name": "AnimeJaNai-zh-CN-1.1.4-rtx5080-laptop-win-x64-full.7z",
-        "sha256": "b7fb8cdc3f746e09ca3f8b600f241223922b0ca2c35c967fcb153ee775594a48",
-        "bytes": 1102345383
+        "tag": "standalone-v1.1.5",
+        "name": "AnimeJaNai-zh-CN-1.1.5-rtx5080-laptop-win-x64-full.7z",
+        "sha256": "aaa9c7a814e04bd1a04f787377ebb0826e54626078414ffa8a84773f90c964f3",
+        "bytes": 1102321608
       }
     ],
-    "version": "1.1.4"
+    "version": "1.1.5"
   },
   "ui_source": {
     "repo": "sunuuc/AnimeJaNai-zh-CN",

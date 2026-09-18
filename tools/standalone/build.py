@@ -159,7 +159,7 @@ def inspect_payload():
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
        'portable_config/script-modules/player_ui_menu.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
@@ -241,6 +241,7 @@ def package():
     run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')
     run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')
     run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')
+    run(sys.executable,R/'tests/test_player_ui_empty_scope.py',R/'clean-install',E/'fresh-install/player_ui-handoff')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
     sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:

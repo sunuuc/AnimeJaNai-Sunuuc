@@ -20,6 +20,14 @@ for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
     target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
 for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
     result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
+for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
+    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
+for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
+    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
+for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
+    result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
+for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-handoff/results.json'):
+    result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
 head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 assert head==os.environ['GITHUB_SHA'],'Main changed during the build'
 assets=json.loads((DIST/'artifacts.json').read_text())
