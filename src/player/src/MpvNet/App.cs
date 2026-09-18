@@ -92,11 +92,11 @@ public class AppClass
     {
         if (RememberVolume)
         {
-            Player.SetPropertyInt("volume", Settings.Volume);
-            Player.SetPropertyString("mute", Settings.Mute);
+            if (!CommandLine.Contains("volume")) Player.SetPropertyInt("volume", Settings.Volume);
+            if (!CommandLine.Contains("mute")) Player.SetPropertyString("mute", Settings.Mute);
         }
 
-        if (RememberAudioDevice && Settings.AudioDevice != "")
+        if (RememberAudioDevice && Settings.AudioDevice != "" && !CommandLine.Contains("audio-device"))
             Player.SetPropertyString("audio-device", Settings.AudioDevice);
     }
 

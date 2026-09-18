@@ -37,6 +37,7 @@ static class Program
                 return;
             }
 
+            StartupDiagnostics.Begin();
             App.Init();
             Theme.Init();
             Mutex mutex = new Mutex(true, StringHelp.GetMD5Hash(App.ConfPath), out bool isFirst);
@@ -121,6 +122,7 @@ static class Program
         }
         catch (Exception ex)
         {
+            StartupDiagnostics.Failed();
             Terminal.WriteError(ex);
         }
     }
