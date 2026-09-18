@@ -47,9 +47,14 @@ def inspect_payload():
     clean_session_files(ST)''')
 old="    run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')"
 edit(p,old,old+"\n    run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')")
+old="    run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')"
+edit(p,old,old+"\n    run(sys.executable,R/'tests/test_player_ui_empty_scope.py',R/'clean-install',E/'fresh-install/player_ui-handoff')")
 p='tools/standalone/publish.py'
 old="head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']"
 edit(p,old,"""for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
     result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
+"""+old)
+edit(p,old,"""for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-handoff/results.json'):
+    result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
 """+old)
 print('Standalone startup sources prepared')
