@@ -435,8 +435,20 @@ end
 
 local activity_timer
 
+local function local_file_only()
+    local path=mp.get_property('path','')
+    local opened=mp.get_property('stream-open-filename','')
+    local function ordinary(s)
+        if s=='' then return true end
+        if s:match('^%a:[/\\]') then return true end
+        return not s:match('^%a[%w+.-]*:') and s:sub(1,2)~='//' and s:sub(1,2)~='\\\\'
+    end
+    if path=='' or mp.get_property_bool('demuxer-via-network',false) or not ordinary(path) or not ordinary(opened) then return false end
+    local file=mp.utils.file_info(path)
+    return file and file.is_file or false
+end
 local function spawn(time)
-    if disabled then return end
+    if disabled or not local_file_only() then return end
 
     local path = properties["path"]
     if path == nil then return end

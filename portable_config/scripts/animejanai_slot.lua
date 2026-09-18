@@ -110,7 +110,7 @@ local function finish_status(text)
     stop_watch(false)
     local failed=desired~=0 and (text:find('FAILED',1,true) or text:find('No Chains Activated',1,true))
     if refresh_paused and not owned_pause and mp.get_property_bool('pause',false)
-            and mp.get_property_bool('seekable',false) then
+            and mp.get_property_bool('seekable',false) and not mp.get_property_bool('demuxer-via-network',false) then
         refresh_paused=false
         mp.commandv('seek','0','relative+exact') -- once, only an explicit paused switch
     end

@@ -56,7 +56,7 @@ local function shot(name)
 end
 local steps={}
 steps[#steps+1]=function(next_)
- check(ui().version=='1.1.1','Player UI controller version')
+ check(ui().version=='1.1.2','Player UI controller version')
  check(mp.get_property_number('vo-presented-frame-count',0)>0,'native video output')
  check(not button('playlist'),'single input has no invented episode list')
  check(button('settings') and button('audio') and button('sub') and button('danmaku'),'Player UI bottom row')

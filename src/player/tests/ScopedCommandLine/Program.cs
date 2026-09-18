@@ -29,5 +29,7 @@ var opts=ScopedCommandLine.FileOptions(new[]{new ScopedCommandLine.Option("sub-f
 Check(opts.Contains("a\\;b.srt;二.srt"),"multiple subtitles escaped");
 Check(opts.Split("sub-files-add").Length==2,"single aggregate key");
 Check(ScopedCommandLine.FileOptions(new[]{new ScopedCommandLine.Option("title",value)}).Contains(value),"payload unchanged");
+Check(ScopedCommandLine.Parse(new[]{"--playlist","episodes.m3u","--playlist-start=1"}).Entries.Count==0,"playlist is an option value");
+Check(ScopedCommandLine.Parse(new[]{"--http-header-fields=Authorization: LocalTest sample","https://example.invalid/file"}).NeedsDedicatedProcess,"caller authentication preserved");
 if(args.Length==2 && args[0]=="--json") File.WriteAllText(args[1],JsonSerializer.Serialize(p));
 Console.WriteLine($"PASS {checks} parser checks");

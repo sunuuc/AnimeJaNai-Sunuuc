@@ -4,8 +4,9 @@ local utils=require 'mp.utils'
 local options=require 'mp.options'
 local core=dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_core.lua'}))
 local metrics=dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_metrics.lua'}))
-local o={hide_timeout=2.5,network_speed=true,volume_step=5,font='Microsoft YaHei',accent='B47799'}
+local o={hide_timeout=2.5,network_speed=true,volume_step=5,ui_scale=0.70,font='Microsoft YaHei',accent='B47799'}
 options.read_options(o,'player_ui')
+o.ui_scale=core.clamp(tonumber(o.ui_scale) or .70,.45,1.5)
 o.hide_timeout=core.clamp(o.hide_timeout,1,20);o.volume_step=core.clamp(o.volume_step,1,20)
 if not o.accent:match('^%x%x%x%x%x%x$') then o.accent='B47799' end
 local ui=mp.create_osd_overlay('ass-events');ui.z=20
@@ -195,11 +196,14 @@ local function icon(id,x,y,active,disabled,small)
     line(string.format('{\\rDefault\\an7\\pos(%.2f,%.2f)\\bord0\\shad0\\fscx%d\\fscy%d\\1c&H%s&\\1a&H%02X&\\p1}%s{\\p0}',x-16*size/100,y-16*size/100,size,size,color,disabled and 160 or 0,icons[id] or icons.more))
 end
 local function thumb(t,x)
+    if not core.local_media(mp.get_property('path',''),mp.get_property('stream-open-filename',''),bool('demuxer-via-network')) then hide_thumb();return end
     if not state.thumb or state.thumb.disabled or not state.thumb.available then return end
     if state.thumb_time and math.abs(state.thumb_time-t)<.2 then return end
     kill(thumb_timer)
     thumb_timer=mp.add_timeout(.06,function()
-        thumb_timer=nil;state.thumb_time=t
+        thumb_timer=nil
+        if not core.local_media(mp.get_property('path',''),mp.get_property('stream-open-filename',''),bool('demuxer-via-network')) then hide_thumb();return end
+        state.thumb_time=t
         local width=state.thumb.width or 160;local height=state.thumb.height or 90
         local px=core.clamp(x*layout.scale-width/2,12,layout.w*layout.scale-width-12)
         local py=(layout.seek.y0-46)*layout.scale-height
@@ -272,14 +276,14 @@ render=function()
     render_timer=nil
     if bool('window-minimized') then ui:remove();bind_mouse(false);return end
     local pw,ph=mp.get_osd_size();if pw<=0 or ph<=0 then return end
-    layout=core.layout(pw,ph,num('playlist-count',0),num('display-hidpi-scale',1));buttons={};output={};menu_box=nil
+    layout=core.layout(pw,ph,num('playlist-count',0),num('display-hidpi-scale',1),o.ui_scale);buttons={};output={};menu_box=nil
     local net=bool('demuxer-via-network') and o.network_speed and not bool('idle-active',true)
     if state.visible then
         for i=0,47 do local y=layout.h-340+i*340/48
             rect(0,y,layout.w,y+340/48+.2,'000000',math.floor(255-170*(i/47)^1.4))
         end
         local title=core.title(mp.get_property('media-title',''),mp.get_property('path',''))
-        if bool('idle-active',true) then title='拖入视频或链接开始播放' end
+        if bool('idle-active',true) then title='' end
         text(36,layout.title_y,40,title,7,WHITE,true,layout.w-72)
         local detail={};local count=num('playlist-count',0)
         if count>1 then detail[#detail+1]=string.format('播放列表  %d / %d',num('playlist-pos',0)+1,count) end
@@ -366,7 +370,7 @@ render=function()
     local boxes={}
     for _,b in ipairs(menus.boxes) do boxes[#boxes+1]={kind=b.kind,x0=b.x0,x1=b.x1,y0=b.y0,y1=b.y1,total=b.total,view=b.view,offset=b.offset} end
     mp.set_property_native('user-data/player_ui/ui',{visible=state.visible,menu=state.menu or '',width=pw,height=ph,
-        controls=buttons,scale=layout.scale,hover=state.hover,mouse_x=state.x,mouse_y=state.y,overlay_ok=state.overlay_ok,overlay_error=state.overlay_error,menu_boxes=boxes,subtitle_slot=state.sub_slot or 1,version='1.1.1',network_rate=state.rate,rows=rows,
+        controls=buttons,scale=layout.scale,hover=state.hover,mouse_x=state.x,mouse_y=state.y,overlay_ok=state.overlay_ok,overlay_error=state.overlay_error,menu_boxes=boxes,subtitle_slot=state.sub_slot or 1,version='1.1.2',network_rate=state.rate,rows=rows,
         performance=state.menu=='performance' and {fps=state.fps,cpu=state.cpu,memory=state.memory} or nil})
 end
 request_render=function()if not render_timer then render_timer=mp.add_timeout(.035,render) end end
@@ -398,7 +402,7 @@ show=function()
 end
 local function mouse_move()
     local x,y=mp.get_mouse_pos()
-    if not layout then local w,h=mp.get_osd_size();layout=core.layout(w,h,num('playlist-count',0),num('display-hidpi-scale',1)) end
+    if not layout then local w,h=mp.get_osd_size();layout=core.layout(w,h,num('playlist-count',0),num('display-hidpi-scale',1),o.ui_scale) end
     state.x=x/layout.scale;state.y=y/layout.scale
     if state.drag=='volume-slider' and layout.volume then
         mp.set_property_number('volume',core.clamp((state.x-layout.volume.x0)/(layout.volume.x1-layout.volume.x0),0,1)*100)

@@ -12,7 +12,9 @@ public sealed class ScopedCommandLine
     public bool HasGroups { get; private set; }
     public bool NeedsDedicatedProcess => HasGroups ||
         GlobalOptions.Any(o => o.Name is "input-ipc-server" or "sub-file" or "sub-files"
-            or "force-media-title" or "start" or "audio-file" or "audio-files");
+            or "force-media-title" or "start" or "audio-file" or "audio-files"
+            or "http-header-fields" or "referrer" or "user-agent" or "playlist" or "playlist-start"
+            or "external-file" or "external-files");
 
     static readonly HashSet<string> ValueOptions = new(StringComparer.Ordinal) {
         "sub-file", "sub-files", "audio-file", "audio-files", "external-file",
@@ -20,7 +22,7 @@ public sealed class ScopedCommandLine
         "sid", "aid", "vid", "slang", "alang", "sub-delay", "audio-delay",
         "http-header-fields", "referrer", "user-agent", "input-ipc-server",
         "config-dir", "input-conf", "script", "scripts", "script-opt",
-        "script-opts", "playlist-start", "profile", "log-file", "o"
+        "script-opts", "playlist", "playlist-start", "profile", "log-file", "o"
     };
 
     public static ScopedCommandLine Parse(IEnumerable<string> arguments)

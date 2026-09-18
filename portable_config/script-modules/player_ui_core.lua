@@ -48,9 +48,10 @@ function M.title(title,path)
     return title
 end
 -- Anchored Player UI layout 1.1.1: physical DPI, not a percentage of the video height.
-function M.layout(pw,ph,count,dpi)
+function M.layout(pw,ph,count,dpi,ui_scale)
     pw,ph=math.max(1,pw),math.max(1,ph)
-    local scale=math.min(M.clamp(tonumber(dpi) or 1,.5,3),pw/920,ph/620)
+    local base=M.clamp(tonumber(ui_scale) or .70,.45,1.5)*M.clamp(tonumber(dpi) or 1,.5,1.25)
+    local scale=math.min(base,pw/920,ph/620)
     local w,h=pw/scale,ph/scale;local compact=w<1100
     local step=compact and 58 or 84;local y=h-66;local controls={}
     local function button(id,x,bw)
@@ -138,5 +139,15 @@ function M.lower_bound(events,t)
     local lo,hi=1,#events+1
     while lo<hi do local mid=math.floor((lo+hi)/2);if events[mid].t<t then lo=mid+1 else hi=mid end end
     return lo
+end
+function M.local_media(path,opened,network)
+    if network or type(path)~='string' or path=='' then return false end
+    local function file_path(s)
+        if not s or s=='' then return true end
+        if s:match('^%a:[/\\]') then return true end
+        if s:match('^%a[%w+.-]*:') or s:sub(1,2)=='//' or s:sub(1,2)=='\\\\' then return false end
+        return true
+    end
+    return file_path(path) and file_path(opened)
 end
 return M
