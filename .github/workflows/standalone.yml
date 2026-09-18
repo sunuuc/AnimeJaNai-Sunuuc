@@ -36,6 +36,8 @@ jobs:
         run: |
           python tools/standalone/prepare_playback.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/standalone/inline_player_ui_modules.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/standalone/prepare_gpu_target.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/standalone/prepare_startup.py
