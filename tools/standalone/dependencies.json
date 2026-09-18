@@ -4,13 +4,13 @@
     "assets": [
       {
         "repo": "sunuuc/AnimeJaNai-zh-CN",
-        "tag": "standalone-v1.1.2",
-        "name": "AnimeJaNai-zh-CN-1.1.2-win-x64-full.7z",
-        "sha256": "bddf5e1c06c49eb92e6653d2fbdb2653245b1da3d53803105dc004008f6dfb54",
-        "bytes": 1712778567
+        "tag": "standalone-v1.1.3",
+        "name": "AnimeJaNai-zh-CN-1.1.3-rtx5080-laptop-win-x64-full.7z",
+        "sha256": "857fb897d556551944b9ae0901b8e943d6a1fdf7e7dd1df8fb4182cc0f6e12de",
+        "bytes": 1102279475
       }
     ],
-    "version": "1.1.2"
+    "version": "1.1.3"
   },
   "ui_source": {
     "repo": "sunuuc/AnimeJaNai-zh-CN",
@@ -39,39 +39,11 @@
       "sha256": "5742aad5b5feaa9cc4989b09cccb721445d82cf5178be1d26b2e78cc69f92391"
     },
     {
-      "id": "trt-sm75",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-sm75.7z",
-      "sha256": "c14c491229f94170968a81ad12d2f6c47887b770bb1c58de370b31a82b730108"
-    },
-    {
-      "id": "trt-sm86",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-sm86.7z",
-      "sha256": "62d184244b58a0871d09d9973d34e8b7278a93e5742b350c09d48f60853bd147"
-    },
-    {
-      "id": "trt-sm89",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-sm89.7z",
-      "sha256": "ad3b2523e8c51ba53536ee30fd5d18f4a8971eb443fb39c72f6cb2807d308d3c"
-    },
-    {
       "id": "trt-sm120",
       "repo": "the-database/mpv-AnimeJaNai",
       "tag": "3.6.0",
       "name": "component-trt-sm120.7z",
       "sha256": "204533a5e1ab1bbe4557902e8b58f83a33ee1c2d0a925a42e00cd9cf42468dec"
-    },
-    {
-      "id": "trt-ptx",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-ptx.7z",
-      "sha256": "ec44c7e1efe3d06dc59ddbcda6d858ae9f5a5dc3e3ec8dcfcc8881240eb4f150"
     },
     {
       "id": "rife",
@@ -80,5 +52,6 @@
       "name": "component-rife.7z",
       "sha256": "bb002ecc92cb628c1627ba687d5e709d4d201e432e06a94ba0028aff5f631f0f"
     }
-  ]
+  ],
+  "gpu_target": "rtx5080-laptop"
 }
