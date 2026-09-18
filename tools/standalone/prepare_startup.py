@@ -1,4 +1,4 @@
-"""Keep managed and native startup state consistent before publishing."""
+"Keep managed and native startup state consistent before publishing."
 from pathlib import Path
 R=Path(__file__).resolve().parents[2]
 
@@ -12,15 +12,15 @@ p='src/player/src/MpvNet/Player.cs'
 edit(p,'if (CommandLine.Contains("config-dir"))',
      'if (CommandLine.Contains("config-dir") && !CommandLine.Contains("input-conf"))')
 edit(p,'                string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");',
-'''                string explicitConfig = CommandLine.GetValue("config-dir");
-                if (explicitConfig.Length > 0)
-                    return _configFolder = System.IO.Path.GetFullPath(explicitConfig).AddSep();
-
-                string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");''')
+     '                string explicitConfig = CommandLine.GetValue("config-dir");\n'
+     '                if (explicitConfig.Length > 0)\n'
+     '                    return _configFolder = System.IO.Path.GetFullPath(explicitConfig).AddSep();\n\n'
+     '                string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");')
 p='src/player/src/MpvNet/App.cs'
-edit(p,'            Player.SetPropertyInt("volume", Settings.Volume);\n            Player.SetPropertyString("mute", Settings.Mute);',
-'''            if (!CommandLine.Contains("volume")) Player.SetPropertyInt("volume", Settings.Volume);
-            if (!CommandLine.Contains("mute")) Player.SetPropertyString("mute", Settings.Mute);''')
+edit(p,'            Player.SetPropertyInt("volume", Settings.Volume);\n'
+       '            Player.SetPropertyString("mute", Settings.Mute);',
+       '            if (!CommandLine.Contains("volume")) Player.SetPropertyInt("volume", Settings.Volume);\n'
+       '            if (!CommandLine.Contains("mute")) Player.SetPropertyString("mute", Settings.Mute);')
 edit(p,'if (RememberAudioDevice && Settings.AudioDevice != "")',
      'if (RememberAudioDevice && Settings.AudioDevice != "" && !CommandLine.Contains("audio-device"))')
 p='src/player/src/MpvNet.Windows/Program.cs'
@@ -28,33 +28,26 @@ edit(p,'            App.Init();','            StartupDiagnostics.Begin();\n     
 edit(p,'            Terminal.WriteError(ex);','            StartupDiagnostics.Failed();\n            Terminal.WriteError(ex);')
 
 p='tests/test_startup_playback.py'
-edit(p,"""def options(uri):
-    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first','--script-opts-append','handoff-tag=ready']
-""", """def options(uri,native=False):
-    tail=['--script-opts-append=handoff-tag=ready'] if native else ['--script-opts-append','handoff-tag=ready']
-    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first',*tail]
-""")
-edit(p,"    args=[flag+BOOT.name,*options(uri)]", "    args=[flag+BOOT.name,*options(uri,exe=='mpv.exe')]")
+edit(p,"def options(uri):\n"
+       "    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first','--script-opts-append','handoff-tag=ready']\n",
+       "def options(uri,native=False):\n"
+       "    tail=['--script-opts-append=handoff-tag=ready'] if native else ['--script-opts-append','handoff-tag=ready']\n"
+       "    return ['--script-opts=handoff-url='+uri,'--script-opt=handoff-tag=first',*tail]\n")
+edit(p,"    args=[flag+BOOT.name,*options(uri)]",
+       "    args=[flag+BOOT.name,*options(uri,exe=='mpv.exe')]")
 
-p='tools/standalone/build.py'
-edit(p,'def inspect_payload():', '''def clean_session_files(app):
-    for folder in ('cache','watch_later'):
-        shutil.rmtree(app/'portable_config'/folder,ignore_errors=True)
-    for name in ('settings.xml','saved-props.json','startup-diagnostic.json','startup-diagnostic.json.tmp','playback-diagnostic.json'):
-        (app/'portable_config'/name).unlink(missing_ok=True)
+command=(R/'src/player/src/MpvNet/CommandLine.cs').read_text(encoding='utf-8-sig')
+for marker in ('IsNativePlaylistStartupOption','--playlist was already expanded by native mpv',
+               'SetStartupOption(pair.Name, pair.Value)'):
+    if marker not in command:raise RuntimeError('Native Player UI playlist startup fix missing: '+marker)
+scoped=(R/'src/player/src/MpvNet/ScopedCommandLine.cs').read_text(encoding='utf-8-sig')
+for marker in ('PromotedOptions','EmptyGroupCount'):
+    if marker not in scoped:raise RuntimeError('Scoped handoff provenance missing: '+marker)
 
-def inspect_payload():
-    clean_session_files(ST)''')
-old="    run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')"
-edit(p,old,old+"\n    run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')")
-old="    run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')"
-edit(p,old,old+"\n    run(sys.executable,R/'tests/test_player_ui_empty_scope.py',R/'clean-install',E/'fresh-install/player_ui-handoff')")
-p='tools/standalone/publish.py'
-old="head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']"
-edit(p,old,"""for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
-    result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
-"""+old)
-edit(p,old,"""for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-handoff/results.json'):
-    result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
-"""+old)
+build=(R/'tools/standalone/build.py').read_text(encoding='utf-8-sig')
+for marker in ("tests/test_startup_playback.py","tests/test_player_ui_empty_scope.py"):
+    if marker not in build:raise RuntimeError('Fresh-install startup regression missing: '+marker)
+publish=(R/'tools/standalone/publish.py').read_text(encoding='utf-8-sig')
+if "len(result)==3" not in publish or "player_ui-handoff/results.json" not in publish:
+    raise RuntimeError('Publication gate for Player UI playlist regression is missing')
 print('Standalone startup sources prepared')
