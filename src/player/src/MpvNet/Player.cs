@@ -1,4 +1,4 @@
-﻿
+
 using System.Drawing;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -424,9 +424,6 @@ public class MainPlayer : MpvClient
         if (files == null || files.Length == 0)
             return;
 
-        if ((DateTime.Now - LastLoad).TotalMilliseconds < 1000)
-            append = true;
-
         LastLoad = DateTime.Now;
 
         for (int i = 0; i < files.Length; i++)
@@ -436,12 +433,12 @@ public class MainPlayer : MpvClient
             if (string.IsNullOrEmpty(file))
                 continue;
 
-            if (file.Contains('|'))
+            if (!file.Contains("://") && file.Contains('|'))
                 file = file[..file.IndexOf("|")];
 
             file = ConvertFilePath(file);
 
-            string ext = file.Ext();
+            string ext = file.Contains("://") ? "" : file.Ext();
 
             if (OperatingSystem.IsWindows())
             {
@@ -461,12 +458,11 @@ public class MainPlayer : MpvClient
                 if (i == 0 && !append)
                     CommandV("loadfile", file);
                 else
-                    CommandV("loadfile", file, "append");
+                    CommandV("loadfile", file, i == 0 && GetPropertyInt("playlist-count") == 0 ? "append-play" : "append");
             }
         }
 
-        if (string.IsNullOrEmpty(GetPropertyString("path")))
-            SetPropertyInt("playlist-pos", 0);
+        // loadfile replace starts playback itself; never reopen while path is still initializing.
     }
 
     public static string ConvertFilePath(string path)

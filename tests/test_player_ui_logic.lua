@@ -80,7 +80,7 @@ local function suite()
   for i,r in ipairs(ui().rows or {})do if r.key==key or r.target==key or r.text==key then return 'row-'..i end end
   error('missing menu row '..key)
  end
- check(ui().version=='1.1.1','production layout revision')
+ check(ui().version=='1.1.2','production layout revision')
  bindings['player_ui-volume-up']();bindings['player_ui-volume-down']();check(props.volume==50 and props['time-pos']==10,'volume keys do not seek')
  click('speed');check(ui().menu_boxes[1].x1-ui().menu_boxes[1].x0==144,'speed popover width')
  check(ui().rows[1].text=='8.0x' and ui().rows[8].text=='0.5x','Player UI speed order')
@@ -96,13 +96,13 @@ local function suite()
  click('settings');click(row('performance'));props.fullscreen=true;bindings['player_ui-menu-escape']();advance(.1)
  check(props.fullscreen and ui().menu=='settings','Esc returns from submenu without leaving fullscreen')
  bindings['player_ui-menu-escape']();advance(.1);check(props.fullscreen and ui().menu=='','Esc closes root menu')
- local n=#commands;local b=button('seek');pos.x=(b.x0+b.x1)/2;pos.y=(b.y0+b.y1)/2
+ local n=#commands;local b=button('seek');pos.x=(b.x0+b.x1)*ui().scale/2;pos.y=(b.y0+b.y1)*ui().scale/2
  bindings['player_ui-move']();advance(.1);bindings['player_ui-click']({event='down'});bindings['player_ui-click']({event='up',canceled=true});advance(.1)
  check(#commands==n,'canceled drag does not seek')
  props['playlist-count']=12;props.playlist={}
  for i=1,12 do props.playlist[i]={filename='part'..i..'.mkv'}end
  observers.playlist();advance(.1);click('playlist')
- local drawer=ui().menu_boxes[1];check(drawer.y0==0 and drawer.y1==720 and drawer.x1==1280,'full-height right drawer')
+ local drawer=ui().menu_boxes[1];check(drawer.y0==0 and math.abs(drawer.y1*ui().scale-720)<1 and math.abs(drawer.x1*ui().scale-1280)<1,'full-height right drawer')
  check(#ui().rows==12 and ui().rows[2].text=='part2.mkv','only actual supplied titles')
  local bar=button('menu-scroll-playlist');check(bar~=nil,'long playlist has scrollbar')
  click('row-2');check(props['playlist-pos']==1,'drawer selects real item')
