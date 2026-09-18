@@ -12,9 +12,35 @@ public class CommandLine
         "load-scripts", "scripts", "script-opts", "player-operation-mode", "idle", "log-file",
         "msg-color", "dump-stats", "msg-level", "really-quiet" };
 
-    public static List<StringPair> Arguments => _arguments ??=
-        Parsed.GlobalOptions.Select(o =>
-            new StringPair(ScopedCommandLine.CanonicalName(o.Name), o.Value)).ToList();
+    public static List<StringPair> Arguments => _arguments ??= BuildArguments();
+
+    static List<StringPair> BuildArguments()
+    {
+        var result = new List<StringPair>();
+        bool scriptsAssigned = false;
+        bool scriptOptionsAssigned = false;
+
+        foreach (var raw in Parsed.GlobalOptions)
+        {
+            string name;
+            if (Parsed.LegacyScriptHandoff && raw.Name == "script")
+                name = scriptsAssigned ? "scripts-append" : "scripts";
+            else if (Parsed.LegacyScriptHandoff && raw.Name == "script-opt")
+                name = scriptOptionsAssigned ? "script-opts-append" : "script-opts";
+            else
+                name = ScopedCommandLine.CanonicalName(raw.Name);
+
+            result.Add(new StringPair(name, raw.Value));
+
+            string baseName = ScopedCommandLine.BaseName(name);
+            bool destructiveOnly = name.EndsWith("-remove", StringComparison.Ordinal) ||
+                                   name.EndsWith("-toggle", StringComparison.Ordinal);
+            if (!destructiveOnly && baseName == "scripts") scriptsAssigned = true;
+            if (!destructiveOnly && baseName == "script-opts") scriptOptionsAssigned = true;
+        }
+
+        return result;
+    }
 
     public static void ProcessCommandLineArgsPreInit()
     {
