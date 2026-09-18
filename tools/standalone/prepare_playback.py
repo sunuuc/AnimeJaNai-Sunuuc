@@ -65,11 +65,8 @@ edit(p,'''        if (string.IsNullOrEmpty(GetPropertyString("path")))
             SetPropertyInt("playlist-pos", 0);''','''        // loadfile replace starts playback itself; never reopen while path is still initializing.''')
 edit(p,'                    CommandV("loadfile", file, "append");',
      '                    CommandV("loadfile", file, i == 0 && GetPropertyInt("playlist-count") == 0 ? "append-play" : "append");')
-p='src/player/src/MpvNet/ScopedCommandLine.cs'
-edit(p,'or "force-media-title" or "start" or "audio-file" or "audio-files");',
-     'or "force-media-title" or "start" or "audio-file" or "audio-files"\n            or "http-header-fields" or "referrer" or "user-agent" or "playlist" or "playlist-start"\n            or "external-file" or "external-files");')
-edit(p,'"script-opts", "playlist-start", "profile", "log-file", "o"',
-     '"script-opts", "playlist", "playlist-start", "profile", "log-file", "o"')
+# Startup argument normalization is maintained in ScopedCommandLine.cs.
+# Do not replay an older text migration over the current parser.
 p=R/'tools/standalone/build.py';s=p.read_text(encoding='utf-8-sig')
 old="    run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')"
 new=old+"\n    run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')"
