@@ -62,13 +62,17 @@ public static class StartupDiagnostics
                     : Directory.Exists(Path.Combine(Folder.Startup, "portable_config")) ? "portable" : "appdata";
                 var data = new
                 {
-                    version = 1,
+                    version = 2,
                     phases = Phases.ToArray(),
                     argument_count = Environment.GetCommandLineArgs().Length - 1,
                     media_arguments = parsed?.Entries.Count,
                     scoped_playlist = parsed?.HasGroups,
+                    empty_scope_options_promoted = parsed?.EmptyGroupOptionsPromoted,
+                    legacy_script_handoff = parsed?.LegacyScriptHandoff,
+                    global_option_count = options.Count,
                     playlist_option = options.Any(o => o.Name == "playlist"),
                     script_options = options.Count(o => ScopedCommandLine.BaseName(ScopedCommandLine.CanonicalName(o.Name)) == "scripts"),
+                    script_payload_options = options.Count(o => ScopedCommandLine.BaseName(ScopedCommandLine.CanonicalName(o.Name)) == "script-opts"),
                     missing_scripts = parsed == null ? (int?)null : MissingScripts(),
                     ipc_requested = options.Any(o => o.Name is "input-ipc-server" or "input-ipc-client"),
                     configuration,
