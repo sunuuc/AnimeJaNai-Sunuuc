@@ -33,7 +33,7 @@ jobs:
           archive=root/'runtime.7z'
           with urllib.request.urlopen(url,timeout=90) as src,archive.open('wb') as dst: shutil.copyfileobj(src,dst,1024*1024)
           with archive.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==a['sha256']
-          subprocess.run(['7z','x','-y',str(archive),'-o'+str(root/'runtime'),'portable_config/*','mpv.exe'],check=True,stdout=subprocess.DEVNULL)
+          subprocess.run(['7z','x','-y',str(archive),'-o'+str(root/'runtime'),'portable_config/*','mpv.exe','mpvnet.exe','libmpv-2.dll','*.dll'],check=True,stdout=subprocess.DEVNULL)
           configs=root/'runtime/portable_config'
           with zipfile.ZipFile(out/'packaged-config.zip','w',zipfile.ZIP_DEFLATED) as z:
               for p in configs.rglob('*'):
@@ -41,7 +41,44 @@ jobs:
           for flag,name in [('--list-options','options.txt'),('--input-cmdlist','commands.txt')]:
               p=subprocess.run([str(root/'runtime/mpv.exe'),'--no-config',flag],capture_output=True)
               (out/name).write_bytes(p.stdout+p.stderr)
+      - name: Compare native and frontend script-only launches
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess, os, json, time
+          root=Path.cwd();app=root/'runtime';out=root/'network-audit'/'launch';out.mkdir()
+          media=out/'local.y4m'
+          media.write_bytes(b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+b'\x60'*(160*90)+b'\x80'*(160*90//2))*24*10)
+          env=os.environ.copy()
+          for key in ('MPVNET_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
+           env.pop(key,None)
+          env['PATH']=os.environ['SystemRoot']+r'\System32'
+          results=[]
+          for exe,flag in [('mpv.exe','--script='),('mpvnet.exe','--script='),('mpvnet.exe','--scripts=')]:
+           label=exe+'-'+flag.strip('-=');mark=out/(label+'.json');script=out/(label+'.lua')
+           script.write_text("""local mp=require 'mp'
+          local utils=require 'mp.utils'
+          local function record(phase)
+           local f=assert(io.open([=[%s]=],'w'));f:write(utils.format_json({phase=phase,path=mp.get_property('path'),time=mp.get_property_number('time-pos')}));f:close()
+          end
+          record('script-started')
+          mp.register_event('playback-restart',function()record('playing');mp.add_timeout(.3,function()mp.commandv('quit')end)end)
+          mp.commandv('loadfile',[=[%s]=],'replace')
+          mp.add_timeout(3,function()record('no-playback');mp.commandv('quit')end)
+          """ % (mark,media),encoding='utf-8')
+           args=[str(app/exe),'--vo=gpu','--gpu-api=d3d11','--gpu-context=d3d11','--d3d11-warp=yes','--ao=null','--hwdec=no','--vf=','--idle=yes','--force-window=yes','--terminal=yes','--msg-level=all=info',flag+str(script)]
+           start=time.monotonic()
+           with (out/(label+'.log')).open('wb') as log:
+            proc=subprocess.Popen(args,cwd=out,env=env,stdout=log,stderr=log)
+            try:proc.wait(6)
+            except subprocess.TimeoutExpired:proc.terminate();proc.wait(5)
+           result={'case':label,'script_ran':mark.exists(),'elapsed':time.monotonic()-start,'exit_code':proc.returncode}
+           if mark.exists():result['data']=json.loads(mark.read_text(encoding='utf-8'))
+           results.append(result);print(json.dumps(result,ensure_ascii=False),flush=True)
+          (out/'results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf-8')
+          media.unlink()
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: network-audit-source
           path: network-audit/
