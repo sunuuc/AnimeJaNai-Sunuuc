@@ -10,8 +10,8 @@ def edit(name,old,new):
     p.write_text(s.replace(old,new),encoding='utf-8')
 
 p='portable_config/scripts/player_ui.lua'
-edit(p,"volume_step=5,font=", "volume_step=5,ui_scale=0.70,font=")
-edit(p,"options.read_options(o,'player_ui')", "options.read_options(o,'player_ui')\no.ui_scale=core.clamp(tonumber(o.ui_scale) or .70,.45,1.5)")
+edit(p,"volume_step=5,font=", "volume_step=5,ui_scale=1.00,text_outline=1,font=")
+edit(p,"options.read_options(o,'player_ui')", "options.read_options(o,'player_ui')\no.ui_scale=core.clamp(tonumber(o.ui_scale) or 1.00,.45,1.5)")
 edit(p,"if bool('idle-active',true) then title='拖入视频或链接开始播放' end", "if bool('idle-active',true) then title='' end")
 edit(p,"version='1.1.1'", "version='1.1.2'")
 for name in ('pw,ph','w,h'):
@@ -23,8 +23,13 @@ edit('portable_config/scripts/animejanai_slot.lua', "and mp.get_property_bool('s
 
 p='portable_config/script-modules/player_ui_core.lua'
 edit(p,'function M.layout(pw,ph,count,dpi)', 'function M.layout(pw,ph,count,dpi,ui_scale)')
-edit(p,"local scale=math.min(M.clamp(tonumber(dpi) or 1,.5,3),pw/920,ph/620)",
-     "local base=M.clamp(tonumber(ui_scale) or .70,.45,1.5)*M.clamp(tonumber(dpi) or 1,.5,1.25)\n    local scale=math.min(base,pw/920,ph/620)")
+# The layout must keep the ASS PlayRes at 1:1 with the window: resampling it is
+# what made the text soft. Verify that contract instead of rewriting the body.
+_core=(R/'portable_config/script-modules/player_ui_core.lua').read_text(encoding='utf-8-sig')
+for _marker in ('local want=M.clamp(tonumber(ui_scale)','local w,h=pw,ph','return built or'):
+    if _marker not in _core:raise RuntimeError('Player UI 1:1 layout contract missing: '+_marker)
+for _bad in ('pw/scale','pw/920','ph/620'):
+    if _bad in _core:raise RuntimeError('Player UI layout still resamples the ASS PlayRes: '+_bad)
 edit(p,'return M\n', '''function M.local_media(path,opened,network)
     if network or type(path)~='string' or path=='' then return false end
     local function file_path(s)

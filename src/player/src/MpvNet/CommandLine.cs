@@ -15,14 +15,56 @@ public class CommandLine
 
     public static List<StringPair> Arguments => _arguments ??= BuildArguments();
 
+    // Options that describe one playback item rather than the player session.
+    static readonly HashSet<string> PerEntryOptions = new(StringComparer.Ordinal) {
+        "sub-file", "sub-files", "audio-file", "audio-files", "external-file", "external-files",
+        "force-media-title", "title", "start", "end", "length",
+        "sid", "aid", "vid", "slang", "alang", "sub-delay", "audio-delay",
+        "http-header-fields", "referrer", "user-agent" };
+
+    // Empty --{ ... --} groups that carry their own playlist. Each one is a
+    // separate playback item: its own playlist, subtitle, title, resume position
+    // and track selection. The caller sends these as independent groups so the
+    // options stay attached to the item they describe.
+    public static List<(string Playlist, List<ScopedCommandLine.Option> Options)> ScopedPlaylistGroups()
+    {
+        var groups = new List<(string Playlist, List<ScopedCommandLine.Option> Options)>();
+        foreach (var group in Parsed.EmptyGroupOptions)
+        {
+            string playlist = "";
+            foreach (var option in group)
+                if (option.Name == "playlist") playlist = option.Value;
+            if (playlist.Length == 0) continue;
+            groups.Add((playlist, group.Where(o => o.Name != "playlist").ToList()));
+        }
+        // A plain global --playlist still has to be honoured, and mpv keeps only
+        // the last value of this String option, so every one of them is loaded.
+        if (groups.Count == 0)
+            foreach (var option in Parsed.GlobalOptions)
+                if (option.Name == "playlist" && option.Value.Length > 0)
+                    groups.Add((option.Value, new List<ScopedCommandLine.Option>()));
+        return groups;
+    }
+
     static List<StringPair> BuildArguments()
     {
         var result = new List<StringPair>();
         bool scriptsAssigned = false;
         bool scriptOptionsAssigned = false;
 
+        // With several playback items, their per-item options must not become
+        // globals: the last item's title would then label the first one, which is
+        // what made the played episode look wrong. They are applied per item by
+        // ProcessCommandLineFiles instead.
+        HashSet<ScopedCommandLine.Option>? perEntry = null;
+        if (ScopedPlaylistGroups().Count > 1)
+            perEntry = ScopedPlaylistGroups().SelectMany(g => g.Options)
+                .Where(o => PerEntryOptions.Contains(ScopedCommandLine.BaseName(o.Name)))
+                .ToHashSet();
+
         foreach (var raw in Parsed.GlobalOptions)
         {
+            if (perEntry != null && perEntry.Contains(raw)) continue;
             string name;
             if (Parsed.LegacyScriptHandoff && raw.Name == "script")
                 name = scriptsAssigned ? "scripts-append" : "scripts";
@@ -58,12 +100,14 @@ public class CommandLine
     public static void ProcessCommandLineArgsPreInit()
     {
         // Player UI transports its playlist and selected index in an empty
-        // --{ ... --} scope. mpv must receive --playlist and --playlist-start
-        // before mpv_initialize; replaying them later with loadlist can start
-        // the wrong entry before the requested index is known.
+        // --{ ... --} scope. --playlist is NOT a libmpv-settable startup
+        // option: handing it to mpv_set_option_string before mpv_initialize
+        // deadlocks the player (no request is ever issued, init never returns).
+        // It is therefore skipped here and loaded explicitly after
+        // initialization in ProcessCommandLineFiles().
         foreach (var pair in Arguments)
         {
-            if (IsStartupList(pair.Name) || IsListOperation(pair.Name))
+            if (pair.Name == "playlist" || IsStartupList(pair.Name) || IsListOperation(pair.Name))
                 continue;
 
             Player.ProcessProperty(pair.Name, pair.Value);
@@ -171,23 +215,15 @@ public class CommandLine
 
     public static void ProcessCommandLineFiles()
     {
-        // --playlist was already expanded by native mpv during initialization,
-        // together with --playlist-start. Never clear and rebuild it here.
-        if (Contains("playlist"))
-        {
-            foreach (var entry in Parsed.Entries)
-                Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), "append",
-                    "-1", ScopedCommandLine.FileOptions(entry.Options));
-            return;
-        }
-
+        var groups = ScopedPlaylistGroups();
         bool shuffle = GetValue("shuffle") == "yes";
-        if (!Parsed.HasGroups && !Contains("playlist-start") && !shuffle)
+
+        if (groups.Count == 0 && !Parsed.HasGroups && !Contains("playlist-start") && !shuffle)
         {
             Player.LoadFiles(Parsed.Entries.Select(e => e.Path).ToArray(), !App.Queue, App.Queue);
             return;
         }
-        if (Parsed.Entries.Count == 0) return;
+        if (groups.Count == 0 && Parsed.Entries.Count == 0) return;
 
         bool keepPlaying = App.Queue && Player.GetPropertyInt("playlist-count") > 0
             && Player.GetPropertyInt("playlist-pos") >= 0;
@@ -197,6 +233,35 @@ public class CommandLine
             Player.CommandV("playlist-clear");
         }
         int offset = Player.GetPropertyInt("playlist-count");
+
+        // loadlist is synchronous and, on an idle player, does not start playback,
+        // so no entry is opened before the requested index is known. The index is
+        // then selected with the playlist-play-index command instead of the
+        // playlist-pos property, which is what used to open the first entry.
+        if (groups.Count > 1)
+        {
+            // Several playback items. A playlist URL cannot carry file-local
+            // options, so each item is loaded, detached and re-added as a plain
+            // loadfile with its own group's options. Without this the items share
+            // one global title and subtitle, and the last item wins.
+            foreach (var group in groups)
+            {
+                int before = Player.GetPropertyInt("playlist-count");
+                Player.CommandV("loadlist", MainPlayer.ConvertFilePath(group.Playlist), "append");
+                if (Player.GetPropertyInt("playlist-count") - before != 1) continue;
+                string item = Player.GetPropertyString($"playlist/{before}/filename");
+                if (item.Length == 0) continue;
+                Player.CommandV("playlist-remove", before.ToString());
+                Player.CommandV("loadfile", item, "append", "-1",
+                    ScopedCommandLine.FileOptions(group.Options));
+            }
+        }
+        else
+        {
+            foreach (var group in groups)
+                Player.CommandV("loadlist", MainPlayer.ConvertFilePath(group.Playlist), "append");
+        }
+
         foreach (var entry in Parsed.Entries)
             Player.CommandV("loadfile", MainPlayer.ConvertFilePath(entry.Path), "append",
                 "-1", ScopedCommandLine.FileOptions(entry.Options));

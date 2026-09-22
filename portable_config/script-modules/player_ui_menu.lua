@@ -48,7 +48,6 @@ return function(c)
             link('字幕设置','sub-settings','sub')
             link('弹幕设置','danmaku-settings','danmaku')
             link('统计信息','stats','info')
-            link('性能统计','performance','performance')
         elseif kind=='speed' then
             title=nil
             for _,v in ipairs({8,5,3,2,1.5,1.25,1,.5}) do local n=v
@@ -138,9 +137,9 @@ return function(c)
         return title,a
     end
     M.allowed={settings='设置',speed='播放速度',sub='字幕',audio='音轨',danmaku='弹幕',ai='超分与补帧',scale='缩放模式',
-        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',performance='性能统计',playlist='播放列表',chapters='章节'}
+        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',playlist='播放列表',chapters='章节'}
     local function width(kind,l)
-        local widths={speed=144,settings=244,sub=310,audio=330,danmaku=310,ai=374,scale=204,stats=480,performance=570,playlist=600,chapters=400}
+        local widths={speed=144,settings=244,sub=310,audio=330,danmaku=310,ai=374,scale=204,stats=480,playlist=600,chapters=400}
         return math.min(widths[kind] or 330,l.w-24)
     end
     local function measure(items,w,kind)
@@ -161,7 +160,7 @@ return function(c)
     local function header_height(kind,title) return kind=='playlist' and 60 or title and 58 or 0 end
     local function makebox(l,kind,parent)
         local title,items=M.data(kind);local w=width(kind,l);local hh=header_height(kind,title)
-        local total=measure(items,w,kind);local bottom=l.h-(kind=='speed' and 102 or 116)
+                local total=measure(items,w,kind);local bottom=l.h-(kind=='speed' and 102 or 116)
         if kind=='playlist' then
             return {kind=kind,title=title,items=items,x0=l.w-w,x1=l.w,y0=0,y1=l.h,header=60,total=total,view=l.h-72,content=60,drawer=true}
         end

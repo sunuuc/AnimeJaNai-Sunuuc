@@ -122,7 +122,12 @@ def idle_and_ipc():
         p.shot('idle-small-ui')
         uri=BASE+'/media/ipc.y4m'
         p.command('loadfile',uri,'replace');p.loaded(uri)
-        check(p.get('user-data/player_ui/ui',{}).get('scale',2)<1,'smaller controls in real frontend')
+        ui=p.get('user-data/player_ui/ui',{});scale=ui.get('scale',0)
+        # Controls must be comfortably readable, not shrunk to a token size, and
+        # must still fit inside the client area whatever the window is.
+        check(0.5<=scale<=1.5,'player_ui controls sized in a readable range: %r'%scale)
+        check(all(b['x1']*scale<=ui.get('width',0)+1 and b['y1']*scale<=ui.get('height',0)+1
+                  for b in ui.get('controls',[])),'controls fit the client area')
         p.shot('network-small-ui')
         check(p.get('prefetch-playlist') is False,'native playlist prefetch disabled')
 def direct_and_ui():
@@ -140,7 +145,7 @@ def direct_and_ui():
         check(before==1,'direct playback starts one media request')
         p.command('loadfile',BASE+'/never/next.y4m','append')
         p.command('script-message-to','thumbfast','thumb','12','30','30')
-        for kind in ('speed','audio','sub','settings','playlist','performance'):
+        for kind in ('speed','audio','sub','settings','stats'):
             p.command('script-message','player_ui-menu',kind);time.sleep(.12)
         p.command('script-message','player_ui-hide');p.command('script-message','player_ui-show');time.sleep(.15)
         ui=p.get('user-data/player_ui/ui',{});seek=next(b for b in ui['controls'] if b['id']=='seek')

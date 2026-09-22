@@ -53,29 +53,54 @@ function M.title(title,path)
     if title=='' then title='视频播放' end
     return title
 end
--- Anchored Player UI layout 1.1.1: physical DPI, not a percentage of the video height.
+-- Player UI layout 1.2.0: the ASS PlayRes IS the window, so glyphs are rasterised at
+-- native size and never resampled -- resampling was what made the text soft.
+-- ui_scale*dpi scales glyph and icon sizes, and shrinks further when the window
+-- is too narrow for the control row.
 function M.layout(pw,ph,count,dpi,ui_scale)
     pw,ph=math.max(1,pw),math.max(1,ph)
-    local base=M.clamp(tonumber(ui_scale) or .70,.45,1.5)*M.clamp(tonumber(dpi) or 1,.5,1.25)
-    local scale=math.min(base,pw/920,ph/620)
-    local w,h=pw/scale,ph/scale;local compact=w<1100
-    local step=compact and 58 or 84;local y=h-66;local controls={}
-    local function button(id,x,bw)
-        bw=bw or 48
-        controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-25,y1=y+25}
+    local want=M.clamp(tonumber(ui_scale) or 1.00,.45,1.5)*M.clamp(tonumber(dpi) or 1,.75,1.5)
+    local w,h=pw,ph
+    local built
+    for _=1,12 do
+        local compact=w<1000*want
+        local step=(compact and 54 or 76)*want
+        local edge=(compact and 38 or 54)*want
+        local y=h-46*want
+        local controls={}
+        local function button(id,x,bw)
+            bw=(bw or 44)*want
+            controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-22*want,y1=y+22*want}
+        end
+        button('previous',edge);button('play',edge+step);button('next',edge+2*step);button('volume',edge+3*step)
+        local right={'fullscreen'}
+        for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
+        local x=w-edge
+        for _,id in ipairs(right) do button(id,x);x=x-step end
+        button('speed',x,58)
+        local vx=edge+3*step+26*want
+        local ex=math.min(vx+130*want,x-(58*want)/2-14*want)
+        local volume=ex-vx>=46*want and {x0=vx,x1=ex,y0=y-15*want,y1=y+15*want,y=y} or nil
+        local ok=true
+        for i,b in ipairs(controls) do
+            if b.x0<0 or b.x1>w or b.y0<0 or b.y1>h then ok=false;break end
+            for j=i+1,#controls do
+                local c=controls[j]
+                if not (b.x1<=c.x0 or c.x1<=b.x0) then ok=false;break end
+            end
+            if not ok then break end
+        end
+        if ok then
+            built={w=w,h=h,scale=1,ui=want,controls=controls,volume=volume,
+                seek={x0=22*want,x1=w-22*want,y0=h-118*want,y1=h-92*want,y=h-105*want},
+                title_y=h-186*want,detail_y=h-142*want,margin=26*want,compact=compact,small=false}
+            break
+        end
+        want=want*0.86
     end
-    button('previous',64);button('play',64+step);button('next',64+2*step);button('volume',64+3*step)
-    local right={'fullscreen'}
-    if count>1 then right[#right+1]='playlist' end
-    for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
-    local x=w-64
-    for _,id in ipairs(right) do button(id,x);x=x-step end
-    button('speed',x,72)
-    local vx=64+3*step+38;local ex=math.min(vx+146,x-62)
-    local volume=ex-vx>=60 and {x0=vx,x1=ex,y0=y-18,y1=y+18,y=y} or nil
-    return {w=w,h=h,scale=scale,controls=controls,volume=volume,
-        seek={x0=122,x1=w-122,y0=h-158,y1=h-122,y=h-140},
-        title_y=h-254,detail_y=h-204,margin=36,compact=compact,small=false}
+    return built or {w=w,h=h,scale=1,ui=want,controls={},volume=nil,
+        seek={x0=0,x1=w,y0=h-90,y1=h-70,y=h-80},title_y=h-140,detail_y=h-104,
+        margin=18,compact=true,small=false}
 end
 function M.wrap(value,width,size,maxlines)
     local chars=M.chars(value);local out,line,used={},'',0
@@ -197,22 +222,23 @@ function M.read(now)
 end
 return M
 end)()
-local o={hide_timeout=2.5,network_speed=true,volume_step=5,ui_scale=0.70,font='Microsoft YaHei',accent='B47799'}
+local o={hide_timeout=2.5,network_speed=true,show_clock=true,volume_step=5,ui_scale=1.00,text_outline=0,font='Microsoft YaHei',accent='B47799'}
 options.read_options(o,'player_ui')
-o.ui_scale=core.clamp(tonumber(o.ui_scale) or .70,.45,1.5)
+o.ui_scale=core.clamp(tonumber(o.ui_scale) or 1.00,.45,1.5)
+o.text_outline=core.clamp(tonumber(o.text_outline) or 0,0,4)
 o.hide_timeout=core.clamp(o.hide_timeout,1,20);o.volume_step=core.clamp(o.volume_step,1,20)
 if not o.accent:match('^%x%x%x%x%x%x$') then o.accent='B47799' end
 local ui=mp.create_osd_overlay('ass-events');ui.z=20
 local state={visible=true,x=-1,y=-1,hover=nil,menu=nil,scroll=0,drag=nil,pressed=nil,
     thumb=nil,thumb_time=nil,rate=nil,fps=nil,cpu=nil,memory=nil}
 local layout,buttons,menu_box,menu_items,menus
-local render_timer,hide_timer,pulse,network_timer,thumb_timer
+local render_timer,hide_timer,pulse,network_timer,thumb_timer,clock_timer
 local render,request_render,show,sync_timers,open_menu
 local samples=core.fps_sampler()
 local WHITE,MUTED,PANEL,ACCENT='FFFFFF','BEBEBE','22201F',o.accent
 local labels={previous='上一个文件',next='下一个文件',play='播放 / 暂停',volume='音量 / 静音',
     speed='播放速度',audio='音轨',sub='字幕',danmaku='弹幕',ai='超分 / 补帧预设',
-    settings='设置',stats='统计信息',performance='性能统计',playlist='播放列表',fullscreen='全屏',more='更多',
+    settings='设置',stats='统计信息',playlist='播放列表',fullscreen='全屏',more='更多',
     pin='窗口置顶',minimize='最小化',maximize='最大化 / 还原',close='关闭播放器'}
 local presets={}
 local function read_presets()
@@ -266,7 +292,7 @@ end
 local function info_data(kind)
     local rows={};local title=labels[kind] or '设置'
     local function row(text,fn,selected,disabled) rows[#rows+1]={text=text,fn=fn,selected=selected,disabled=disabled or fn==nil} end
-    if kind=='performance' then
+    if kind=='stats' then
         local target=num('estimated-vf-fps');if target then target=target*num('speed',1) end
         row('实际 FPS  '..format_num(state.fps,'',2)..'  /  目标 '..format_num(target,'',2))
         row('播放器 CPU  '..format_num(state.cpu,'%')..'    内存 '..format_num(state.memory and state.memory/1048576,' MiB',0))
@@ -279,7 +305,6 @@ local function info_data(kind)
         for _,p in ipairs(passes.fresh or {}) do if core.finite(p.avg) then total=total+p.avg;found=true end end
         row('GPU 渲染耗时  '..(found and format_num(total/1e6,' ms',2) or '—'))
         row('缓冲  '..format_num(num('demuxer-cache-duration'),' 秒')..'    读取 '..core.rate(state.rate))
-    elseif kind=='stats' then
         local v=prop('video-params',{}) or {};local a=prop('audio-params',{}) or {}
         row('视频  '..tostring(v.w or '—')..' × '..tostring(v.h or '—')..' · '..mp.get_property('video-codec','—'))
         row('像素格式  '..tostring(v.pixelformat or '—')..' · '..tostring(v.colormatrix or '—'))
@@ -349,7 +374,6 @@ return function(c)
             link('字幕设置','sub-settings','sub')
             link('弹幕设置','danmaku-settings','danmaku')
             link('统计信息','stats','info')
-            link('性能统计','performance','performance')
         elseif kind=='speed' then
             title=nil
             for _,v in ipairs({8,5,3,2,1.5,1.25,1,.5}) do local n=v
@@ -439,9 +463,9 @@ return function(c)
         return title,a
     end
     M.allowed={settings='设置',speed='播放速度',sub='字幕',audio='音轨',danmaku='弹幕',ai='超分与补帧',scale='缩放模式',
-        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',performance='性能统计',playlist='播放列表',chapters='章节'}
+        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',playlist='播放列表',chapters='章节'}
     local function width(kind,l)
-        local widths={speed=144,settings=244,sub=310,audio=330,danmaku=310,ai=374,scale=204,stats=480,performance=570,playlist=600,chapters=400}
+        local widths={speed=144,settings=244,sub=310,audio=330,danmaku=310,ai=374,scale=204,stats=480,playlist=600,chapters=400}
         return math.min(widths[kind] or 330,l.w-24)
     end
     local function measure(items,w,kind)
@@ -639,7 +663,7 @@ open_menu=function(kind,parent)
     hide_thumb();samples:reset();state.fps=nil;state.cpu=nil;state.memory=nil
     if metrics.reset then metrics.reset() end
     menus.open(kind,parent)
-    if state.menu=='performance' then actual_sample() end
+    if state.menu=='stats' then actual_sample() end
     show();sync_timers()
 end
 local function activate(id)
@@ -707,14 +731,16 @@ local function clip(x0,y0,x1,y1,fn)
     clip_region=string.format('\\clip(%d,%d,%d,%d)',math.floor(x0),math.floor(y0),math.ceil(x1),math.ceil(y1))
     fn();clip_region=old
 end
-local function text(x,y,size,s,align,color,bold,max)
+local function text(x,y,size,s,align,color,bold,max,outline)
     if max then s=core.ellipsize(s,max,size) end
-    line(string.format('{\\rDefault\\an%d\\pos(%.2f,%.2f)\\fn%s\\fs%d\\b%d\\bord0\\shad1\\1c&H%s&\\1a&H00&}%s',align or 7,x,y,o.font,size,bold and 1 or 0,color or WHITE,core.escape(s)))
+    line(string.format('{\\rDefault\\an%d\\pos(%.2f,%.2f)\\fn%s\\fs%d\\b%d\\bord%s\\shad0\\1c&H%s&\\1a&H00&}%s',align or 7,x,y,o.font,size,bold and 1 or 0,string.format('%.2f',outline or o.text_outline),color or WHITE,core.escape(s)))
 end
+local icon_u=1
 local function icon(id,x,y,active,disabled,small)
-    if state.hover==id then circle(x,y,24,WHITE,226) end
+    local sc=icon_u
+    if state.hover==id then circle(x,y,18*sc,WHITE,226) end
     local color=active and ACCENT or WHITE
-    local size=small and 70 or 100
+    local size=(small and 44 or 60)*sc
     line(string.format('{\\rDefault\\an7\\pos(%.2f,%.2f)\\bord0\\shad0\\fscx%d\\fscy%d\\1c&H%s&\\1a&H%02X&\\p1}%s{\\p0}',x-16*size/100,y-16*size/100,size,size,color,disabled and 160 or 0,icons[id] or icons.more))
 end
 local function thumb(t,x)
@@ -728,7 +754,7 @@ local function thumb(t,x)
         state.thumb_time=t
         local width=state.thumb.width or 160;local height=state.thumb.height or 90
         local px=core.clamp(x*layout.scale-width/2,12,layout.w*layout.scale-width-12)
-        local py=(layout.seek.y0-46)*layout.scale-height
+        local py=(layout.seek.y0-14*(layout.ui or 1))*layout.scale-height
         cmd('script-message-to','thumbfast','thumb',tostring(t),tostring(math.floor(px)),tostring(math.floor(py)))
     end)
 end
@@ -794,45 +820,56 @@ local function bind_mouse(enabled)
         for _,key in ipairs({'player_ui-click','player_ui-double','player_ui-wheel-up','player_ui-wheel-down'}) do mp.remove_key_binding(key) end
     end
 end
+-- A black window with no feedback is indistinguishable from a frozen player.
+-- Opening and buffering are reported on the overlay itself, independently of the
+-- control bar, so the state is visible even after the bar auto-hides.
+loading_state=function()
+    if bool('idle-active',true) or bool('pause') then return nil end
+    if bool('paused-for-cache') then return '正在缓冲…' end
+    if num('vo-presented-frame-count',0)>0 then return nil end
+    -- Nothing is on screen yet. Before the demuxer has parsed any track the list
+    -- is empty, which is exactly the "opening" phase a black window hides.
+    local tracks=prop('track-list',{}) or {}
+    if #tracks==0 then return '正在加载…' end
+    for _,t in ipairs(tracks) do
+        if t.type=='video' and not t.albumart and t.selected~=false then return '正在加载…' end
+    end
+end
 render=function()
     render_timer=nil
+    state.tick=(state.tick or 0)+1
     if bool('window-minimized') then ui:remove();bind_mouse(false);return end
     local pw,ph=mp.get_osd_size();if pw<=0 or ph<=0 then return end
     layout=core.layout(pw,ph,num('playlist-count',0),num('display-hidpi-scale',1),o.ui_scale);buttons={};output={};menu_box=nil
+    local u=layout.ui;icon_u=u
     local net=bool('demuxer-via-network') and o.network_speed and not bool('idle-active',true)
+    local loading=loading_state()
     if state.visible then
-        for i=0,47 do local y=layout.h-340+i*340/48
-            rect(0,y,layout.w,y+340/48+.2,'000000',math.floor(255-170*(i/47)^1.4))
+        local band=190*u
+        for i=0,47 do local y=layout.h-band+i*band/48
+            rect(0,y,layout.w,y+band/48+.2,'000000',math.floor(255-140*(i/47)^1.4))
         end
-        local title=core.title(mp.get_property('media-title',''),mp.get_property('path',''))
-        if bool('idle-active',true) then title='' end
-        text(36,layout.title_y,40,title,7,WHITE,true,layout.w-72)
-        local detail={};local count=num('playlist-count',0)
-        if count>1 then detail[#detail+1]=string.format('播放列表  %d / %d',num('playlist-pos',0)+1,count) end
-        local v=prop('video-params',{}) or {}
-        if v.w and v.h then detail[#detail+1]=v.w..' × '..v.h end
-        local fps=num('container-fps');if fps then detail[#detail+1]=string.format('%.3g fps',fps) end
-        if bool('paused-for-cache') then detail[#detail+1]='正在缓冲…' end
-        text(36,layout.detail_y,23,table.concat(detail,'  ·  '),7,MUTED,false,layout.w-72)
+        -- Only the title stays on the bar. Episode index, resolution, fps and the
+        -- timecodes are not read here; they live in the statistics menu instead.
+        local count=num('playlist-count',0)
         local seek=layout.seek;local dur=num('duration');local pos=num('time-pos',0)
-        text(36,seek.y,21,core.time(state.drag=='seek' and seek_value(state.x) or pos),4)
-        text(layout.w-36,seek.y,21,core.time(dur),6)
-        rect(seek.x0,seek.y-3,seek.x1,seek.y+3,WHITE,178)
+        -- Track stays dim, the buffered range is clearly brighter, played is accent.
+        rect(seek.x0,seek.y-2.5*u,seek.x1,seek.y+2.5*u,WHITE,200)
         if dur and dur>0 then
             local cache=prop('demuxer-cache-state',{}) or {}
             for _,range in ipairs(cache['seekable-ranges'] or {}) do
                 if core.finite(range.start) and core.finite(range['end']) then
-                    rect(seek.x0+core.clamp(range.start/dur,0,1)*(seek.x1-seek.x0),seek.y-3,
-                        seek.x0+core.clamp(range['end']/dur,0,1)*(seek.x1-seek.x0),seek.y+3,WHITE,100)
+                    rect(seek.x0+core.clamp(range.start/dur,0,1)*(seek.x1-seek.x0),seek.y-2.5*u,
+                        seek.x0+core.clamp(range['end']/dur,0,1)*(seek.x1-seek.x0),seek.y+2.5*u,WHITE,70)
                 end
             end
             local p=state.drag=='seek' and seek_value(state.x) or pos
             local x=seek.x0+core.clamp(p/dur,0,1)*(seek.x1-seek.x0)
-            rect(seek.x0,seek.y-3,x,seek.y+3,ACCENT);circle(x,seek.y,14,'4C4C4C',55);circle(x,seek.y,7,ACCENT)
+            rect(seek.x0,seek.y-2.5*u,x,seek.y+2.5*u,ACCENT);circle(x,seek.y,10*u,'4C4C4C',55);circle(x,seek.y,5*u,ACCENT)
             buttons[#buttons+1]={id='seek',x0=seek.x0,x1=seek.x1,y0=seek.y0,y1=seek.y1}
             if core.inside(seek,state.x,state.y) and not state.menu then
                 local target=seek_value(state.x)
-                rect(state.x-44,seek.y0-40,state.x+44,seek.y0-4,PANEL,20);text(state.x,seek.y0-22,19,core.time(target),5)
+                rect(state.x-38*u,seek.y0-32*u,state.x+38*u,seek.y0-4*u,PANEL,20);text(state.x,seek.y0-18*u,14*u,core.time(target),5)
                 if not state.drag then thumb(target,state.x) end
             else hide_thumb() end
         end
@@ -842,7 +879,7 @@ render=function()
             if id=='next' then disabled=count>1 and num('playlist-pos',0)>=count-1 or count<=1 and not bool('seekable') end
             if id=='speed' then
                 if state.hover==id then rect(b.x0,b.y0,b.x1,b.y1,WHITE,230) end
-                text(b.x,b.y,25,(num('speed',1)%1==0 and string.format('%.1fx',num('speed',1)) or string.format('%gx',num('speed',1))),5)
+                text(b.x,b.y,17*u,(num('speed',1)%1==0 and string.format('%.1fx',num('speed',1)) or string.format('%gx',num('speed',1))),5)
             else
                 local drawid=id
                 if id=='play' then drawid=(bool('pause') or bool('idle-active',true)) and 'play' or 'pause' end
@@ -850,30 +887,53 @@ render=function()
                 if id=='fullscreen' and bool('fullscreen') then drawid='restore' end
                 local d=prop('user-data/player_ui/danmaku',{}) or {}
                 icon(drawid,b.x,b.y,state.menu==id or id=='settings' and state.parent=='settings' or id=='danmaku' and d.loaded and d.enabled,disabled)
-                if id=='sub' then text(b.x,b.y+1,17,'CC',5,'222222',true) end
+                if id=='sub' then text(b.x,b.y+1*u,13*u,'CC',5,'222222',true) end
             end
             if not disabled then buttons[#buttons+1]=b end
         end
         if layout.volume then
             local b=layout.volume;local v=core.clamp(num('volume',0)/100,0,1)
-            rect(b.x0,b.y-3,b.x1,b.y+3,WHITE,145);rect(b.x0,b.y-3,b.x0+v*(b.x1-b.x0),b.y+3,ACCENT)
-            circle(b.x0+v*(b.x1-b.x0),b.y,11,'4C4C4C',40);circle(b.x0+v*(b.x1-b.x0),b.y,6,ACCENT)
+            rect(b.x0,b.y-2.5*u,b.x1,b.y+2.5*u,WHITE,145);rect(b.x0,b.y-2.5*u,b.x0+v*(b.x1-b.x0),b.y+2.5*u,ACCENT)
+            circle(b.x0+v*(b.x1-b.x0),b.y,9*u,'4C4C4C',40);circle(b.x0+v*(b.x1-b.x0),b.y,5*u,ACCENT)
             buttons[#buttons+1]={id='volume-slider',x0=b.x0,x1=b.x1,y0=b.y0,y1=b.y1}
         end
         for i,id in ipairs({'close','maximize','minimize','pin'}) do
-            local x=layout.w-30-(i-1)*60;local b={id=id,x0=x-25,x1=x+25,y0=0,y1=46}
-            buttons[#buttons+1]=b;icon(id,x,23,id=='pin' and bool('ontop'),false,true)
+            local x=layout.w-26*u-(i-1)*50*u;local b={id=id,x0=x-22*u,x1=x+22*u,y0=0,y1=38*u}
+            buttons[#buttons+1]=b;icon(id,x,19*u,id=='pin' and bool('ontop'),false,true)
         end
         if state.menu then draw_menu() end
         if state.hover and labels[state.hover] and not state.menu then
             local tip=labels[state.hover]
             if count<=1 and (state.hover=='previous' or state.hover=='next') then tip=state.hover=='previous' and '后退 10 秒' or '前进 10 秒' end
             if state.hover=='volume' then tip='音量 '..string.format('%.0f',num('volume',100))..'%' end
-            local top=state.y<70;local y=top and 62 or layout.h-106
-            text(core.clamp(state.x,120,layout.w-120),y,18,tip,5)
+            local top=state.y<52*u;local y=top and 46*u or layout.h-78*u
+            text(core.clamp(state.x,90*u,layout.w-90*u),y,14*u,tip,5)
         end
     else hide_thumb() end
-    if net and state.menu~='playlist' then text(layout.w-24,61,20,core.rate(state.rate),9,MUTED) end
+    if loading then
+        local cy=layout.h/2
+        rect(0,cy-50*u,layout.w,cy+48*u,'000000',100)
+        text(layout.w/2,cy-30*u,24*u,loading,5,WHITE,true)
+        for i=1,3 do
+            local on=((state.tick+i)%3==0)
+            circle(layout.w/2+(i-2)*22*u,cy+34*u,on and 3.5*u or 2*u,on and ACCENT or WHITE,on and 0 or 140)
+        end
+    end
+    -- The episode name and the read rate belong to the bar. They are drawn in the
+    -- bar's own title slot (name on top, rate directly under it) and NOT AT ALL
+    -- once it retracts, so nothing stays pinned over the picture. Drawing them
+    -- after an auto-hidden bar put a permanent caption across the bottom of the
+    -- frame, which is exactly what it looked like: something left hanging there.
+    local title=core.title(mp.get_property('media-title',''),mp.get_property('path',''))
+    if bool('idle-active',true) then title='' end
+    if title~='' and state.visible then
+        text(layout.margin,layout.title_y,30*u,title,7,WHITE,false,layout.w-2*layout.margin,0.6)
+        if net then text(layout.margin,layout.detail_y,16*u,core.rate(state.rate),7,WHITE,false,nil,0.6) end
+    end
+    -- The clock sits in the very top-left corner rather than over the frame.
+    if o.show_clock and not bool('idle-active',true) then
+        text(10*u,8*u,22*u,os.date('%H:%M'),7,MUTED,false,nil,0.6)
+    end
     local b=hit(state.x,state.y);state.hover=b and b.id or nil
     bind_mouse(state.visible and (b~=nil or state.drag~=nil or state.menu~=nil))
     ui.res_x=math.floor(layout.w+.5);ui.res_y=math.floor(layout.h+.5);ui.data=table.concat(output,'\n')
@@ -893,10 +953,22 @@ render=function()
     for _,b in ipairs(menus.boxes) do boxes[#boxes+1]={kind=b.kind,x0=b.x0,x1=b.x1,y0=b.y0,y1=b.y1,total=b.total,view=b.view,offset=b.offset} end
     mp.set_property_native('user-data/player_ui/ui',{visible=state.visible,menu=state.menu or '',width=pw,height=ph,
         controls=buttons,scale=layout.scale,hover=state.hover,mouse_x=state.x,mouse_y=state.y,overlay_ok=state.overlay_ok,overlay_error=state.overlay_error,menu_boxes=boxes,subtitle_slot=state.sub_slot or 1,version='1.1.2',network_rate=state.rate,rows=rows,
-        performance=state.menu=='performance' and {fps=state.fps,cpu=state.cpu,memory=state.memory} or nil})
+        performance=state.menu=='stats' and {fps=state.fps,cpu=state.cpu,memory=state.memory} or nil})
 end
 request_render=function()if not render_timer then render_timer=mp.add_timeout(.035,render) end end
 local menu_escape_bound=false
+-- A paused player only redraws on demand, so the clock re-arms a one-shot timer that
+-- lands on the next minute boundary. It stays live without leaving a repeating timer
+-- running while the overlay is hidden.
+local function schedule_clock()
+    clock_timer=nil
+    if not o.show_clock or bool('idle-active',true) or bool('window-minimized') then return end
+    clock_timer=mp.add_timeout(60-(os.time()%60),function()
+        clock_timer=nil
+        request_render()
+        schedule_clock()
+    end)
+end
 sync_timers=function()
     local menu_open=state.menu~=nil
     if menu_open~=menu_escape_bound then
@@ -904,14 +976,17 @@ sync_timers=function()
         if menu_open then mp.add_forced_key_binding('ESC','player_ui-menu-escape',escape)
         else mp.remove_key_binding('player_ui-menu-escape') end
     end
-    local need=not bool('window-minimized') and (state.visible and not bool('pause') and not bool('idle-active',true) or state.menu=='performance')
-    if need and not pulse then pulse=mp.add_periodic_timer(.25,function()if state.menu=='performance' then actual_sample() end;request_render()end)
+    local need=not bool('window-minimized') and (state.visible and not bool('pause') and not bool('idle-active',true) or state.menu=='stats' or loading_state()~=nil)
+    if need and not pulse then pulse=mp.add_periodic_timer(.25,function()if state.menu=='stats' then actual_sample() end;request_render()end)
     elseif not need and pulse then pulse:kill();pulse=nil end
     local net=not bool('window-minimized') and o.network_speed and bool('demuxer-via-network') and not bool('idle-active',true)
     if net and not network_timer then network_timer=mp.add_periodic_timer(1,function()
         state.rate=bool('demuxer-cache-idle') and 0 or num('cache-speed');request_render()
     end)
     elseif not net and network_timer then network_timer:kill();network_timer=nil;state.rate=nil end
+    local want_clock=o.show_clock and not bool('window-minimized') and not bool('idle-active',true)
+    if want_clock and not clock_timer then schedule_clock() end
+    if not want_clock then kill(clock_timer);clock_timer=nil end
 end
 local function hide()
     hide_timer=nil
@@ -950,7 +1025,9 @@ for _,p in ipairs({'pause','idle-active','demuxer-via-network','window-minimized
     'volume','mute','speed','sid','secondary-sid','sub-visibility','sub-delay','sub-scale','sub-pos','audio-delay','display-hidpi-scale','keepaspect','panscan','video-unscaled','track-list','playlist','playlist-pos','media-title','duration','video-params','osd-dimensions',
     'user-data/player_ui/danmaku','user-data/animejanai/requested-slot'}) do
     mp.observe_property(p,'native',function()
-        if p=='pause' then samples:reset();show() else sync_timers();if state.visible then request_render() end end
+        -- The title and clock stay on screen while the bar is hidden, so every observed
+        -- change still needs a redraw.
+        if p=='pause' then samples:reset();show() else sync_timers();request_render() end
     end)
 end
 mp.register_event('start-file',function()
@@ -960,6 +1037,6 @@ mp.register_event('file-loaded',function()samples:reset();show()end)
 mp.register_event('seek',function()samples:reset()end)
 mp.register_event('end-file',function()state.rate=nil;hide_thumb();sync_timers()end)
 mp.register_event('shutdown',function()
-    menus.shutdown();kill(render_timer);kill(hide_timer);kill(pulse);kill(network_timer);kill(thumb_timer);ui:remove();bind_mouse(false)
+    menus.shutdown();kill(render_timer);kill(hide_timer);kill(pulse);kill(network_timer);kill(thumb_timer);kill(clock_timer);ui:remove();bind_mouse(false)
 end)
 show()

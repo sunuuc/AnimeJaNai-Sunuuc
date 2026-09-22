@@ -47,29 +47,54 @@ function M.title(title,path)
     if title=='' then title='视频播放' end
     return title
 end
--- Anchored Player UI layout 1.1.1: physical DPI, not a percentage of the video height.
+-- Player UI layout 1.2.0: the ASS PlayRes IS the window, so glyphs are rasterised at
+-- native size and never resampled -- resampling was what made the text soft.
+-- ui_scale*dpi scales glyph and icon sizes, and shrinks further when the window
+-- is too narrow for the control row.
 function M.layout(pw,ph,count,dpi,ui_scale)
     pw,ph=math.max(1,pw),math.max(1,ph)
-    local base=M.clamp(tonumber(ui_scale) or .70,.45,1.5)*M.clamp(tonumber(dpi) or 1,.5,1.25)
-    local scale=math.min(base,pw/920,ph/620)
-    local w,h=pw/scale,ph/scale;local compact=w<1100
-    local step=compact and 58 or 84;local y=h-66;local controls={}
-    local function button(id,x,bw)
-        bw=bw or 48
-        controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-25,y1=y+25}
+    local want=M.clamp(tonumber(ui_scale) or 1.00,.45,1.5)*M.clamp(tonumber(dpi) or 1,.75,1.5)
+    local w,h=pw,ph
+    local built
+    for _=1,12 do
+        local compact=w<1000*want
+        local step=(compact and 54 or 76)*want
+        local edge=(compact and 38 or 54)*want
+        local y=h-46*want
+        local controls={}
+        local function button(id,x,bw)
+            bw=(bw or 44)*want
+            controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-22*want,y1=y+22*want}
+        end
+        button('previous',edge);button('play',edge+step);button('next',edge+2*step);button('volume',edge+3*step)
+        local right={'fullscreen'}
+        for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
+        local x=w-edge
+        for _,id in ipairs(right) do button(id,x);x=x-step end
+        button('speed',x,58)
+        local vx=edge+3*step+26*want
+        local ex=math.min(vx+130*want,x-(58*want)/2-14*want)
+        local volume=ex-vx>=46*want and {x0=vx,x1=ex,y0=y-15*want,y1=y+15*want,y=y} or nil
+        local ok=true
+        for i,b in ipairs(controls) do
+            if b.x0<0 or b.x1>w or b.y0<0 or b.y1>h then ok=false;break end
+            for j=i+1,#controls do
+                local c=controls[j]
+                if not (b.x1<=c.x0 or c.x1<=b.x0) then ok=false;break end
+            end
+            if not ok then break end
+        end
+        if ok then
+            built={w=w,h=h,scale=1,ui=want,controls=controls,volume=volume,
+                seek={x0=22*want,x1=w-22*want,y0=h-118*want,y1=h-92*want,y=h-105*want},
+                title_y=h-186*want,detail_y=h-142*want,margin=26*want,compact=compact,small=false}
+            break
+        end
+        want=want*0.86
     end
-    button('previous',64);button('play',64+step);button('next',64+2*step);button('volume',64+3*step)
-    local right={'fullscreen'}
-    if count>1 then right[#right+1]='playlist' end
-    for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
-    local x=w-64
-    for _,id in ipairs(right) do button(id,x);x=x-step end
-    button('speed',x,72)
-    local vx=64+3*step+38;local ex=math.min(vx+146,x-62)
-    local volume=ex-vx>=60 and {x0=vx,x1=ex,y0=y-18,y1=y+18,y=y} or nil
-    return {w=w,h=h,scale=scale,controls=controls,volume=volume,
-        seek={x0=122,x1=w-122,y0=h-158,y1=h-122,y=h-140},
-        title_y=h-254,detail_y=h-204,margin=36,compact=compact,small=false}
+    return built or {w=w,h=h,scale=1,ui=want,controls={},volume=nil,
+        seek={x0=0,x1=w,y0=h-90,y1=h-70,y=h-80},title_y=h-140,detail_y=h-104,
+        margin=18,compact=true,small=false}
 end
 function M.wrap(value,width,size,maxlines)
     local chars=M.chars(value);local out,line,used={},'',0

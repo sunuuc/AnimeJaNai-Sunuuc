@@ -37,9 +37,14 @@ edit(p,"    args=[flag+BOOT.name,*options(uri)]",
        "    args=[flag+BOOT.name,*options(uri,exe=='mpv.exe')]")
 
 command=(R/'src/player/src/MpvNet/CommandLine.cs').read_text(encoding='utf-8-sig')
-for marker in ('IsNativePlaylistStartupOption','--playlist was already expanded by native mpv',
-               'SetStartupOption(pair.Name, pair.Value)'):
-    if marker not in command:raise RuntimeError('Native Player UI playlist startup fix missing: '+marker)
+# --playlist must never reach mpv_set_option_string before mpv_initialize: that
+# deadlocks libmpv. It has to be skipped pre-init and loaded with loadlist after
+# initialization, then selected with playlist-play-index.
+for marker in ('IsNativePlaylistStartupOption','loadlist','playlist-play-index',
+               'pair.Name == "playlist"','SetStartupOption(pair.Name, pair.Value)'):
+    if marker not in command:raise RuntimeError('Player UI playlist handoff fix missing: '+marker)
+if 'mpv must receive --playlist' in command:
+    raise RuntimeError('Unsafe pre-init --playlist handoff was reintroduced')
 scoped=(R/'src/player/src/MpvNet/ScopedCommandLine.cs').read_text(encoding='utf-8-sig')
 for marker in ('PromotedOptions','EmptyGroupCount'):
     if marker not in scoped:raise RuntimeError('Scoped handoff provenance missing: '+marker)

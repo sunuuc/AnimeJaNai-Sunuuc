@@ -159,7 +159,7 @@ def inspect_payload():
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
        'portable_config/script-modules/player_ui_menu.lua',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
