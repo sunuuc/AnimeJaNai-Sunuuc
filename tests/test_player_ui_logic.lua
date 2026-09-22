@@ -13,7 +13,7 @@ local function suite()
    for _,b in ipairs(l.controls)do controls[#controls+1]=b;ids[b.id]=b end
    if l.volume then controls[#controls+1]=l.volume end
    check(ids.settings and ids.audio and ids.sub and ids.danmaku and not ids.ai and not ids.stats and not ids.performance,'clean Player UI bottom row')
-   check((ids.playlist~=nil)==(count>1),'playlist only when provided')
+   check(ids.playlist==nil,'playlist control removed from the bottom row')
    for i,b in ipairs(controls)do
     check(b.x0>=0 and b.x1<=l.w and b.y0>=0 and b.y1<=l.h,'screen bounds')
     for j=i+1,#controls do local c=controls[j];check(b.x1<=c.x0 or c.x1<=b.x0,'non-overlapping hit areas')end
@@ -93,7 +93,7 @@ local function suite()
  local x,y=ui().menu_boxes[1],ui().menu_boxes[2];check(y.x1<=x.x0,'child opens to the left without overlap')
  click(row('preset:0'));check(commands[#commands][2]=='aji-slot' and commands[#commands][3]=='0','reuse AI controller')
  click('settings');click(row('scale'));click(row('填充裁剪'));check(props.panscan==1 and props.keepaspect,'fill crop mode')
- click('settings');click(row('performance'));props.fullscreen=true;bindings['player_ui-menu-escape']();advance(.1)
+ click('settings');click(row('stats'));props.fullscreen=true;bindings['player_ui-menu-escape']();advance(.1)
  check(props.fullscreen and ui().menu=='settings','Esc returns from submenu without leaving fullscreen')
  bindings['player_ui-menu-escape']();advance(.1);check(props.fullscreen and ui().menu=='','Esc closes root menu')
  local n=#commands;local b=button('seek');pos.x=(b.x0+b.x1)*ui().scale/2;pos.y=(b.y0+b.y1)*ui().scale/2
@@ -101,11 +101,8 @@ local function suite()
  check(#commands==n,'canceled drag does not seek')
  props['playlist-count']=12;props.playlist={}
  for i=1,12 do props.playlist[i]={filename='part'..i..'.mkv'}end
- observers.playlist();advance(.1);click('playlist')
- local drawer=ui().menu_boxes[1];check(drawer.y0==0 and math.abs(drawer.y1*ui().scale-720)<1 and math.abs(drawer.x1*ui().scale-1280)<1,'full-height right drawer')
- check(#ui().rows==12 and ui().rows[2].text=='part2.mkv','only actual supplied titles')
- local bar=button('menu-scroll-playlist');check(bar~=nil,'long playlist has scrollbar')
- click('row-2');check(props['playlist-pos']==1,'drawer selects real item')
+ observers.playlist();advance(.1)
+ check(button('playlist')==nil,'playlist drawer is gone with its control')
  bindings['player_ui-leave']();advance(4)
  local active=0;for _,t in ipairs(timers)do if t.alive and t.repeated then active=active+1 end end
  check(active==0,'hidden local video has no repeating UI timer')

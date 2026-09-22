@@ -48,6 +48,12 @@ local function row(key)
  for i,r in ipairs(ui().rows or {})do if r.key==key or r.target==key or r.text==key then return 'row-'..i end end
  error('missing row '..key)
 end
+-- Same lookup, but reporting absence instead of failing: used to assert that a
+-- row is NOT offered (the removed episode drawer, for example).
+local function has_row(key)
+ for _,r in ipairs(ui().rows or {})do if r.key==key or r.target==key or r.text==key then return true end end
+ return false
+end
 local function menu(kind,then_)
  mp.commandv('script-message','player_ui-menu',kind)
  wait_for(function()return ui().menu==kind end,'menu did not open: '..kind,then_)
@@ -155,9 +161,9 @@ steps[#steps+1]=function(next_)
  end)
 end
 steps[#steps+1]=function(next_)
- click('settings',function()click(row('performance'),function()
+ click('settings',function()click(row('stats'),function()
   after(.9,function()
-   check((ui().performance or {}).fps==0,'paused actual FPS');shot('player_ui-performance')
+   check((ui().performance or {}).fps==0,'paused actual FPS');shot('player_ui-stats')
    mp.set_property_bool('pause',false)
    after(2,function()
     local fps=(ui().performance or {}).fps;check(type(fps)=='number' and fps>0,'playing actual FPS')
@@ -173,17 +179,18 @@ steps[#steps+1]=function(next_)
  end)end)
 end
 steps[#steps+1]=function(next_)
+ -- The episode drawer was removed from the player UI, so a multi-entry playlist
+ -- must stay invisible: no playlist button in the bar, no drawer in the
+ -- settings menu, and no playlist row offered anywhere. The playlist itself is
+ -- still loaded (playback order is the caller's business), only the UI is gone.
  for i=1,8 do mp.commandv('loadfile',out..'/second.y4m','append')end
- after(.2,function()
-  check(button('playlist')~=nil,'playlist button appears for actual entries')
-  click('playlist',function()
-   check(#ui().rows==9,'drawer lists exactly nine supplied entries')
-   local b=ui().menu_boxes[1];check(b.y0==0 and b.y1*ui().scale==ui().height and b.x1*ui().scale==ui().width,'right drawer fills window height')
-   check(button('menu-scroll-playlist')~=nil,'playlist scrollbar');shot('player_ui-playlist')
-   click('row-2',function()after(.3,function()
-    check(mp.get_property_number('playlist-pos')==1,'second actual entry selected')
-    check(not mp.get_property_native('user-data/player_ui/danmaku',{}).loaded,'new video clears old danmaku');next_()
-   end)end)
+ after(.3,function()
+  check(mp.get_property_number('playlist-count',0)==9,'nine entries are loaded')
+  check(button('playlist')==nil,'no playlist button for a multi-entry playlist')
+  check(button('menu-scroll-playlist')==nil,'no playlist scrollbar')
+  menu('settings',function()
+   check(not has_row('playlist'),'no playlist entry inside settings')
+   close(next_)
   end)
  end)
 end

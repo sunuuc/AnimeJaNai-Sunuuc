@@ -65,8 +65,17 @@ def capture_client(pid: int, destination: Path) -> dict:
                 if width >= 64 and height >= 64:
                     windows.append((width*height, hwnd))
             return True
-        if not u.EnumWindows(visit, 0) or not windows:
-            raise RuntimeError('No visible client window for test process')
+        # mpv's OSD can report ready before the host window is shown, so give the
+        # window a bounded amount of time to appear instead of sampling once.
+        deadline = time.monotonic()+5
+        while True:
+            windows.clear()
+            u.EnumWindows(visit, 0)
+            if windows:
+                break
+            if time.monotonic() >= deadline:
+                raise RuntimeError('No visible client window for test process')
+            time.sleep(.1)
         hwnd = max(windows, key=lambda x: x[0])[1]
         u.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0043)
         u.SetForegroundWindow(hwnd)

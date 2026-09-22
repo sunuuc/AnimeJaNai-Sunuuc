@@ -10,6 +10,9 @@ public sealed class ScopedCommandLine
     public List<Option> GlobalOptions { get; } = [];
     public List<Entry> Entries { get; } = [];
     public List<Option> PromotedOptions { get; } = [];
+    // Options of each empty --{ ... --} group, kept per group in order. The
+    // caller may send several such groups, each one a separate playback item.
+    public List<List<Option>> EmptyGroupOptions { get; } = [];
     public bool HasGroups { get; private set; }
     public int EmptyGroupCount { get; private set; }
     public int EmptyGroupOptionsPromoted { get; private set; }
@@ -67,6 +70,7 @@ public sealed class ScopedCommandLine
                     // so diagnostics and tests can distinguish it from globals.
                     result.GlobalOptions.AddRange(groupOptions!);
                     result.PromotedOptions.AddRange(groupOptions!);
+                    result.EmptyGroupOptions.Add(new List<Option>(groupOptions!));
                     result.EmptyGroupCount++;
                     result.EmptyGroupOptionsPromoted += groupOptions!.Count;
                 }

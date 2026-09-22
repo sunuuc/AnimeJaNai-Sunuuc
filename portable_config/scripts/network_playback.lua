@@ -33,8 +33,25 @@ mp.add_hook('on_load',-1000,function()
     if state.network then
         for name,value in pairs({['sub-auto']='no',['audio-file-auto']='no',['cover-art-auto']='no',
             ['ytdl']='no',['demuxer-cache-wait']='no',['cache-pause-wait']='1',
-            ['demuxer-max-bytes']='32MiB',['demuxer-max-back-bytes']='8MiB',
-            ['demuxer-readahead-secs']='10',['cache-secs']='10',['network-timeout']='20'}) do
+            -- Read three minutes ahead and keep the cache in memory, but size it
+            -- from the bitrate rather than from a round number: three minutes of
+            -- 1080p is 110-260 MiB, and even 4K stays under 550 MiB. 768 MiB is
+            -- therefore about 1.5x the worst case, while the 2 GiB this used to
+            -- ask for pushed committed memory past 3.9 GB because mpv counts the
+            -- packet budget against the process commit even when the packets are
+            -- never all resident. The backward half is a further slice of that
+            -- same total, so it is kept well under it (768M total, 384M back =
+            -- 384M of already-played data plus 384M of readahead).
+            ['demuxer-readahead-secs']='180',['cache-secs']='180',
+            ['demuxer-max-bytes']='768M',['demuxer-max-back-bytes']='384M',
+            -- The video/audio decoder queues default to 512M/1M and are counted
+            -- in the same committed pool as the packet cache. 256M is still far
+            -- more than the decoder needs to stay ahead of playback at 1080p
+            -- (the AnimeJaNai filter chain is the real bottleneck, not the
+            -- decoders) and removes half a gigabyte of headroom the player was
+            -- reserving and never using.
+            ['vd-queue-max-bytes']='256M',['ad-queue-max-bytes']='512K',
+            ['network-timeout']='20'}) do
             set('file-local-options/'..name,value)
         end
         mp.commandv('change-list','demuxer-lavf-o','append','http_multiple=0')

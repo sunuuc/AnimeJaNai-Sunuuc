@@ -30,6 +30,68 @@ public static class StartupDiagnostics
     public static void OptionError(int error) { optionError = error; Record("option-rejected"); }
     public static void Failed() => Record("startup-failed");
 
+    // Shape of the caller's argument list: option names, value kinds and short
+    // hashes only. Never the values themselves, so URLs, titles and tokens stay
+    // out of the diagnostic.
+    static string[] ArgvShape()
+    {
+        string[] argv = Environment.GetCommandLineArgs();
+        var shape = new List<string>();
+        for (int i = 1; i < argv.Length; i++)
+        {
+            string raw = argv[i];
+            if (raw is "--{" or "--}") { shape.Add(raw); continue; }
+            int eq = raw.StartsWith("--") ? raw.IndexOf('=') : -1;
+            shape.Add(eq < 0 ? (raw.StartsWith("--") ? raw : ValueKind(raw))
+                             : raw[..eq] + "=" + ValueKind(raw[(eq + 1)..]));
+        }
+        return shape.ToArray();
+    }
+
+    static string ValueKind(string value)
+    {
+        if (value.Contains("://")) return "<url:" + Hash8(value) + ">";
+        if (value.StartsWith("\\\\") || (value.Length > 1 && value[1] == ':')) return "<path>";
+        if (double.TryParse(value, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double number)) return "<num>";
+        return "<text:" + value.Length + ">";
+    }
+
+    static string Hash8(string value) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(
+            System.Text.Encoding.UTF8.GetBytes(value)))[..8].ToLowerInvariant();
+
+    static string[] PlaylistHashes()
+    {
+        var hashes = new List<string>();
+        foreach (var option in CommandLine.Parsed.GlobalOptions)
+            if (option.Name == "playlist") hashes.Add(Hash8(option.Value));
+        return hashes.ToArray();
+    }
+
+    // One short hash per playlist entry, taken from the URL path with the query
+    // string removed. Enough to tell entries apart and to see which one plays,
+    // without writing any address, title or token to disk.
+    static string[] PlaylistEntryHashes()
+    {
+        var hashes = new List<string>();
+        try
+        {
+            int count = Player.GetPropertyInt("playlist-count");
+            for (int i = 0; i < count && i < 64; i++)
+            {
+                string file = Player.GetPropertyString($"playlist/{i}/filename");
+                if (file.Length == 0)
+                    file = Player.GetPropertyString($"playlist/{i}/playlist-path");
+                int query = file.IndexOf('?');
+                if (query >= 0) file = file[..query];
+                hashes.Add(Hash8(file));
+            }
+        }
+        catch { }
+        return hashes.ToArray();
+    }
+
     static int MissingScripts()
     {
         int missing = 0;
@@ -71,6 +133,7 @@ public static class StartupDiagnostics
                     version = 3,
                     phases = Phases.ToArray(),
                     argument_count = Environment.GetCommandLineArgs().Length - 1,
+                    argv_shape = ArgvShape(),
                     media_arguments = parsed?.Entries.Count,
                     scoped_playlist = parsed?.HasGroups,
                     empty_scope_count = parsed?.EmptyGroupCount,
@@ -81,6 +144,7 @@ public static class StartupDiagnostics
                     global_option_count = options.Count,
                     playlist_option = options.Any(o => o.Name == "playlist"),
                     playlist_option_count = options.Count(o => o.Name == "playlist"),
+                    playlist_hashes = parsed == null ? [] : PlaylistHashes(),
                     playlist_start_option_count = playlistStarts.Count,
                     playlist_start_kind = startKind,
                     playlist_start_index = startIndex,
@@ -94,6 +158,7 @@ public static class StartupDiagnostics
                     has_media = nativeReady && Player.GetPropertyString("path").Length > 0,
                     playlist_count = nativeReady ? Player.GetPropertyInt("playlist-count") : 0,
                     playlist_current_pos = nativeReady ? Player.GetPropertyInt("playlist-pos") : -1,
+                    playlist_entry_hashes = nativeReady ? PlaylistEntryHashes() : [],
                     file_loaded = sawFile,
                     option_error = optionError
                 };
