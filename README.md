@@ -1,4 +1,4 @@
-# AnimeJaNai-zh-CN
+# AnimeJaNai-Sunuuc
 
 Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管理。
 
