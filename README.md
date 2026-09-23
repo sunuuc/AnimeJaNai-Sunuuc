@@ -6,7 +6,7 @@ Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管
 
 [下载](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases)
 
-Windows x64，面向 **NVIDIA GeForce RTX 5080 Laptop GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
+Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
 
 解压完整包，运行 `mpvnet.exe`。调整 AI 配置时打开 `AnimeJaNaiManager.exe`。
 
