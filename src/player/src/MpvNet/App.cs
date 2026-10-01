@@ -11,7 +11,7 @@ public class AppClass
 {
     public List<string> TempFiles { get; } = new ();
 
-    public string ConfPath { get => Player.ConfigFolder + "mpvnet.conf"; }
+    public string ConfPath { get => Player.ConfigFolder + "NekoAnimeVE.conf"; }
     public string ProcessInstance { get; set; } = "single";
     public string DarkMode { get; set; } = "always";
     public string DarkTheme { get; set; } = "dark";

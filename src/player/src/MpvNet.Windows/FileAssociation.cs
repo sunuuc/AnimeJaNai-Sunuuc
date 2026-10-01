@@ -24,13 +24,13 @@ public static class FileAssociation
             }
 
             RegistryHelp.SetValue(@"HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\" + exeFilename, "", exePath);
-            RegistryHelp.SetValue(@"HKCR\Applications\" + exeFilename, "FriendlyAppName", "mpv.net media player");
+            RegistryHelp.SetValue(@"HKCR\Applications\" + exeFilename, "FriendlyAppName", "NekoAnimeVE media player");
             RegistryHelp.SetValue(@"HKCR\Applications\" + exeFilename + @"\shell\open\command", "", $"\"{exePath}\" \"%1\"");
             RegistryHelp.SetValue(@"HKCR\SystemFileAssociations\video\OpenWithList\" + exeFilename, "", "");
             RegistryHelp.SetValue(@"HKCR\SystemFileAssociations\audio\OpenWithList\" + exeFilename, "", "");
-            RegistryHelp.SetValue(@"HKLM\SOFTWARE\RegisteredApplications", "mpv.net", @"SOFTWARE\Clients\Media\mpv.net\Capabilities");
-            RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\mpv.net\Capabilities", "ApplicationDescription", "mpv.net media player");
-            RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\mpv.net\Capabilities", "ApplicationName", "mpv.net");
+            RegistryHelp.SetValue(@"HKLM\SOFTWARE\RegisteredApplications", "NekoAnimeVE", @"SOFTWARE\Clients\Media\NekoAnimeVE\Capabilities");
+            RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\NekoAnimeVE\Capabilities", "ApplicationDescription", "NekoAnimeVE media player");
+            RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\NekoAnimeVE\Capabilities", "ApplicationName", "NekoAnimeVE");
 
             foreach (string ext in extensions)
             {
@@ -39,7 +39,7 @@ public static class FileAssociation
                 RegistryHelp.SetValue(@"HKCR\" + "." + ext + @"\OpenWithProgIDs", exeFilenameNoExt + "." + ext, "");
                 RegistryHelp.SetValue(@"HKCR\" + "." + ext, "PerceivedType", perceivedType);
                 RegistryHelp.SetValue(@"HKCR\" + exeFilenameNoExt + "." + ext + @"\shell\open\command", "", $"\"{exePath}\" \"%1\"");
-                RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\mpv.net\Capabilities\FileAssociations", "." + ext, exeFilenameNoExt + "." + ext);
+                RegistryHelp.SetValue(@"HKLM\SOFTWARE\Clients\Media\NekoAnimeVE\Capabilities\FileAssociations", "." + ext, exeFilenameNoExt + "." + ext);
             }
         }
         else
@@ -49,11 +49,11 @@ public static class FileAssociation
 
             RegistryHelp.RemoveKey(@"HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\" + exeFilename);
             RegistryHelp.RemoveKey(@"HKCR\Applications\" + exeFilename);
-            RegistryHelp.RemoveKey(@"HKLM\SOFTWARE\Clients\Media\mpv.net");
+            RegistryHelp.RemoveKey(@"HKLM\SOFTWARE\Clients\Media\NekoAnimeVE");
             RegistryHelp.RemoveKey(@"HKCR\SystemFileAssociations\video\OpenWithList\" + exeFilename);
             RegistryHelp.RemoveKey(@"HKCR\SystemFileAssociations\audio\OpenWithList\" + exeFilename);
 
-            RegistryHelp.RemoveValue(@"HKLM\SOFTWARE\RegisteredApplications", "mpv.net");
+            RegistryHelp.RemoveValue(@"HKLM\SOFTWARE\RegisteredApplications", "NekoAnimeVE");
 
             foreach (string id in Registry.ClassesRoot.GetSubKeyNames())
             {

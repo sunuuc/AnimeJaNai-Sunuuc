@@ -1,0 +1,92 @@
+"""Product identity contracts for source and extracted portable releases."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import unittest
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+META = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
+NAME = 'NekoAnimeVE'
+ENTRY_POINTS = (NAME + '.exe', NAME + 'Manager.exe', NAME + 'Updater.exe')
+
+
+class BrandingTests(unittest.TestCase):
+    def test_release_identity_and_documented_entry_points(self):
+        self.assertEqual(META['name'], NAME)
+        self.assertEqual(META['tag'], 'standalone-v' + META['version'])
+        for filename in ('README.md', 'docs/standalone.md'):
+            text = (ROOT / filename).read_text(encoding='utf-8')
+            self.assertTrue(text.startswith('# ' + NAME))
+            self.assertIn(ENTRY_POINTS[0], text)
+            self.assertIn(ENTRY_POINTS[1], text)
+            self.assertNotIn('AnimeJaNai-zh-CN-', text)
+        self.assertIn('https://github.com/sunuuc/NekoAnimeVE/releases/latest',
+                      (ROOT / 'README.md').read_text(encoding='utf-8'))
+
+    def test_compiled_names_and_component_launcher_agree(self):
+        projects = ('src/player/src/MpvNet.Windows/MpvNet.Windows.csproj',
+                    'src/manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj',
+                    'tools/standalone/Updater.csproj')
+        for project, executable in zip(projects, ENTRY_POINTS):
+            xml = ET.parse(ROOT / project)
+            self.assertEqual(xml.findtext('.//AssemblyName'), Path(executable).stem)
+        for filename in ('portable_config/input.conf', 'portable_config/input-animejanai.conf',
+                         'portable_config/scripts/player_ui.lua'):
+            text = (ROOT / filename).read_text(encoding='utf-8')
+            self.assertIn(ENTRY_POINTS[1], text)
+            self.assertNotIn('AnimeJaNaiManager.exe', text)
+        self.assertIn(ENTRY_POINTS[2], ((ROOT / projects[1]).parent /
+            'ViewModels/ComponentManagerViewModel.cs').read_text(encoding='utf-8'))
+
+    def test_localized_window_and_about_identity(self):
+        for filename in ('src/player/src/MpvNet/LanguageStrings.json',
+                         'src/manager/AnimeJaNaiConfEditor/LanguageStrings.json'):
+            data = json.loads((ROOT / filename).read_text(encoding='utf-8'))
+            self.assertEqual(data['keys']['sa3d61b60b957b367'], NAME + ' Manager')
+            self.assertEqual(data['translations'][NAME + ' Manager'], NAME + ' 管理器')
+            self.assertEqual(data['keys']['s5926043be98ac75f'], 'About ' + NAME)
+        title = (ROOT / 'src/player/src/MpvNet.Windows/WinForms/MainForm.cs').read_text(encoding='utf-8')
+        self.assertIn('text = "NekoAnimeVE"', title)
+        self.assertIn('"} - NekoAnimeVE"', title)
+        about = (ROOT / 'src/player/src/MpvNet.Windows/WPF/Views/AboutWindow.xaml').read_text(encoding='utf-8')
+        self.assertIn('>NekoAnimeVE', about)
+
+    def test_original_upstream_model_and_license_identity_is_preserved(self):
+        self.assertIn('the-database/AnimeJaNaiManager', (ROOT / 'README.md').read_text(encoding='utf-8'))
+        self.assertIn('2x_AnimeJaNai', (ROOT / 'animejanai/animejanai.conf').read_text(encoding='utf-8'))
+        self.assertTrue((ROOT / 'THIRD_PARTY_LICENSES/AnimeJaNaiManager-GPL-3.0.txt').is_file())
+
+
+def verify_package(folder):
+    app = Path(folder).resolve()
+    for filename in ENTRY_POINTS:
+        assert (app / filename).is_file(), filename
+    for filename in ('mpvnet.exe', 'AnimeJaNaiManager.exe', 'AnimeJaNaiUpdater.exe'):
+        assert not (app / filename).exists(), 'Obsolete entry point: ' + filename
+    env = dict(os.environ, BRANDING_APP=str(app))
+    script = '''
+$ErrorActionPreference = 'Stop'
+$names = 'NekoAnimeVE.exe', 'NekoAnimeVEManager.exe', 'NekoAnimeVEUpdater.exe'
+$result = foreach ($name in $names) {
+    $info = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $env:BRANDING_APP $name))
+    @{name=$name;product=$info.ProductName;version=$info.ProductVersion}
+}
+ConvertTo-Json -InputObject @($result) -Compress
+'''
+    result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', script],
+                            env=env, capture_output=True, text=True, check=True)
+    records = json.loads(result.stdout)
+    assert len(records) == 3
+    for item in records:
+        assert item['product'] == NAME, item
+        assert item['version'].split('+', 1)[0] == META['version'], item
+    print('PASS extracted product entry points and binary metadata', records)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        verify_package(sys.argv.pop(1))
+    unittest.main()

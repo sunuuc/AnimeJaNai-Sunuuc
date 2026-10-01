@@ -21,7 +21,7 @@ public static class ChineseLocalization
 {
     private static readonly Dictionary<string, string> Exact = new(StringComparer.Ordinal)
     {
-        ["AnimeJaNai Manager"] = "AnimeJaNai 管理器",
+        ["NekoAnimeVE Manager"] = "NekoAnimeVE 管理器",
         ["Profiles"] = "配置方案",
         ["Global Settings"] = "全局设置",
         ["Default Profiles (Read-only)"] = "默认配置（只读）",
@@ -85,7 +85,7 @@ public static class ChineseLocalization
         ["Done."] = "完成。",
         ["unknown error"] = "未知错误",
         ["Could not load component information."] = "无法读取组件信息。",
-        ["AnimeJaNaiUpdater.exe not found next to the install - component management unavailable."] = "安装目录中未找到 AnimeJaNaiUpdater.exe，无法管理组件。",
+        ["NekoAnimeVEUpdater.exe not found next to the install - component management unavailable."] = "安装目录中未找到 NekoAnimeVEUpdater.exe，无法管理组件。",
         ["GPU: no NVIDIA device detected — the built-in DirectML engine covers AMD and Intel GPUs"] = "GPU：未检测到 NVIDIA 设备；内置 DirectML 后端可用于 AMD 和 Intel GPU",
         ["TensorRT runtime"] = "TensorRT 运行库",
         ["RIFE interpolation models"] = "RIFE 补帧模型",
@@ -145,10 +145,10 @@ public static class ChineseLocalization
         ["Export Current Profile Conf File"] = "导出当前配置文件",
         ["Confirm Full Conf Import"] = "确认导入完整配置",
         ["Confirm Profile Conf Import"] = "确认导入配置",
-        ["AnimeJaNai Conf File"] = "AnimeJaNai 配置文件",
-        ["AnimeJaNai Profile Conf File"] = "AnimeJaNai 配置方案文件",
-        ["AnimeJaNai Conf File (*.conf)"] = "AnimeJaNai 配置文件 (*.conf)",
-        ["AnimeJaNai Profile Conf File (*.pconf)"] = "AnimeJaNai 配置方案文件 (*.pconf)",
+        ["NekoAnimeVE Conf File"] = "NekoAnimeVE 配置文件",
+        ["NekoAnimeVE Profile Conf File"] = "NekoAnimeVE 配置方案文件",
+        ["NekoAnimeVE Conf File (*.conf)"] = "NekoAnimeVE 配置文件 (*.conf)",
+        ["NekoAnimeVE Profile Conf File (*.pconf)"] = "NekoAnimeVE 配置方案文件 (*.pconf)",
     };
 
     private static readonly (string English, string Chinese)[] Phrases =

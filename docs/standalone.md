@@ -1,10 +1,12 @@
-# AnimeJaNai-Sunuuc 1.1.7
+# NekoAnimeVE 1.1.8
+
+播放器、管理器和完整程序包统一使用 NekoAnimeVE 名称。播放器为 `NekoAnimeVE.exe`，管理器为 `NekoAnimeVEManager.exe`。
 
 Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持动漫 AI 超分和 RIFE 补帧。
 
 ## 使用
 
-解压 `AnimeJaNai-zh-CN-1.1.7-rtx5080-laptop-win-x64-full.7z`，运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
+解压 `NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
 
 包内包含 TensorRT 运行库、SM120 内核、超分与补帧模型。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
@@ -62,8 +64,8 @@ GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服�
 
 ## 文件
 
-- `AnimeJaNai-zh-CN-1.1.7-rtx5080-laptop-win-x64-full.7z`：完整程序
-- `AnimeJaNai-zh-CN-1.1.7-sources.zip`：源码
+- `NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z`：完整程序
+- `NekoAnimeVE-1.1.8-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
 
 ## 许可证

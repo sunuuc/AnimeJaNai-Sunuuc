@@ -24,7 +24,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: animejanai-standalone
+  group: nekoanimeve-standalone
   cancel-in-progress: true
 jobs:
   full:
@@ -44,6 +44,8 @@ jobs:
           python tools/standalone/inline_player_ui_modules.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/test_gpu_target.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/test_branding.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify release-page shortcut is absent
         run: python tests/test_no_release_shortcut.py
@@ -67,9 +69,9 @@ jobs:
       - name: Compile self-contained Windows applications
         run: |
           $releaseVersion = (Get-Content release.json | ConvertFrom-Json).version
-          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-$releaseVersion -o publish-player
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=$releaseVersion -o publish-player
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-$releaseVersion -o publish-manager
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=$releaseVersion -o publish-manager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet publish tools/standalone/Updater.csproj -c Release -o publish-updater
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

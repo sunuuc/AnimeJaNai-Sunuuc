@@ -1,14 +1,14 @@
-# AnimeJaNai-Sunuuc
+# NekoAnimeVE
 
 Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管理。
 
 ## 下载与使用
 
-[下载正式版](https://github.com/sunuuc/AnimeJaNai-Sunuuc/releases/latest)
+[下载正式版](https://github.com/sunuuc/NekoAnimeVE/releases/latest)
 
 Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
 
-解压完整包，运行 `mpvnet.exe`。调整 AI 配置时打开 `AnimeJaNaiManager.exe`。
+解压完整包，运行 `NekoAnimeVE.exe`。调整 AI 配置时打开 `NekoAnimeVEManager.exe`。
 
 包内包含播放器、模型和运行库，无需另装 .NET、Python 或 VapourSynth。首次使用某个模型或分辨率时，TensorRT 需要生成引擎缓存；之后可以复用。显卡驱动由系统安装。
 

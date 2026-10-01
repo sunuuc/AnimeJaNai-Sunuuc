@@ -14,10 +14,10 @@ SOURCE=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(par
 APP=OUT/'独立 Player UI 播放器';shutil.copytree(SOURCE,APP)
 CALLER=OUT/'Player UI 调用目录';CALLER.mkdir()
 ENV=os.environ.copy()
-for key in ('MPVNET_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
+for key in ('NEKOANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
     ENV.pop(key,None)
 ENV['PATH']=os.environ['SystemRoot']+r'\System32'
-ENV['MPVNET_HOME']=str(OUT/'已删除的旧版目录'/'portable_config')
+ENV['NEKOANIMEVE_HOME']=str(OUT/'已删除的旧版目录'/'portable_config')
 ENV['DOTNET_ROOT']=str(OUT/'不存在的 dotnet');ENV['DOTNET_ROOT_X64']=ENV['DOTNET_ROOT']
 ENV['DOTNET_MULTILEVEL_LOOKUP']='0';ENV['DOTNET_BUNDLE_EXTRACT_BASE_DIR']=str(OUT/'bundles')
 MEDIA=b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+b'\x60'*(160*90)+b'\x80'*(160*90//2))*24*8
@@ -89,7 +89,7 @@ def run_process(tag,args):
     started=time.monotonic()
     log_path=OUT/f'{tag}.log'
     with log_path.open('wb') as log:
-        cp=subprocess.run([str(APP/'mpvnet.exe'),*FLAGS,*args],cwd=CALLER,env=ENV,
+        cp=subprocess.run([str(APP/'NekoAnimeVE.exe'),*FLAGS,*args],cwd=CALLER,env=ENV,
                           stdout=log,stderr=subprocess.STDOUT,timeout=15)
     log_text=log_path.read_text(encoding='utf-8',errors='replace')
     assert 'Lua error' not in log_text,(tag,'production Lua error',log_text[-2000:])

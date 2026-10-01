@@ -130,7 +130,7 @@ end)
                 startupinfo=subprocess.STARTUPINFO();startupinfo.dwFlags|=subprocess.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow=subprocess.SW_HIDE
             completed=subprocess.run([str(MPV),
-                *(['--process-instance=multi'] if MPV.name.lower()=='mpvnet.exe' else []),'--load-scripts=no',f'--config-dir={config}',
+                *(['--process-instance=multi'] if MPV.name.lower()=='NekoAnimeVE.exe' else []),'--load-scripts=no',f'--config-dir={config}',
                 '--vo=null','--ao=null','--hwdec=no',
                 *(['--sid=1','--sub-file='+str(sub)] if primary else ['--sid=auto']),
                 '--script='+str(SCRIPT),*(['--script='+UI_SCRIPT] if UI_SCRIPT else []),'--script='+str(driver),

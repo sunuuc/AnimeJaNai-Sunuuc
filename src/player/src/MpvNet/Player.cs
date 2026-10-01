@@ -158,7 +158,7 @@ public class MainPlayer : MpvClient
         // this means Lua scripts that use idle might not work correctly
         SetPropertyString("idle", "yes");
 
-        SetPropertyString("user-data/frontend/name", "mpv.net");
+        SetPropertyString("user-data/frontend/name", "NekoAnimeVE");
         SetPropertyString("user-data/frontend/version", AppInfo.Version.ToString());
         SetPropertyString("user-data/frontend/process-path", Environment.ProcessPath!);
 
@@ -251,7 +251,7 @@ public class MainPlayer : MpvClient
                 if (explicitConfig.Length > 0)
                     return _configFolder = System.IO.Path.GetFullPath(explicitConfig).AddSep();
 
-                string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");
+                string? mpvnet_home = Environment.GetEnvironmentVariable("NEKOANIMEVE_HOME");
 
                 if (Directory.Exists(mpvnet_home))
                     return _configFolder = mpvnet_home.AddSep();
@@ -259,7 +259,7 @@ public class MainPlayer : MpvClient
                 _configFolder = Folder.Startup + "portable_config";
 
                 if (!Directory.Exists(_configFolder))
-                    _configFolder = Folder.AppData + "mpv.net";
+                    _configFolder = Folder.AppData + "NekoAnimeVE";
 
                 if (!Directory.Exists(_configFolder))
                     Directory.CreateDirectory(_configFolder);

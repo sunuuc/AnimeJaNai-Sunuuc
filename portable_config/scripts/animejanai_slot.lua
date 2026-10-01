@@ -83,7 +83,7 @@ local function stop_watch(resume)
 end
 local function fail(text)
     pending=false; kill(dispatch_timer);dispatch_timer=nil;stop_watch(true)
-    msg.error(text);mp.osd_message('AnimeJaNai：' .. text,5)
+    msg.error(text);mp.osd_message('NekoAnimeVE：' .. text,5)
 end
 local function has_video()
     for _,t in ipairs(mp.get_property_native('track-list',{}) or {}) do
@@ -117,8 +117,8 @@ local function finish_status(text)
     refresh_paused=false; release_pause()
     if failed then
         msg.warn('当前配置未完整启用，请查看 Ctrl+J 中的模型/处理链信息。')
-        mp.osd_message('AnimeJaNai：当前配置未完整启用，按 Ctrl+J 查看原因。',5)
-    elseif was_building then mp.osd_message('AnimeJaNai：引擎已就绪',3) end
+        mp.osd_message('NekoAnimeVE：当前配置未完整启用，按 Ctrl+J 查看原因。',5)
+    elseif was_building then mp.osd_message('NekoAnimeVE：引擎已就绪',3) end
 end
 local function poll()
     if not loaded or not desired or (desired==0 and not refresh_paused) or not has_video() then stop_watch(true);return end
@@ -130,7 +130,7 @@ local function poll()
         stable=nil; build_deadline=build_deadline or now+1200
         hold_pause()
         mp.commandv('vf-command',label or 'aji','poll','1')
-        mp.osd_message('AnimeJaNai：正在构建引擎，完成后恢复播放。',interval+0.2)
+        mp.osd_message('NekoAnimeVE：正在构建引擎，完成后恢复播放。',interval+0.2)
     elseif text then
         if stable==text then finish_status(text);return end
         stable=text
@@ -138,7 +138,7 @@ local function poll()
     if now>(build_deadline or watch_deadline) then
         stop_watch(true);refresh_paused=false
         msg.warn('等待 AI 初始化状态超时；已解除本脚本的暂停，未跳转或重建滤镜。')
-        mp.osd_message('AnimeJaNai：暂未确认 AI 初始化完成，按 Ctrl+J 查看状态。',5)
+        mp.osd_message('NekoAnimeVE：暂未确认 AI 初始化完成，按 Ctrl+J 查看状态。',5)
     end
 end
 local function start_watch()

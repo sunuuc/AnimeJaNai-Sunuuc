@@ -242,7 +242,7 @@ local function suite()
   'builtin quality balanced and performance presets are removed')
  click(row('preset:0'));check(commands[#commands][2]=='aji-slot' and commands[#commands][3]=='0','reuse AI controller')
  click('settings');click(row('ai'));scroll_menu_down('ai',10);click(row('配置管理器'))
- check(commands[#commands][1]=='run' and commands[#commands][2]:match('AnimeJaNaiManager%.exe$'),
+ check(commands[#commands][1]=='run' and commands[#commands][2]:match('NekoAnimeVEManager%.exe$'),
   'AI configuration manager control targets the existing manager executable')
  for _,slot in ipairs({1,2,3,4,5,6,7,8,9}) do
   click('settings');click(row('ai'))
@@ -409,7 +409,7 @@ local function suite()
   json_responses[comments_json]={comments={{p='2,1,16777215',m='你好世界'}}}
   json_responses[empty_comments_json]={comments={}}
   local old_getenv,old_open,old_remove,old_rename=os.getenv,io.open,os.remove,os.rename
-  local private_path='danmaku-private/AnimeJaNai-danmaku.conf'
+  local private_path='danmaku-private/NekoAnimeVE-danmaku.conf'
   local private_servers='api_servers=https://danmaku.example|ME,https://danmaku2.example|Catcat\n'
   local private_files={[private_path]=private_servers}
   os.getenv=function(name)if name=='TEMP' then return out~='' and out or root..'/_probe' end;
@@ -478,7 +478,7 @@ local function suite()
    'one display area governs fixed and scrolling comments without a second limit')
   check(danmaku_state.settings.opacity==204,'percentage opacity maps to upstream byte opacity')
   messages['player_ui-danmaku-save-words'](' English \r\n中文\n\n')
-  check(private_files['danmaku-private/AnimeJaNai-danmaku-blocklist.txt']=='English\n中文',
+  check(private_files['danmaku-private/NekoAnimeVE-danmaku-blocklist.txt']=='English\n中文',
    'word blocking persists trimmed UTF-8 words one per line')
   messages['player_ui-danmaku-words']()
   check(commands[#commands][3]=='show-danmaku-blocklist' and commands[#commands][4]=='English\n中文',

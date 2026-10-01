@@ -70,7 +70,7 @@
                     <MenuItem Header="Show mpv.net options" InputGestureText="Ctrl+n" Command="{Binding Data.ShowMpvNetSpecificSettingsCommand, Source={StaticResource BindingProxy}}" />
                     <Separator />
                     <MenuItem Header="Preview mpv.conf" InputGestureText="F5" Command="{Binding Data.PreviewMpvConfFileCommand, Source={StaticResource BindingProxy}}" />
-                    <MenuItem Header="Preview mpvnet.conf" InputGestureText="F6" Command="{Binding Data.PreviewMpvNetConfFileCommand, Source={StaticResource BindingProxy}}" />
+                    <MenuItem Header="Preview NekoAnimeVE.conf" InputGestureText="F6" Command="{Binding Data.PreviewMpvNetConfFileCommand, Source={StaticResource BindingProxy}}" />
                     <Separator />
                     <MenuItem Header="Show mpv manual" InputGestureText="Ctrl+F1" Command="{Binding Data.ShowMpvManualCommand, Source={StaticResource BindingProxy}}" />
                     <MenuItem Header="Show mpv.net manual" InputGestureText="Ctrl+F2" Command="{Binding Data.ShowMpvNetManualCommand, Source={StaticResource BindingProxy}}" />

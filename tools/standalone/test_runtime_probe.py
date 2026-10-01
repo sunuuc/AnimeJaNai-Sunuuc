@@ -86,7 +86,7 @@ class PEChecks(unittest.TestCase):
 
 
 class RuntimeChecks(unittest.TestCase):
-    exe = r'C:\空目录\player\mpvnet.exe'
+    exe = r'C:\空目录\player\NekoAnimeVE.exe'
     root = r'C:\空目录\player'
     bundle = r'C:\test\bundles'
 
@@ -122,7 +122,7 @@ class RuntimeChecks(unittest.TestCase):
             self.classify([self.exe, self.root + r'-other\coreclr.dll'])
 
     def test_wrong_process_and_empty_list(self):
-        for modules in ([], [r'C:\other\mpvnet.exe']):
+        for modules in ([], [r'C:\other\NekoAnimeVE.exe']):
             with self.subTest(modules=modules), self.assertRaises(RuntimeError):
                 self.classify(modules, RUNTIME_EXPORTS)
 

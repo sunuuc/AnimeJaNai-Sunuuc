@@ -172,7 +172,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             long totalMb = missing.Sum(p => p.Bytes) / 1048576;
             var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
             {
-                Title = AnimeJaNai.Localization.UiText.T("Set up AnimeJaNai"),
+                Title = AnimeJaNai.Localization.UiText.T("Set up NekoAnimeVE"),
                 Content = AnimeJaNai.Localization.UiText.F($"Components recommended for this PC are not installed:\n\n{lines}\n\nDownload and install them now ({totalMb:N0} MB)?"),
                 PrimaryButtonText = AnimeJaNai.Localization.UiText.T("Install"),
                 CloseButtonText = AnimeJaNai.Localization.UiText.T("Not now"),
@@ -237,7 +237,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        // Two layouts: at the install root the exe sits next to mpvnet.exe with the data in
+        // Two layouts: at the install root the exe sits next to NekoAnimeVE.exe with the data in
         // animejanai/ (3.4.0+); in the legacy layout (and `dotnet run` from the project
         // output, which copies animejanai.conf + onnx/ beside the binary) the exe lives
         // inside the data directory itself.
@@ -254,7 +254,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             : AtInstallRoot ? Path.Combine(AppContext.BaseDirectory, "animejanai")
             : AppContext.BaseDirectory);
 
-        // install root: player, AnimeJaNaiUpdater, portable_config/
+        // install root: player, NekoAnimeVEUpdater, portable_config/
         public static string RootDir { get; } = Path.GetFullPath(
             Environment.GetEnvironmentVariable("ANIMEJANAI_ROOT") is { Length: > 0 } rd ? rd
             : AtInstallRoot ? AppContext.BaseDirectory

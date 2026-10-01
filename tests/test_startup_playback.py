@@ -13,10 +13,10 @@ SOURCE=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(par
 APP=OUT/'独立 player';shutil.copytree(SOURCE,APP)
 CALLER=OUT/'caller 工作目录';CALLER.mkdir()
 ENV=os.environ.copy()
-for key in ('MPVNET_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
+for key in ('NEKOANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
     ENV.pop(key,None)
 ENV['PATH']=os.environ['SystemRoot']+r'\System32'
-ENV['MPVNET_HOME']=str(OUT/'deleted-original'/'portable_config')
+ENV['NEKOANIMEVE_HOME']=str(OUT/'deleted-original'/'portable_config')
 ENV['DOTNET_ROOT']=str(OUT/'no-dotnet');ENV['DOTNET_ROOT_X64']=ENV['DOTNET_ROOT']
 ENV['DOTNET_MULTILEVEL_LOOKUP']='0';ENV['DOTNET_BUNDLE_EXTRACT_BASE_DIR']=str(OUT/'bundles')
 MEDIA=b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+b'\x60'*(160*90)+b'\x80'*(160*90//2))*24*12
@@ -59,7 +59,7 @@ def stop(p):
         try:p.wait(5)
         except subprocess.TimeoutExpired:p.kill();p.wait(5)
 class Player:
-    def __init__(self,args,name,exe='mpvnet.exe',ipc=True):
+    def __init__(self,args,name,exe='NekoAnimeVE.exe',ipc=True):
         self.fp=None;self.proc=None;self.seq=0;self.buffer=b'';self.log=(OUT/(name+'.log')).open('wb')
         self.name=name;self.pipe=r'\\.\pipe\startup-'+uuid.uuid4().hex
         flags=FLAGS+(['--input-ipc-server='+self.pipe] if ipc else [])
@@ -136,7 +136,7 @@ def script_launch(exe,flag,name,repeated=False):
             assert len([t for t in p.get('track-list',[]) if t['type']=='sub'])==2,'repeated external subtitles were lost'
         assert p.get('prefetch-playlist') is False,'network guard was not loaded from portable config'
         assert count(path)==1,'handoff reopened the media'
-        if exe=='mpvnet.exe':
+        if exe=='NekoAnimeVE.exe':
             report=json.loads((APP/'portable_config/startup-diagnostic.json').read_text(encoding='utf-8-sig'))
             assert report['media_arguments']==0 and report['script_options']>=1 and report['missing_scripts']==0
             assert report['configuration']=='portable' and report['file_loaded']
@@ -179,9 +179,9 @@ def direct_cli():
 
 try:
     case('native-script',lambda:script_launch('mpv.exe','--script=','native-script'))
-    case('frontend-script',lambda:script_launch('mpvnet.exe','--script=','frontend-script'))
-    case('frontend-scripts',lambda:script_launch('mpvnet.exe','--scripts=','frontend-scripts'))
-    case('repeated-scripts-subtitles',lambda:script_launch('mpvnet.exe','--script=','repeated-scripts',True))
+    case('frontend-script',lambda:script_launch('NekoAnimeVE.exe','--script=','frontend-script'))
+    case('frontend-scripts',lambda:script_launch('NekoAnimeVE.exe','--scripts=','frontend-scripts'))
+    case('repeated-scripts-subtitles',lambda:script_launch('NekoAnimeVE.exe','--script=','repeated-scripts',True))
     case('immediate-ipc',immediate_ipc)
     case('script-with-existing-window',dedicated_script)
     case('direct-cli',direct_cli)

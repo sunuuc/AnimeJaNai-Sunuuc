@@ -1,7 +1,7 @@
 {
-  "version": "1.1.7",
-  "tag": "standalone-v1.1.7",
-  "name": "AnimeJaNai-zh-CN",
+  "version": "1.1.8",
+  "tag": "standalone-v1.1.8",
+  "name": "NekoAnimeVE",
   "format": "full-portable",
   "prerelease": false,
   "gpu_target": "rtx5080-laptop"

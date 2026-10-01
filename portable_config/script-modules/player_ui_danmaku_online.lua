@@ -63,7 +63,7 @@ function M.request_command(url, body, options)
         '$utf8=[System.Text.UTF8Encoding]::new($false);',
         '$url=$utf8.GetString(' .. ps_b64(url) .. ');',
         '$request=[System.Net.HttpWebRequest]::Create($url);',
-        "$request.UserAgent='AnimeJaNai/1.0';",
+        "$request.UserAgent='NekoAnimeVE/1.1.8';",
         "$request.Timeout=" .. tostring(timeout * 1000) .. ';',
         "$request.ReadWriteTimeout=" .. tostring(timeout * 1000) .. ';',
         '[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;',

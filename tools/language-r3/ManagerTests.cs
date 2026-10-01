@@ -38,7 +38,7 @@ Environment.SetEnvironmentVariable("ANIMEJANAI_DATA_DIR",fixture);
 Environment.SetEnvironmentVariable("ANIMEJANAI_ROOT",fixture);
 InterfaceLanguage.SettingsPath=Path.Combine(dir,"interface-language.json");
 void Check(bool ok,string what){if(!ok)throw new Exception(what);Console.WriteLine("PASS "+what);}
-Check(!File.Exists(Path.Combine(fixture,"AnimeJaNaiUpdater.exe")),"test fixture cannot launch updater or network installer");
+Check(!File.Exists(Path.Combine(fixture,"NekoAnimeVEUpdater.exe")),"test fixture cannot launch updater or network installer");
 Check(InterfaceLanguage.Read()=="zh-CN","Chinese default without setting");
 Check(InterfaceLanguage.Resolve("system","zh-TW")=="zh-CN"&&InterfaceLanguage.Resolve("system","en-US")=="en","system language resolution");
 File.WriteAllText(InterfaceLanguage.SettingsPath,"{broken");
@@ -58,6 +58,7 @@ string[] raw=vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName).ToArray();
 Check(typeof(MainWindowViewModel).GetProperty("DefaultUpscaleSlots")==null,
       "builtin default presets removed from the manager model");
 var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.UIThread.RunJobs();
+Check(w.Title==(zh?"NekoAnimeVE 管理器":"NekoAnimeVE Manager"),"product window title "+selected);
 Check(raw.SequenceEqual(vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName)),"custom profile names preserved");
 var tabs=w.GetLogicalDescendants().OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
 Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components"),"constructed tab headers "+selected);

@@ -6,13 +6,13 @@
 		<RootNamespace>MpvNet.Windows</RootNamespace>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<PublishSingleFile>true</PublishSingleFile>
-		<AssemblyName>mpvnet</AssemblyName>
+		<AssemblyName>NekoAnimeVE</AssemblyName>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
-		<FileVersion>7.1.2.0</FileVersion>
-		<AssemblyVersion>7.1.2.0</AssemblyVersion>
-		<InformationalVersion>7.1.2.0</InformationalVersion>
+		<FileVersion>1.1.8.0</FileVersion>
+		<AssemblyVersion>1.1.8.0</AssemblyVersion>
+		<InformationalVersion>1.1.8</InformationalVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

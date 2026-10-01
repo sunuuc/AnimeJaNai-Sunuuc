@@ -5,9 +5,9 @@ public static class Terminal
 {
     static int Padding { get; } = 60;
 
-    public static void WriteError(object obj, string module = "mpv.net") => Write(obj, module, ConsoleColor.DarkRed, false);
+    public static void WriteError(object obj, string module = "NekoAnimeVE") => Write(obj, module, ConsoleColor.DarkRed, false);
 
-    public static void Write(object obj, string module = "mpv.net") => Write(obj, module, ConsoleColor.Black, true);
+    public static void Write(object obj, string module = "NekoAnimeVE") => Write(obj, module, ConsoleColor.Black, true);
 
     public static void Write(object obj, string module, ConsoleColor color, bool useDefaultColor)
     {

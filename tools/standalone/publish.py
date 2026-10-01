@@ -33,7 +33,7 @@ assets=json.loads((DIST/'artifacts.json').read_text())
 assert assets and all(x['repo']==REPO for x in assets)
 LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
-sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
+sourcezip=DIST/f'NekoAnimeVE-{META["version"]}-sources.zip'
 
 # Record the exact runtime input for rebuilding this release.
 temp=sourcezip.with_suffix('.pending.zip')
@@ -52,12 +52,26 @@ paths=source_release_files(('src','portable_config','tests','third_party','THIRD
 paths += [H/'dependencies.json',H/'build.py',H/'publish.py',H/'test_complete.py',
           H/'inline_player_ui_modules.py',H/'verify_player_sources.py',R/'tools/language-r3/ManagerTests.cs']
 tree=[]
+tracked_blobs={}
+for record in subprocess.check_output(['git','ls-tree','-r','-z','HEAD']).decode('utf-8').split('\0'):
+    if record:
+        metadata,name=record.split('\t',1)
+        tracked_blobs[name]=metadata.split()[2]
+blob_reader=subprocess.Popen(['git','cat-file','--batch'],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 for p in paths:
     assert p.suffix.lower() not in FONTS|{'.exe','.dll'},p
     entry={'path':p.relative_to(R).as_posix(),'mode':'100644','type':'blob'};raw=p.read_bytes()
-    try:entry['content']=raw.decode('utf-8')
+    previous=tracked_blobs.get(entry['path'])
+    if previous:
+        blob_reader.stdin.write((previous+'\n').encode());blob_reader.stdin.flush()
+        header=blob_reader.stdout.readline().split()
+        committed=blob_reader.stdout.read(int(header[2]));blob_reader.stdout.read(1)
+        if raw.replace(b'\r\n',b'\n')==committed.replace(b'\r\n',b'\n'):
+            entry['sha']=previous;tree.append(entry);continue
+    try:entry['content']=raw.decode('utf-8').replace('\r\n','\n')
     except UnicodeDecodeError:entry['sha']=api(f'repos/{REPO}/git/blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})['sha']
     tree.append(entry)
+blob_reader.stdin.close();assert blob_reader.wait()==0
 tracked=set(subprocess.check_output(['git','ls-files'],text=True).splitlines())
 for name in ('portable_config/scripts/modernx.lua','portable_config/script-opts/modernx.conf'):
     if name in tracked:tree.append({'path':name,'mode':'100644','type':'blob','sha':None})
@@ -68,7 +82,7 @@ old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==MET
 assert not old,'Release tag already exists; refusing to overwrite'
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')
 rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
-    'name':f'AnimeJaNai-Sunuuc {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
+    'name':f'NekoAnimeVE {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
 run('gh','release','upload',META['tag'],'-R',REPO,*user_assets,sourcezip,checksums)
 uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
 for p in user_assets+[sourcezip,checksums]:

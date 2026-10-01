@@ -532,7 +532,7 @@ namespace AnimeJaNaiConfEditor.Services
         public async Task<(bool ok, string message)> SubmitAsync(CancellationToken ct = default)
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("AnimeJaNaiManager");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("NekoAnimeVEManager");
             using var content = new StringContent(JsonSerializer.Serialize(this), Encoding.UTF8, "application/json");
             try
             {

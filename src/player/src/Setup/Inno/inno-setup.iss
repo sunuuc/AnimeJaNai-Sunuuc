@@ -1,19 +1,19 @@
 
-#define MyAppName "mpv.net"
-#define MyAppExeName "mpvnet.exe"
+#define MyAppName "NekoAnimeVE"
+#define MyAppExeName "NekoAnimeVE.exe"
 #define MyAppSourceDir "..\..\MpvNet.Windows\bin\Debug"
-#define MyAppVersion GetFileVersion("..\..\MpvNet.Windows\bin\Debug\mpvnet.exe")
+#define MyAppVersion GetFileVersion("..\..\MpvNet.Windows\bin\Debug\NekoAnimeVE.exe")
 
 [Setup]
-AppId={{9AA2B100-BEF3-44D0-B819-D8FC3C4D557D}}
+AppId={{5507DC66-6430-49B6-88BD-AD4791CF73C2}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-AppPublisher=Frank Skare (stax76)
+AppPublisher=sunuuc
 ArchitecturesInstallIn64BitMode=x64
 Compression=lzma2
 DefaultDirName={autopf}\{#MyAppName}
-OutputBaseFilename=mpv.net-v{#MyAppVersion}-setup-x64
-OutputDir=E:\Desktop
+OutputBaseFilename=NekoAnimeVE-v{#MyAppVersion}-setup-x64
+OutputDir=output
 DefaultGroupName={#MyAppName}
 SetupIconFile=..\..\MpvNet.Windows\mpv-icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}

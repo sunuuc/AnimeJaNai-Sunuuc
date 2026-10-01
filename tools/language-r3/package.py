@@ -22,8 +22,8 @@ def stage_files():
     for n in scripts:
         dst=stage/'portable_config/scripts'/n;dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(R/'portable_config/scripts'/n,dst)
     with zipfile.ZipFile(R/'r2-base.zip') as z:
-        for p in ('libmpv-2.dll','mpv.exe','AnimeJaNaiUpdater.exe'):assert (stage/p).read_bytes()==z.read(p),p
-    for p in ('mpvnet.exe','AnimeJaNaiManager.exe'):assert (stage/p).stat().st_size>1000000
+        for p in ('libmpv-2.dll','mpv.exe','NekoAnimeVEUpdater.exe'):assert (stage/p).read_bytes()==z.read(p),p
+    for p in ('NekoAnimeVE.exe','NekoAnimeVEManager.exe'):assert (stage/p).stat().st_size>1000000
     for p in ('zh-CN','zh_CN','zh'):assert (stage/'Locale'/p/'LC_MESSAGES/mpvnet.mo').stat().st_size>10000
 
 def finish():

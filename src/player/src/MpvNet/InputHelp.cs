@@ -196,7 +196,7 @@ public static class InputHelp
         Add(b, new (_("Help"), _("Manual mpv.net"), "script-message-to mpvnet shell-execute https://github.com/mpvnet-player/mpv.net/blob/main/docs/manual.md", "Ctrl+F2"));
         Add(b, new (_("Help"), "-"));
         Add(b, new (_("Help"), _("awesome-mpv"), "script-message-to mpvnet shell-execute https://github.com/stax76/awesome-mpv", "Ctrl+a"));
-        Add(b, new (_("Help"), _("About mpv.net"), "script-message-to mpvnet show-about"));
+        Add(b, new (_("Help"), _("About NekoAnimeVE"), "script-message-to mpvnet show-about"));
 
         Add(b, new ("", "", "quit", "q", _("Exit")));
         Add(b, new ("", "", "script-message-to mpvnet show-menu", "MBTN_Right", _("Show Menu")));

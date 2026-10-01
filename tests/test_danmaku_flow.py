@@ -372,7 +372,7 @@ class DanmakuFlowTest(unittest.TestCase):
                     sample = folder / name
                     sample.write_bytes((bytes([16]) * 256 + bytes([128]) * 128) * 60)
                     samples.append(lua_string(str(sample)))
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}|本地回归\n', encoding='utf-8')
                 result_path = folder / 'state.json'
                 driver = folder / 'driver.lua'
@@ -408,7 +408,7 @@ mp.add_timeout(20,function()finish(1)end)
                 env = os.environ.copy()
                 env['LOCALAPPDATA'] = directory
                 proc = subprocess.run([
-                    str(executable), *(['--process-instance=multi'] if executable.name.lower() == 'mpvnet.exe' else []),
+                    str(executable), *(['--process-instance=multi'] if executable.name.lower() == 'NekoAnimeVE.exe' else []),
                     f'--config-dir={self.config}', '--load-scripts=no', '--idle=yes',
                     '--vo=null', '--ao=null', '--demuxer=rawvideo', '--demuxer-rawvideo-w=16',
                     '--demuxer-rawvideo-h=16', '--demuxer-rawvideo-format=I420',
@@ -453,7 +453,7 @@ mp.add_timeout(20,function()finish(1)end)
                 folder = Path(directory)
                 sample = folder / '尼古喵喵 (2026) S1E5.yuv'
                 sample.write_bytes((bytes([16]) * 256 + bytes([128]) * 128) * 60)
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}|第一线路,'
                     f'http://127.0.0.1:{server.server_port}/second|第二线路\n', encoding='utf-8')
                 result_path = folder / 'state.json'
@@ -518,7 +518,7 @@ end)
                 folder = Path(directory)
                 sample = folder / '尼古喵喵 (2026) S1E5 - 第5集.yuv'
                 sample.write_bytes((bytes([16]) * 256 + bytes([128]) * 128) * 60)
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}|本地回归\n', encoding='utf-8')
                 result_path = folder / 'state.json'
                 driver = folder / 'driver.lua'
@@ -575,7 +575,7 @@ end)
         try:
             with tempfile.TemporaryDirectory(prefix='animejanai-platform-manual-') as directory:
                 folder = Path(directory)
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}|本地回归\n', encoding='utf-8')
                 result_path = folder / 'state.json'
                 driver = folder / 'driver.lua'
@@ -644,7 +644,7 @@ end)
                 folder = Path(directory)
                 sample = folder / '尼古喵喵 (2026) S1E5.yuv'
                 sample.write_bytes((bytes([16]) * 256 + bytes([128]) * 128) * 60)
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}/unavailable|不可用线路,'
                     f'http://127.0.0.1:{server.server_port}|可用线路\n', encoding='utf-8')
                 result_path = folder / 'state.json'
@@ -696,7 +696,7 @@ end)
                 folder = Path(directory)
                 sample = folder / '尼古喵喵 (2026) S1E5 - 喵喵们要去秘境啦喵.yuv'
                 sample.write_bytes((bytes([16]) * 256 + bytes([128]) * 128) * 60)
-                (folder / 'AnimeJaNai-danmaku.conf').write_text(
+                (folder / 'NekoAnimeVE-danmaku.conf').write_text(
                     f'api_servers=http://127.0.0.1:{server.server_port}/wrong|季度不符,'
                     f'http://127.0.0.1:{server.server_port}/empty|空结果,'
                     f'http://127.0.0.1:{server.server_port}|可用线路\n', encoding='utf-8')
@@ -755,7 +755,7 @@ end)
         try:
             with tempfile.TemporaryDirectory(prefix="animejanai-danmaku-flow-") as directory:
                 folder = Path(directory)
-                (folder / "AnimeJaNai-danmaku.conf").write_text(
+                (folder / "NekoAnimeVE-danmaku.conf").write_text(
                     f"api_servers=http://127.0.0.1:{server.server_port}|本地测试,"
                     f"http://127.0.0.1:{server.server_port}/unused|第二线路\n", encoding="utf-8")
                 result_path = folder / "state.json"
@@ -823,7 +823,7 @@ mp.add_timeout(25,function()fail('timed out in phase '..phase)end)
                 # opening a media-server stream or putting fixture labels in the UI.
                 frame = bytes([16]) * 256 + bytes([128]) * 128
                 sample.write_bytes(frame * 60)
-                (folder / "AnimeJaNai-danmaku.conf").write_text(
+                (folder / "NekoAnimeVE-danmaku.conf").write_text(
                     f"api_servers=http://127.0.0.1:{server.server_port}|本地回归\n", encoding="utf-8")
                 result_path = folder / "state.json"
                 driver = folder / "driver.lua"
@@ -891,7 +891,7 @@ mp.add_timeout(15,function()finish({error='automatic matching did not load comme
                 sample = folder / "尼古喵喵 (2026) S1E5 - 喵喵们要去秘境啦喵.yuv"
                 frame = bytes([16]) * 256 + bytes([128]) * 128
                 sample.write_bytes(frame * 60)
-                (folder / "AnimeJaNai-danmaku.conf").write_text(
+                (folder / "NekoAnimeVE-danmaku.conf").write_text(
                     f"api_servers=http://127.0.0.1:{server.server_port}|本地回归\n", encoding="utf-8")
                 result_path = folder / "state.json"
                 driver = folder / "driver.lua"
@@ -952,7 +952,7 @@ end)
         try:
             with tempfile.TemporaryDirectory(prefix="animejanai-danmaku-cache-") as directory:
                 folder = Path(directory)
-                (folder / "AnimeJaNai-danmaku.conf").write_text(
+                (folder / "NekoAnimeVE-danmaku.conf").write_text(
                     f"api_servers=http://127.0.0.1:{server.server_port}|主线路,"
                     f"http://127.0.0.1:{server.server_port}/second|第二线路\n", encoding="utf-8")
                 result_path = folder / "state.json"

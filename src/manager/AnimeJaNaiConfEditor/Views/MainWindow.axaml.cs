@@ -65,7 +65,7 @@ namespace AnimeJaNaiConfEditor.Views
                 {
                     Title = AnimeJaNai.Localization.UiText.T("Import Profile Conf File"),
                     AllowMultiple = false,
-                    FileTypeFilter = new FilePickerFileType[] { new(AnimeJaNai.Localization.UiText.T("AnimeJaNai Conf File")) { Patterns = new[] { "*.conf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
+                    FileTypeFilter = new FilePickerFileType[] { new(AnimeJaNai.Localization.UiText.T("NekoAnimeVE Conf File")) { Patterns = new[] { "*.conf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
                     SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(vm.BackupPath),
                 });
 
@@ -136,7 +136,7 @@ namespace AnimeJaNaiConfEditor.Views
                 {
                     Title = AnimeJaNai.Localization.UiText.T("Import Full Conf File"),
                     AllowMultiple = false,
-                    FileTypeFilter = new FilePickerFileType[] { new(AnimeJaNai.Localization.UiText.T("AnimeJaNai Profile Conf File")) { Patterns = new[] { "*.pconf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
+                    FileTypeFilter = new FilePickerFileType[] { new(AnimeJaNai.Localization.UiText.T("NekoAnimeVE Profile Conf File")) { Patterns = new[] { "*.pconf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
                     SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(vm.BackupPath),
                 });
 
@@ -268,7 +268,7 @@ namespace AnimeJaNaiConfEditor.Views
                     DefaultExtension = "conf",
                     FileTypeChoices = new FilePickerFileType[]
                     {
-                    new(AnimeJaNai.Localization.UiText.T("AnimeJaNai Conf File (*.conf)")) { Patterns = new[] { "*.conf" } },
+                    new(AnimeJaNai.Localization.UiText.T("NekoAnimeVE Conf File (*.conf)")) { Patterns = new[] { "*.conf" } },
                     },
                     SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(vm.BackupPath),
                 });
@@ -305,7 +305,7 @@ namespace AnimeJaNaiConfEditor.Views
                     DefaultExtension = "conf",
                     FileTypeChoices = new FilePickerFileType[]
                     {
-                    new(AnimeJaNai.Localization.UiText.T("AnimeJaNai Profile Conf File (*.pconf)")) { Patterns = new[] { "*.pconf" } },
+                    new(AnimeJaNai.Localization.UiText.T("NekoAnimeVE Profile Conf File (*.pconf)")) { Patterns = new[] { "*.pconf" } },
                     },
                     SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(vm.BackupPath),
                 });

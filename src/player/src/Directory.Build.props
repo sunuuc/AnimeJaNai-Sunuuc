@@ -1,6 +1,6 @@
 ﻿<Project>
 	<PropertyGroup>
-		<Product>mpv.net</Product>
+		<Product>NekoAnimeVE</Product>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 </Project>

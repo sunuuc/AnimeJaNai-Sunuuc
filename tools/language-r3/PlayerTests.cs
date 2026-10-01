@@ -15,7 +15,7 @@ class Test
  {
     var root=Path.GetFullPath(args[0]);Directory.CreateDirectory(root);
     var config=Path.Combine(root,"isolated-player");Directory.CreateDirectory(config);
-    Environment.SetEnvironmentVariable("MPVNET_HOME",config);
+    Environment.SetEnvironmentVariable("NEKOANIMEVE_HOME",config);
     InterfaceLanguage.SettingsPath=Path.Combine(config,"interface-language.json");
     MpvNet.Translator.Current=new WpfTranslator();
     WpfApplication.Init();
@@ -27,6 +27,7 @@ class Test
        MpvNet.Global.App.DarkMode=mode;Theme.Init();Theme.UpdateWpfColors();
        var tr=new WpfTranslator();
        Check(tr.Gettext("Settings")== (zh?"设置":"Settings"),"embedded player resource "+lang);
+       Check(tr.Gettext("About NekoAnimeVE")==(zh?"关于 NekoAnimeVE":"About NekoAnimeVE"),"product about title "+lang);
        var window=new ConfWindow{Width=1040,Height=760};
        window.Show();window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.Render);
        Check(window.Title==(zh?"设置":"Config Editor"),"actual settings window title "+lang);
@@ -44,7 +45,7 @@ class Test
        selector.SelectedIndex=zh?1:0;
        Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"player saves shared preference "+lang);
        window.Close();
-       Check(!File.Exists(Path.Combine(config,"mpv.conf"))&&!File.Exists(Path.Combine(config,"mpvnet.conf")),"closing language settings leaves playback configs untouched "+lang);
+       Check(!File.Exists(Path.Combine(config,"mpv.conf"))&&!File.Exists(Path.Combine(config,"NekoAnimeVE.conf")),"closing language settings leaves playback configs untouched "+lang);
     }
     Console.WriteLine("PASS Player language suite");
  }
