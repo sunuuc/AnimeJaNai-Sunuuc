@@ -94,12 +94,14 @@ class Frontend:
     def loaded(self,path):
         self.wait(lambda:self.get('path')==path and self.get('time-pos') is not None and (self.get('vo-presented-frame-count',0) or 0)>0,'video did not begin')
     def shot(self,name):
-        self.wait(lambda:self.get('user-data/player_ui/ui',{}).get('overlay_ok') is True,'overlay not rendered')
         target=OUT/(name+'.png')
         if self.get('idle-active'):
+            ui=self.get('user-data/player_ui/ui',{})
+            check(not ui.get('visible') and not ui.get('controls'),'idle/error does not show playback controls')
             evidence=capture_client(self.proc.pid,target)
             (OUT/(name+'-capture.json')).write_text(json.dumps(evidence,indent=2),encoding='utf-8')
         else:
+            self.wait(lambda:self.get('user-data/player_ui/ui',{}).get('overlay_ok') is True,'overlay not rendered')
             self.command('screenshot-to-file',str(target),'window')
         check(target.is_file() and target.stat().st_size>1024,'captured visible client '+name)
     def close(self):
@@ -134,7 +136,7 @@ def direct_and_ui():
     uri=BASE+'/auth/direct.y4m?api_key=a|b&MediaSourceId=test'
     with Frontend([uri,'--http-header-fields=Authorization: LocalTest sample'],'direct') as p:
         p.loaded(uri)
-        check(p.get('file-local-options/cache-pause-initial')=='no',
+        check(p.get('file-local-options/cache-pause-initial') is False,
               'network playback does not wait for the configured initial cache')
         initial=p.get('time-pos',0)
         p.wait(lambda:(p.get('time-pos',0) or 0)>initial+.5,'real playback does not advance')
