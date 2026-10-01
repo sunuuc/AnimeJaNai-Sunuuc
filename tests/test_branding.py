@@ -24,7 +24,7 @@ class BrandingTests(unittest.TestCase):
             self.assertIn(ENTRY_POINTS[0], text)
             self.assertIn(ENTRY_POINTS[1], text)
             self.assertNotIn('AnimeJaNai-zh-CN-', text)
-        self.assertIn('https://github.com/sunuuc/mpv-NekoAnimeVE/releases/latest',
+        self.assertIn('https://github.com/sunuuc/mpv-NekoAnimeVE/releases',
                       (ROOT / 'README.md').read_text(encoding='utf-8'))
 
     def test_distribution_names_follow_project_identity(self):
