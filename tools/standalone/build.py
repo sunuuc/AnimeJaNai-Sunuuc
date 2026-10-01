@@ -100,6 +100,12 @@ def app_root(p):
 def cp(src,dst):
     if src.is_dir():shutil.copytree(src,dst,dirs_exist_ok=True)
     else:dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,dst)
+
+def copy_validation_reports(src,dst):
+    """Ship reports, not the generated media, models or executable fixtures."""
+    for path in src.rglob('*'):
+        if path.is_file() and path.suffix.lower() in {'.json','.log','.png','.txt'}:
+            cp(path,dst/path.relative_to(src))
 def source_release_files(folders):
     tracked=set(subprocess.check_output(['git','ls-files','-z'],cwd=R).decode('utf-8').split('\0'))
     files=[]
@@ -227,7 +233,8 @@ def package():
     info=ST/'build-info/standalone'
     shutil.rmtree(info/'validation',ignore_errors=True)
     shutil.rmtree(info/'ui-validation',ignore_errors=True)
-    cp(E,info/'validation');cp(R/'language-evidence',info/'ui-validation')
+    copy_validation_reports(E,info/'validation')
+    copy_validation_reports(R/'language-evidence',info/'ui-validation')
     # Validation artifacts can contain additional executable fixtures. Scan the
     # final package tree, then keep the exact report that gates publication.
     scan_security(ST,E/'security',R/'downloads/antivirus')

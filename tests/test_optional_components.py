@@ -12,8 +12,18 @@ import argparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools/standalone'))
 from components import prepare, validate
+from build import copy_validation_reports
 
 class ComponentContracts(unittest.TestCase):
+    def test_validation_package_excludes_generated_models_and_media(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);source=root/'source';target=root/'reports';source.mkdir()
+            for name in ('results.json','test.log','capture.png','suite.txt',
+                         'fixture.onnx','fixture.engine','video.y4m','helper.exe'):
+                (source/name).write_text('fixture')
+            copy_validation_reports(source,target)
+            self.assertEqual({p.name for p in target.iterdir()},
+                             {'results.json','test.log','capture.png','suite.txt'})
     def test_catalog_covers_hardware_and_downloads_are_pinned(self):
         catalog=json.loads((ROOT/'tools/standalone/component-catalog.json').read_text())
         names={p['name'] for p in catalog['packs']}
