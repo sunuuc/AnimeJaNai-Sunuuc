@@ -25,9 +25,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
         {
             Instance = this;
             AnimeJaNaiConf = ReadAnimeJaNaiConf(AnimeJaNaiConfPath, true);
-            // Built after the user conf loads so the read-only default profiles reflect the saved
-            // standard/sharp preset.
-            RefreshDefaultProfiles();
 
 
             for (var i = 0; i < AnimeJaNaiConf.UpscaleSlots.Count; i++)
@@ -196,157 +193,47 @@ namespace AnimeJaNaiConfEditor.ViewModels
             }
         }
 
-        // Rebuilds the read-only default profiles from DEFAULT_PROFILES_CONF, swapping each profile's
-        // HD models to their V3.1Sharp1 variants per its own preset. Standard and sharp HD model
-        // filenames differ only by the _HD_V3.1_ vs _HD_V3.1Sharp1_ token (the SD model has none).
-        public void RefreshDefaultProfiles()
-        {
-            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
-            DefaultUpscaleSlots[0].MpvProfileName = "upscale-on-quality";
-            DefaultUpscaleSlots[1].MpvProfileName = "upscale-on-balanced";
-            DefaultUpscaleSlots[2].MpvProfileName = "upscale-on-performance";
-            DefaultUpscaleSlots[0].DescriptionText = AnimeJaNai.Localization.UiText.T("Minimum Suggested GPU: NVIDIA RTX 4090");
-            DefaultUpscaleSlots[1].DescriptionText = AnimeJaNai.Localization.UiText.T("Minimum Suggested GPU: NVIDIA RTX 3080");
-            DefaultUpscaleSlots[2].DescriptionText = AnimeJaNai.Localization.UiText.T("Minimum Suggested GPU: NVIDIA RTX 3060");
-            if (AnimeJaNaiConf != null)
-            {
-                ApplySharp(DefaultUpscaleSlots[0], AnimeJaNaiConf.QualitySharp);
-                ApplySharp(DefaultUpscaleSlots[1], AnimeJaNaiConf.BalancedSharp);
-                ApplySharp(DefaultUpscaleSlots[2], AnimeJaNaiConf.PerformanceSharp);
-            }
-            this.RaisePropertyChanged(nameof(CurrentSlot));
-            this.RaisePropertyChanged(nameof(CurrentDefaultStandardSelected));
-            this.RaisePropertyChanged(nameof(CurrentDefaultSharpSelected));
-        }
 
-        private static void ApplySharp(UpscaleSlot slot, bool sharp)
-        {
-            if (!sharp)
-            {
-                return;
-            }
-            foreach (var chain in slot.Chains)
-            {
-                foreach (var model in chain.Models)
-                {
-                    if (model.Name != null && model.Name.Contains("_HD_V3.1_"))
-                    {
-                        model.Name = model.Name.Replace("_HD_V3.1_", "_HD_V3.1Sharp1_");
-                    }
-                }
-            }
-        }
-
-        // The Standard/Sharp toggle in the default-profiles view applies to whichever default profile
-        // is currently shown (CurrentSlot). These map slot 1/2/3 -> Quality/Balanced/Performance.
-        private bool CurrentDefaultSharpValue() => CurrentSlot?.SlotNumber switch
-        {
-            "1" => AnimeJaNaiConf?.QualitySharp ?? false,
-            "2" => AnimeJaNaiConf?.BalancedSharp ?? false,
-            "3" => AnimeJaNaiConf?.PerformanceSharp ?? false,
-            _ => false,
-        };
-
-        public bool CurrentDefaultSharpSelected => CurrentDefaultSharpValue();
-        public bool CurrentDefaultStandardSelected => !CurrentDefaultSharpValue();
-
-        public void SetCurrentDefaultStandard() => SetCurrentDefaultPreset(false);
-        public void SetCurrentDefaultSharp() => SetCurrentDefaultPreset(true);
-
-        private void SetCurrentDefaultPreset(bool sharp)
-        {
-            switch (CurrentSlot?.SlotNumber)
-            {
-                case "1": AnimeJaNaiConf.QualitySharp = sharp; break;
-                case "2": AnimeJaNaiConf.BalancedSharp = sharp; break;
-                case "3": AnimeJaNaiConf.PerformanceSharp = sharp; break;
-                default: return;
-            }
-            RefreshDefaultProfiles(); // also raises the toggle props
-        }
 
         private string[] _commonResolutions = [
+
             "0x0",
+
             "640x360",
+
             "640x480",
+
             "720x480",
+
             "768x576",
+
             "960x540",
+
             "1024x576",
+
             "1280x720",
+
             "1440x1080",
+
             "1920x1080"];
 
+
+
         public string[] CommonResolutions
+
         {
+
             get => _commonResolutions;
+
             set => this.RaiseAndSetIfChanged(ref _commonResolutions, value);
+
         }
+
+
 
         public string[] BuilderOptimizationLevels { get; } = ["0", "1", "2", "3", "4", "5"];
 
-        private static readonly string DEFAULT_PROFILES_CONF = @"[slot_1]
-profile_name=Quality
-chain_1_min_resolution=1280x720
-chain_1_max_resolution=1920x1080
-chain_1_min_fps=0
-chain_1_max_fps=31
-chain_1_model_1_resize_height_before_upscale=0
-chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
-chain_1_rife=no
-chain_2_min_resolution=0x0
-chain_2_max_resolution=1280x720
-chain_2_min_fps=0
-chain_2_max_fps=31
-chain_2_model_1_resize_height_before_upscale=0
-chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo
-chain_2_rife=no
-chain_3_min_resolution=0x0
-chain_3_max_resolution=1920x1080
-chain_3_min_fps=0
-chain_3_max_fps=61
-chain_3_model_1_resize_height_before_upscale=0
-chain_3_model_1_resize_factor_before_upscale=100
-chain_3_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
-chain_3_rife=no
-[slot_2]
-profile_name=Balanced
-chain_1_min_resolution=1280x720
-chain_1_max_resolution=1920x1080
-chain_1_min_fps=0
-chain_1_max_fps=31
-chain_1_model_1_resize_height_before_upscale=0
-chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
-chain_1_rife=no
-chain_2_min_resolution=0x0
-chain_2_max_resolution=1280x720
-chain_2_min_fps=0
-chain_2_max_fps=31
-chain_2_model_1_resize_height_before_upscale=0
-chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo
-chain_2_rife=no
-[slot_3]
-profile_name=Performance
-chain_1_min_resolution=1280x720
-chain_1_max_resolution=1920x1080
-chain_1_min_fps=0
-chain_1_max_fps=31
-chain_1_model_1_resize_height_before_upscale=0
-chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Performance_SPANF3_b5f48_unshuffle_fp16
-chain_1_rife=no
-chain_2_min_resolution=0x0
-chain_2_max_resolution=1280x720
-chain_2_min_fps=0
-chain_2_max_fps=31
-chain_2_model_1_resize_height_before_upscale=0
-chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op21_dynamo
-chain_2_rife=no";
+
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
@@ -389,18 +276,6 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _showGlobalSettings, value);
         }
 
-        private bool _showDefaultProfiles;
-        [DataMember]
-        public bool ShowDefaultProfiles
-        {
-            get => _showDefaultProfiles;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _showDefaultProfiles, value);
-                this.RaisePropertyChanged(nameof(CurrentSlot));
-            }
-        }
-
         private bool _showCustomProfiles = true; // TODO 
         [DataMember]
         public bool ShowCustomProfiles
@@ -422,8 +297,6 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _selectedSlotNumber, value);
                 this.RaisePropertyChanged(nameof(CurrentSlot));
-                this.RaisePropertyChanged(nameof(CurrentDefaultStandardSelected));
-                this.RaisePropertyChanged(nameof(CurrentDefaultSharpSelected));
             }
         }
 
@@ -446,22 +319,12 @@ chain_2_rife=no";
         {
             ShowGlobalSettings = true;
             ShowCustomProfiles = false;
-            ShowDefaultProfiles = false;
-        }
-
-        public void HandleShowDefaultProfile(string slotNumber)
-        {
-            ShowGlobalSettings = false;
-            ShowDefaultProfiles = true;
-            ShowCustomProfiles = false;
-            SelectedSlotNumber = slotNumber;
         }
 
         public void HandleShowCustomProfile(string slotNumber)
         {
             ShowGlobalSettings = false;
             ShowCustomProfiles = true;
-            ShowDefaultProfiles = false;
             SelectedSlotNumber = slotNumber;
         }
 
@@ -474,8 +337,7 @@ chain_2_rife=no";
 
         public UpscaleSlot CurrentSlot
         {
-            get => ShowCustomProfiles ? AnimeJaNaiConf.UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() :
-                ShowDefaultProfiles ? DefaultUpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
+            get => ShowCustomProfiles ? AnimeJaNaiConf.UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
         }
 
         private UpscaleSlot? _selectedProfileToClone;
@@ -530,19 +392,7 @@ chain_2_rife=no";
             }
         }
 
-        private AvaloniaList<UpscaleSlot> _defaultUpscaleSlots = [];
-        [DataMember]
-        public AvaloniaList<UpscaleSlot> DefaultUpscaleSlots
-        {
-            get => _defaultUpscaleSlots;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
-                this.RaisePropertyChanged(nameof(AllSlots));
-            }
-        }
-
-        public AvaloniaList<UpscaleSlot> AllSlots => new(DefaultUpscaleSlots.Concat(AnimeJaNaiConf?.UpscaleSlots?.Where(x => x.ShowSlot && !x.ActiveSlot)));
+        public AvaloniaList<UpscaleSlot> AllSlots => new(AnimeJaNaiConf.UpscaleSlots.Where(x => x.ShowSlot && !x.ActiveSlot));
 
         private bool _showAdvancedSettings = false;
         [DataMember]
@@ -800,17 +650,6 @@ chain_2_rife=no";
                 ? DEFAULT_TRT_ENGINE_SETTINGS
                 : trtEngineSettings;
 
-            // v2 (animejanai 3.3.0) had a single global default_preset for all default profiles; v3
-            // split it into per-profile quality/balanced/performance keys. Use default_preset as the
-            // fallback so a migrated conf keeps its Sharp selection. The per-profile keys (when
-            // present in a v3 conf) take precedence; default_preset is absent in v3 confs.
-            var legacyPreset = parser.GetValue("global", "default_preset", "standard");
-            bool IsSharp(string key) => parser.GetValue("global", key, legacyPreset).Trim()
-                .Equals("sharp", StringComparison.OrdinalIgnoreCase);
-            animeJaNaiConf.QualitySharp = IsSharp("quality_preset");
-            animeJaNaiConf.BalancedSharp = IsSharp("balanced_preset");
-            animeJaNaiConf.PerformanceSharp = IsSharp("performance_preset");
-
             foreach (var section in parser.Sections)
             {
                 if (section.SectionName != "global")
@@ -1047,7 +886,7 @@ chain_2_rife=no";
             parser.SetValue("global", "backend_auto_fallback", conf.BackendAutoFallback ? "yes" : "no");
             parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
             // Write-minimal: only persist default_slot when the user picked one (absent => the vf
-            // line's baked-in Balanced slot applies).
+            // line's configured startup slot applies).
             if (conf.DefaultSlot is int defaultSlot)
             {
                 parser.SetValue("global", "default_slot", defaultSlot.ToString(ENGLISH_CULTURE));
@@ -1064,20 +903,6 @@ chain_2_rife=no";
             {
                 parser.SetValue("global", "trt_engine_settings", conf.TrtEngineSettings);
             }
-            // Write-minimal: only persist a profile's preset when sharp (absent => standard).
-            if (conf.QualitySharp)
-            {
-                parser.SetValue("global", "quality_preset", "sharp");
-            }
-            if (conf.BalancedSharp)
-            {
-                parser.SetValue("global", "balanced_preset", "sharp");
-            }
-            if (conf.PerformanceSharp)
-            {
-                parser.SetValue("global", "performance_preset", "sharp");
-            }
-
             foreach (var profile in conf.UpscaleSlots)
             {
                 var section = $"slot_{profile.SlotNumber}";
@@ -1189,37 +1014,6 @@ chain_2_rife=no";
         }
 
 #pragma warning disable CA1822 // Mark members as static
-        public async void LaunchBenchmark()
-#pragma warning restore CA1822 // Mark members as static
-        {
-            await Task.Run(async () =>
-            {
-                using var process = new Process();
-
-                if (OperatingSystem.IsWindows())
-                {
-                    process.StartInfo.FileName = "cmd.exe";
-                    process.StartInfo.Arguments = @"/C .\benchmarks\animejanai_benchmark_all.bat";
-                }
-                else
-                {
-                    // Linux: the same benchmark run via the cross-platform .NET tool.
-                    process.StartInfo.FileName = "/bin/sh";
-                    process.StartInfo.Arguments = "./benchmarks/animejanai_benchmark_all.sh";
-                }
-
-                process.StartInfo.RedirectStandardOutput = false;
-                process.StartInfo.RedirectStandardError = false;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.WorkingDirectory = DataDir;
-
-                process.Start();
-                await process.WaitForExitAsync();
-            });
-        }
-
-#pragma warning disable CA1822 // Mark members as static
         public async void OpenModelsDirectory()
 #pragma warning restore CA1822 // Mark members as static
         {
@@ -1244,10 +1038,7 @@ chain_2_rife=no";
             }
         }
 
-        // The default profile is stored as [global] default_slot in animejanai.conf and applied by
-        // scripts/animejanai_backend.lua at startup. These map the Manager's mpv profile names to the
-        // native filter slot numbers the player switches between: Quality/Balanced/Performance are the
-        // built-in slots 1001/1002/1003, custom profiles use their own number 1-9, and Off is slot 0.
+        // Map custom profile names to the native filter slot; Off is slot 0.
         private static int? MpvProfileToSlot(string? mpvProfile)
         {
             if (string.IsNullOrEmpty(mpvProfile))
@@ -1257,9 +1048,6 @@ chain_2_rife=no";
             switch (mpvProfile)
             {
                 case "upscale-off": return 0;
-                case "upscale-on-quality": return 1001;
-                case "upscale-on-balanced": return 1002;
-                case "upscale-on-performance": return 1003;
             }
             var m = Regex.Match(mpvProfile, @"^upscale-on-(\d+)$");
             return m.Success ? int.Parse(m.Groups[1].Value, ENGLISH_CULTURE) : (int?)null;
@@ -1271,9 +1059,6 @@ chain_2_rife=no";
             {
                 case null: return null;
                 case 0: return "upscale-off";
-                case 1001: return "upscale-on-quality";
-                case 1002: return "upscale-on-balanced";
-                case 1003: return "upscale-on-performance";
             }
             return slot.Value is >= 1 and <= 9 ? $"upscale-on-{slot.Value}" : null;
         }
@@ -1291,14 +1076,6 @@ chain_2_rife=no";
         {
             if (SelectedMpvProfile == null || SelectedMpvProfile == "upscale-off")
             {
-                return;
-            }
-
-            var defaultSlot = DefaultUpscaleSlots.Where(x => x.MpvProfileName == SelectedMpvProfile).FirstOrDefault();
-
-            if (defaultSlot != null)
-            {
-                HandleShowDefaultProfile(defaultSlot.SlotNumber);
                 return;
             }
 
@@ -1332,9 +1109,6 @@ chain_2_rife=no";
                 // Separate subscription: WhenAnyValue's tuple overload doesn't extend to this many
                 // properties in one call.
                 this.WhenAnyValue(
-                    x => x.QualitySharp,
-                    x => x.BalancedSharp,
-                    x => x.PerformanceSharp,
                     x => x.GpuSubtitles).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
@@ -1358,11 +1132,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _enableLogging, value);
         }
 
-        // The slot the player loads by default at startup (Quality/Balanced/Performance = 1001/1002/
-        // 1003, custom profiles = 1-9, Off = 0). null means no default is stored, so the slot baked
-        // into the vf line (Balanced) applies. Persisted as [global] default_slot in animejanai.conf
-        // and applied by scripts/animejanai_backend.lua. Not auto-saved here; the Profiles tab writes
-        // it explicitly via SelectDefaultProfile.
+        // Startup slot: custom profiles 1-9 or Off (0).
         private int? _defaultSlot;
         public int? DefaultSlot
         {
@@ -1390,33 +1160,6 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _directMlSelected, value);
             }
-        }
-
-        // Per-profile Standard vs Sharp model selection for the three built-in default profiles.
-        // Persisted as [global] quality_preset / balanced_preset / performance_preset and honored at
-        // playback by animejanai_config.py (slots 1001/1002/1003). false => standard, true => sharp.
-        private bool _qualitySharp = false;
-        [DataMember]
-        public bool QualitySharp
-        {
-            get => _qualitySharp;
-            set => this.RaiseAndSetIfChanged(ref _qualitySharp, value);
-        }
-
-        private bool _balancedSharp = false;
-        [DataMember]
-        public bool BalancedSharp
-        {
-            get => _balancedSharp;
-            set => this.RaiseAndSetIfChanged(ref _balancedSharp, value);
-        }
-
-        private bool _performanceSharp = false;
-        [DataMember]
-        public bool PerformanceSharp
-        {
-            get => _performanceSharp;
-            set => this.RaiseAndSetIfChanged(ref _performanceSharp, value);
         }
 
         private string _trtEngineSettings = "--builderOptimizationLevel=5 --optShapes=input:%video_resolution% --skipInference";
@@ -1636,8 +1379,7 @@ chain_2_rife=no";
                 sub?.Dispose();
                 sub = Vm.WhenAnyValue(
                     x => x.SelectedSlotNumber,
-                    x => x.ShowCustomProfiles,
-                    x => x.ShowDefaultProfiles
+                    x => x.ShowCustomProfiles
                     ).Subscribe(x =>
                 {
                     this.RaisePropertyChanged(nameof(ActiveSlot));
@@ -1670,7 +1412,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _slotNumber, value);
         }
 
-        public bool ActiveSlot => ((Vm?.ShowCustomProfiles ?? false) && IsCustomSlot || (Vm?.ShowDefaultProfiles ?? false) && !IsCustomSlot) && SlotNumber == Vm?.SelectedSlotNumber;
+        public bool ActiveSlot => (Vm?.ShowCustomProfiles ?? false) && SlotNumber == Vm?.SelectedSlotNumber;
 
         public bool IsCustomSlot => MpvProfileName?.Any(char.IsDigit) ?? false;
 

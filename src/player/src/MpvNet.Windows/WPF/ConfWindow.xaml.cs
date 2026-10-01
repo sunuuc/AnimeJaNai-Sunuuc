@@ -425,8 +425,7 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
     
     void ConfWindow1_Loaded(object sender, RoutedEventArgs e)
     {
-        SearchControl.SearchTextBox.SelectAll();
-        Keyboard.Focus(SearchControl.SearchTextBox);
+        SearchControl.FocusInput(selectAll: true);
 
         foreach (var i in MainStackPanel.Children.OfType<StringSettingControl>())
             i.Update();
@@ -481,10 +480,7 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
             Close();
 
         if (e.Key == Key.F3 || e.Key == Key.F6 || (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control))
-        {
-            Keyboard.Focus(SearchControl.SearchTextBox);
-            SearchControl.SearchTextBox.SelectAll();
-        }
+            SearchControl.FocusInput(selectAll: true);
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null) =>

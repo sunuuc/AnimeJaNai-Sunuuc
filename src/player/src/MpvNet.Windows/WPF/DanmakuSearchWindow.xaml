@@ -1,0 +1,281 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MpvNet.Windows.WPF.DanmakuSearchWindow"
+        Title="搜索弹幕" Width="560" Height="620" MinWidth="500" MinHeight="430"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="NoResize"
+        AllowsTransparency="True" Background="Transparent"
+        Foreground="{Binding Theme.Foreground}" FontSize="14"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Loaded="Window_Loaded" Closed="Window_Closed">
+    <Window.Resources>
+        <Style x:Key="ChipButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground}" />
+            <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.MenuBackground}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,7,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Surface" CornerRadius="6" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background"
+                                        Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.MenuHighlight}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Surface" Property="Opacity" Value=".82" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Surface" Property="Background"
+                                        Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Heading}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{Binding Theme.Heading}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="18,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Surface" CornerRadius="6" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value=".88" /></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Opacity" Value=".72" /></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value=".42" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SearchTextBox" TargetType="TextBox">
+            <Setter Property="Foreground" Value="{Binding Theme.Foreground}" />
+            <Setter Property="Background" Value="{Binding Theme.MenuBackground}" />
+            <Setter Property="BorderBrush" Value="{Binding Theme.MenuHighlight}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CaretBrush" Value="{Binding Theme.Foreground}" />
+            <Setter Property="SelectionBrush" Value="{Binding Theme.Heading}" />
+            <Setter Property="Padding" Value="13,9" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="ResultListBoxItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Margin" Value="0,0,0,5" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Card" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="Background"
+                                        Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.MenuBackground}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Card" Property="Background"
+                                        Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.MenuHighlight}" />
+                                <Setter TargetName="Card" Property="BorderBrush"
+                                        Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Heading}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ResultGroupItem" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <StackPanel Background="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Background}">
+                            <ContentPresenter />
+                            <ItemsPresenter />
+                        </StackPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="1" CornerRadius="8" Background="{Binding Theme.Background}"
+            BorderBrush="{Binding Theme.MenuBackground}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.18" />
+        </Border.Effect>
+        <Grid Margin="18,16,18,15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Margin="2,0,0,13">
+                <TextBlock x:Name="Heading" Text="搜索弹幕" FontSize="24" FontWeight="SemiBold" />
+                <TextBlock x:Name="Subheading" Margin="0,4,0,0" Foreground="{Binding Theme.Foreground2}"
+                           TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+            </StackPanel>
+
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <Grid>
+                    <TextBox x:Name="SearchBox" Style="{StaticResource SearchTextBox}" MaxLength="120"
+                             TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown" />
+                    <TextBlock x:Name="SearchPlaceholder" Text="搜索作品名称" Margin="14,0,12,0"
+                               VerticalAlignment="Center" Foreground="{Binding Theme.Foreground2}"
+                               IsHitTestVisible="False" />
+                </Grid>
+                <Button x:Name="SearchButton" Grid.Column="1" Content="搜索" Style="{StaticResource ActionButton}"
+                        IsDefault="True" Margin="10,0,0,0" Click="Search_Click" />
+            </Grid>
+
+            <Grid x:Name="SourceRow" Grid.Row="2" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="58" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                <TextBlock Text="线路" Foreground="{Binding Theme.Foreground2}" VerticalAlignment="Center" />
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                              Focusable="False" CanContentScroll="True">
+                    <ItemsControl x:Name="SourceChips">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Name}" DataContext="{Binding}" Style="{StaticResource ChipButton}"
+                                        Click="SourceChip_Click" ToolTipService.ShowOnDisabled="False" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <Grid x:Name="Filters" Grid.Row="3" Margin="0,0,0,10">
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="58" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                <TextBlock Text="季度" Foreground="{Binding Theme.Foreground2}" VerticalAlignment="Center" />
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                              Focusable="False" CanContentScroll="True">
+                    <ItemsControl x:Name="SeasonChips">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate><Button Content="{Binding Name}" Style="{StaticResource ChipButton}"
+                                                  Click="SeasonChip_Click" /></DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <TextBlock Grid.Row="1" Text="平台" Foreground="{Binding Theme.Foreground2}" VerticalAlignment="Center"
+                           Margin="0,7,0,0" />
+                <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="0,7,0,0" HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled" Focusable="False" CanContentScroll="True">
+                    <ItemsControl x:Name="PlatformChips">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate><Button Content="{Binding Name}" Style="{StaticResource ChipButton}"
+                                                  Click="PlatformChip_Click" /></DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <Grid Grid.Row="4" Margin="0,0,0,4">
+                <ListBox x:Name="ShowList" SelectionChanged="Show_Changed" BorderThickness="0" Background="Transparent"
+                         ItemContainerStyle="{StaticResource ResultListBoxItem}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.IsVirtualizingWhenGrouping="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
+                    <ListBox.GroupStyle>
+                        <GroupStyle ContainerStyle="{StaticResource ResultGroupItem}">
+                            <GroupStyle.HeaderTemplate><DataTemplate>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"
+                                           Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground}"
+                                           Margin="3,11,0,5" />
+                            </DataTemplate></GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListBox.GroupStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid MinHeight="108">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="76" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Width="70" Height="100" CornerRadius="4" Background="#403C3E" ClipToBounds="True">
+                                    <Image Source="{Binding ImageUrl}" Stretch="UniformToFill" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="12,2,2,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Detail}" Margin="0,5,0,0" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground2}" />
+                                    <TextBlock Text="{Binding Platform}" Margin="0,4,0,0" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground}" />
+                                    <TextBlock Text="{Binding Provenance}" Margin="0,3,0,0" FontSize="12" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground2}" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <ListBox x:Name="EpisodeList" Visibility="Collapsed" SelectionChanged="Episode_Changed"
+                         BorderThickness="0" Background="Transparent" ItemContainerStyle="{StaticResource ResultListBoxItem}"
+                         VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.IsVirtualizingWhenGrouping="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
+                    <ListBox.GroupStyle><GroupStyle ContainerStyle="{StaticResource ResultGroupItem}"><GroupStyle.HeaderTemplate><DataTemplate>
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Margin="3,11,0,5"
+                                   Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground}" />
+                    </DataTemplate></GroupStyle.HeaderTemplate></GroupStyle></ListBox.GroupStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid MinHeight="42">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding NumberLabel}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.Theme.Foreground2}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
+                            Margin="24,12" IsHitTestVisible="False" Visibility="Collapsed">
+                    <TextBlock x:Name="EmptyHeading" Text="输入作品名开始搜索" FontSize="18" FontWeight="SemiBold"
+                               TextAlignment="Center" />
+                    <TextBlock x:Name="EmptyDescription" Margin="0,8,0,0" Foreground="{Binding Theme.Foreground2}"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="5" Margin="0,9,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <TextBlock x:Name="Status" VerticalAlignment="Center" TextWrapping="Wrap" Margin="2,0,12,0"
+                           Foreground="{Binding Theme.Foreground2}" Visibility="Collapsed" />
+                <Button x:Name="BackButton" Grid.Column="1" Content="返回" Visibility="Collapsed"
+                        Style="{StaticResource ChipButton}" Padding="20,8" Margin="0"
+                        Click="Back_Click" />
+                <Button x:Name="CloseButton" Grid.Column="1" Content="取消" Style="{StaticResource ChipButton}"
+                        Padding="20,8" Margin="0" Click="Close_Click" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

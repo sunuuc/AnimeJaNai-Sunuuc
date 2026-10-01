@@ -141,11 +141,12 @@ local function poll()
         mp.osd_message('AnimeJaNai：暂未确认 AI 初始化完成，按 Ctrl+J 查看状态。',5)
     end
 end
-local function start_watch(startup)
+local function start_watch()
     stop_watch(false)
     if not loaded or not desired or (desired==0 and not refresh_paused) or not has_video() then release_pause();return end
     watch_deadline=mp.get_time()+8
-    if startup and desired>0 then hold_pause() end -- start the clock AFTER the first configured frame
+    -- Start playback immediately. Only an explicit TensorRT build status below
+    -- owns a temporary pause; waiting for two status-file polls delayed every start.
     watch_timer=mp.add_periodic_timer(interval,poll);poll()
 end
 local function stamp(filters,f,index,n)
@@ -218,7 +219,7 @@ dispatch=function()
     end
     pending=false;tries=0
     mp.set_property_native('user-data/animejanai/requested-slot',desired)
-    start_watch(false)
+    start_watch()
 end
 local function request(raw)
     local n=slot_number(raw)
@@ -298,7 +299,7 @@ mp.register_event('file-loaded',function()
     if pending then
         if desired>0 and has_video() then hold_pause() end
         schedule(0)
-    elseif sent then start_watch(true) end
+    elseif sent then start_watch() end
 end)
 mp.register_event('end-file',function()
     generation=generation+1;loaded=false;pending=false;sent=nil

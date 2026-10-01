@@ -1,0 +1,189 @@
+name: Automatic Regression Tests in QEMU VMs
+
+on:
+  push:
+    branches: [master, ci]
+  pull_request:
+  workflow_dispatch:
+    # Even with defaults, jobs not started via dispatch will only have blank inputs
+    inputs:
+      test_repo:
+        description: 'An instance of a libass-tests git repo'
+        required: false
+        default: 'https://github.com/libass/libass-tests.git'
+      test_ref:
+        description: 'Git ref of libass-tests repo to run tests on; defaults to newest commit on default branch'
+        required: false
+        default: ''
+
+jobs:
+  ART-VM:
+    # This does NOT have KVM, but the only runners with native virtualisation (MacOS) are unreliable
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Bot-friendly names
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'ART (netbsd64-qemu, NetBSD-10, amd64)'
+            os_image: netbsd
+            os_version: 10.1
+            CC: 'gcc -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all'
+            confflags: ''
+            # Leak detection appears to find false positives in libc and external libs
+            ASAN_OPTIONS: detect_leaks=0
+            ART_REG_SKIP: ''
+
+          - name: 'ART (freebsd64-qemu, FreeBSD-14, amd64)'
+            os_image: freebsd
+            os_version: 14.3
+            # The default FreeBSD env places the libiconv header from ports in the default include path,
+            # but doesn't put the corresponding library into the default library path.
+            # Either inlcuding the lib path (presumably done by ports) or
+            # telling libiconv’s header to pose as system iconv resolves the mismatch.
+            CC: 'clang -DLIBICONV_PLUG=1 -fsanitize=address -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all'
+            confflags: ''
+            # Leak detection appears to find false positives in libc and external libs
+            ASAN_OPTIONS: detect_leaks=0
+            ART_REG_SKIP: ''
+
+          - name: 'ART (openbsd64-qemu, OpenBSD-7, amd64)'
+            os_image: openbsd
+            os_version: 7.8
+            CC: 'clang'
+            confflags: ''
+            ASAN_OPTIONS: ''
+            ART_REG_SKIP: 'font_nonunicode'
+            AUTOCONF_VERSION: '2.72'
+            AUTOMAKE_VERSION: '1.18'
+
+          - name: 'ART (haiku64-qemu, Haiku, amd64)'
+            os_image: haiku
+            os_version: r1beta5
+            # no libubsan available, thus just SIGILL
+            CC: 'gcc -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all -fsanitize-undefined-trap-on-error'
+
+          - name: 'ART(omnios64-qemu, illumos/OmniOS, amd64)'
+            os_image: omnios
+            os_version: r151058
+            # errors by default, but illumos has spec-incompliant iconv (const vs restrict)
+            CC: 'gcc -Wno-error=incompatible-pointer-types'
+            confenv: 'PKG_CONFIG_PATH=/opt/ooce/lib/64/pkgconfig'
+            ART_REG_SKIP: 'font_nonunicode'
+
+    env:
+      ASAN_OPTIONS: ${{ matrix.ASAN_OPTIONS }}
+      AUTOCONF_VERSION: ${{ matrix.AUTOCONF_VERSION }}
+      AUTOMAKE_VERSION: ${{ matrix.AUTOMAKE_VERSION }}
+
+    defaults:
+      run:
+        # Avoid syncing after each step, we only need an initial sync for repos
+        shell: cpa.sh {0} --sync-files none
+
+    steps:
+      # Available core count changes on runner type and over time, but GHA
+      # doesn’t easily expose this, so we’ll have to query this ourselves. Based on:
+      # https://github.com/orgs/community/discussions/25057#discussioncomment-5957241
+      - name: determine logical cpu core count
+        id: cpus
+        shell: python
+        run: |
+          import os
+          import multiprocessing
+
+          try:
+            num_cpus = len(os.sched_getaffinity(0))
+          except AttributeError:
+            num_cpus = multiprocessing.cpu_count()
+          print(f"num_cpus={num_cpus}")
+
+          output_file = os.environ["GITHUB_OUTPUT"]
+          with open(output_file, "a", encoding="utf-8") as output_stream:
+            output_stream.write(f"count={num_cpus}\n")
+
+      - name: checkout libass
+        uses: actions/checkout@v6
+
+      - name: download test samples
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.inputs.test_repo || 'libass/libass-tests'}}
+          ref: ${{ github.event.inputs.test_ref }}
+          path: './libass-tests'
+
+      - name: Start VM
+        uses: cross-platform-actions/action@v1.4.0
+        with:
+          operating_system: ${{ matrix.os_image }}
+          version: ${{ matrix.os_version }}
+          environment_variables: ASAN_OPTIONS AUTOCONF_VERSION AUTOMAKE_VERSION
+          sync_files: runner-to-vm
+
+      - name: Install Packages
+        run: |
+          # Install Packages
+          case "${{ matrix.os_image }}" in
+            netbsd)
+              # We'll use the base system's version of gcc
+              sudo pkgin -y install \
+                  mozilla-rootcerts-openssl git nasm \
+                  autoconf automake libtool-base pkg-config \
+                  freetype fribidi harfbuzz fontconfig png
+              ;;
+            freebsd)
+              # Using system compiler
+              sudo pkg -o ASSUME_ALWAYS_YES=yes install \
+                git nasm ca_root_nss \
+                autoconf automake libtool pkgconf \
+                freetype2 fribidi harfbuzz fontconfig png
+              ;;
+            openbsd)
+              # while OpenBSD natively uses doas,
+              # cross-platform-action only preconfigured sudo.
+              # Using system-provided: compiler, fontconfig, freetype, pkgconf
+              sudo pkg_add \
+                git nasm libtool \
+                autoconf-"$AUTOCONF_VERSION"p0 \
+                automake-"$AUTOMAKE_VERSION" \
+                fribidi harfbuzz libunibreak png
+              ;;
+            haiku)
+              pkgman install -y \
+                git nasm gcc make pkgconfig \
+                libtool autoconf automake \
+                freetype_devel fribidi_devel harfbuzz_devel \
+                fontconfig_devel libunibreak_devel libpng16_devel
+              ;;
+            omnios)
+              # "ooce" extra packages are not in regular search paths.
+              # Activate via /opt/ooce/lib/64/pkgconfig etc.
+              # Harfbuzz and fribidi are bundled with pango (no standalone package).
+              sudo pkg install --deny-new-be --no-backup-be \
+                pkg:/developer/gcc14 \
+                pkg:/developer/nasm \
+                pkg:/developer/build/make \
+                pkg:/developer/pkg-config \
+                pkg:/developer/build/autoconf \
+                pkg:/developer/build/automake \
+                pkg:/developer/build/libtool \
+                pkg:/ooce/library/fontconfig \
+                pkg:/ooce/library/pango \
+                pkg:/ooce/library/libpng
+              ;;
+          esac
+
+      - name: Build libass
+        run: |
+          ./autogen.sh
+          env ${{ matrix.confenv }} \
+            ./configure CC="${{ matrix.CC }}" ${{ matrix.confflags }} --enable-fuzz --enable-compare
+          make -j '${{ steps.cpus.outputs.count }}'
+
+      - name: Run Tests
+        run: |
+          ART_REG_SKIP="${{ matrix.ART_REG_SKIP }}" \
+          make ART_SAMPLES="./libass-tests" check \
+          || (cat ./test-suite.log; exit 1)

@@ -43,6 +43,9 @@ public static class WinApi
     public static extern bool AllowSetForegroundWindow(int dwProcessId);
 
     [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
     public static extern void ReleaseCapture();
 
     [DllImport("user32.dll")]

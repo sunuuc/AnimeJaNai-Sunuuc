@@ -117,7 +117,7 @@ def case(name,fn):
         RESULTS.append({'case':name,'passed':False,'error':str(e)});print('FAIL',name,str(e),flush=True)
 def idle_and_ipc():
     with Frontend([], 'idle-ipc') as p:
-        p.wait(lambda:p.get('user-data/player_ui/ui',{}).get('version')=='1.1.2','UI missing')
+        p.wait(lambda:p.get('user-data/player_ui/ui',{}).get('version')=='1.3.0','UI missing')
         check(p.get('idle-active') is True,'idle without media is not fake playback')
         p.shot('idle-small-ui')
         uri=BASE+'/media/ipc.y4m'
@@ -134,6 +134,8 @@ def direct_and_ui():
     uri=BASE+'/auth/direct.y4m?api_key=a|b&MediaSourceId=test'
     with Frontend([uri,'--http-header-fields=Authorization: LocalTest sample'],'direct') as p:
         p.loaded(uri)
+        check(p.get('file-local-options/cache-pause-initial')=='no',
+              'network playback does not wait for the configured initial cache')
         initial=p.get('time-pos',0)
         p.wait(lambda:(p.get('time-pos',0) or 0)>initial+.5,'real playback does not advance')
         p.command('set_property','pause',True)

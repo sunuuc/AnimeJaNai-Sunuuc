@@ -11,6 +11,35 @@ REPO='sunuuc/AnimeJaNai-zh-CN'
 from gpu_target import TARGET, prune, validate as validate_gpu_target
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
+SOURCE_ADDITIONS={
+    'tools/standalone/build_libass.py',
+    'tools/standalone/libass-build-packages.json',
+    'tools/standalone/build_danmaku_factory.py',
+    'THIRD_PARTY_LICENSES/PCRE2-BSD.txt',
+    'tests/test_danmaku_canvas.py',
+    'tests/test_mpv_danmaku_viewport.py',
+    'tests/manager-profiles/ManagerProfiles.csproj',
+    'tests/manager-profiles/Program.cs',
+    'tests/danmaku-wpf/DanmakuWpfChecks.csproj',
+    'tests/danmaku-wpf/Program.cs',
+    'tests/test_danmaku_search_xaml.py',
+    'portable_config/script-modules/player_ui_danmaku_online.lua',
+    'portable_config/script-modules/player_ui_danmaku_render.lua',
+    'THIRD_PARTY_LICENSES/DanmakuFactory-MIT.txt',
+    'docs/danmaku-renderer.md',
+    'tests/test_danmaku_native.py',
+    'portable_config/script-opts/player_ui_danmaku.conf',
+    'tests/test_danmaku_online.py',
+    'tools/standalone/verify_player_sources.py',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSourcesWindow.xaml',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSourcesWindow.xaml.cs',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSourceEditWindow.xaml',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSourceEditWindow.xaml.cs',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSearchWindow.xaml',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuSearchWindow.xaml.cs',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuBlocklistWindow.xaml',
+    'src/player/src/MpvNet.Windows/WPF/DanmakuBlocklistWindow.xaml.cs',
+}
 
 def sha(p):
     with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
@@ -53,6 +82,15 @@ def app_root(p):
 def cp(src,dst):
     if src.is_dir():shutil.copytree(src,dst,dirs_exist_ok=True)
     else:dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,dst)
+def source_release_files(folders):
+    tracked=set(subprocess.check_output(['git','ls-files','-z'],cwd=R).decode('utf-8').split('\0'))
+    files=[]
+    for folder in folders:
+        for path in (R/folder).rglob('*'):
+            if path.is_symlink() or not path.is_file() or any(x in ('bin','obj','__pycache__','.git') for x in path.relative_to(R/folder).parts):continue
+            relative=path.relative_to(R).as_posix()
+            if relative in tracked or relative in SOURCE_ADDITIONS or relative.startswith(('third_party/danmaku-factory/','third_party/libass/')):files.append(path)
+    return sorted(files,key=lambda path:path.relative_to(R).as_posix())
 def replace_once(p,old,new):
     s=p.read_text(encoding='utf-8-sig')
     if new in s:return
@@ -118,9 +156,15 @@ def stage():
     cp(R/'portable_config',ST/'portable_config')
     cp(R/'animejanai/animejanai.conf',ST/'animejanai/animejanai.conf')
     cp(R/'THIRD_PARTY_LICENSES',ST/'THIRD_PARTY_LICENSES');cp(R/'LICENSE',ST/'LICENSE')
+    run(sys.executable,H/'build_danmaku_factory.py','--output',ST/'animejanai/danmaku/DanmakuFactory.exe')
+    cp(R/'docs/danmaku-renderer.md',ST/'弹幕说明.md')
+
     for folder in ('publish-player','publish-manager','publish-updater'):
         for p in (R/folder).rglob('*'):
             if p.is_file() and p.suffix.lower() in ('.exe','.dll','.json'):cp(p,ST/p.relative_to(R/folder))
+    run(sys.executable,H/'build_libass.py','--output',ST/'libass-9.dll')
+    cp(R/'third_party/libass/UPSTREAM.json',ST/'build-info/native/libass-source.json')
+    cp(R/'third_party/libass/COPYING',ST/'THIRD_PARTY_LICENSES/libass-ISC.txt')
     candidates=list(Path(r'C:\Program Files\Microsoft Visual Studio\2022').glob('*/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT'))
     if candidates:
         crt=sorted(candidates)[-1]
@@ -159,9 +203,11 @@ def inspect_payload():
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
     required=['mpvnet.exe','mpv.exe','libmpv-2.dll','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
-       'portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
+       'portable_config/script-opts/player_ui.conf','portable_config/script-opts/player_ui_danmaku.conf',
+       'portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
        'portable_config/script-modules/player_ui_core.lua','portable_config/script-modules/player_ui_metrics.lua',
-       'portable_config/script-modules/player_ui_menu.lua',
+       'portable_config/script-modules/player_ui_menu.lua','portable_config/script-modules/player_ui_danmaku_online.lua',
+       'portable_config/script-modules/player_ui_danmaku_render.lua','animejanai/danmaku/DanmakuFactory.exe',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
        'animejanai/inference/nvinfer_11.dll','animejanai/inference/trtexec.exe','Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
     for name in required:
@@ -201,6 +247,7 @@ def inspect_payload():
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
 
 def package():
+    run(sys.executable,H/'verify_player_sources.py')
     for name,marker in [('manager-tests.txt','PASS Manager language suite'),('player-tests.txt','PASS Player language suite'),('parser-tests.txt','PASS')]:
         if marker not in (R/'language-evidence'/name).read_text(encoding='utf-8-sig'):raise RuntimeError('UI regression failed: '+name)
     for n in ('results.json','scripts-results.json'):
@@ -245,9 +292,8 @@ def package():
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
     sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
-        for folder in ('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES'):
-            for p in (R/folder).rglob('*'):
-                if p.is_file() and not any(x in ('bin','obj','__pycache__','.git') for x in p.relative_to(R/folder).parts) and p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
+        for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
+            if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
         for n in ('LICENSE','release.json','docs/standalone.md'):z.write(R/n,n)
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[sourcezip]),encoding='utf-8')
     cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')

@@ -1,0 +1,45 @@
+name: Flutter Release Mac
+on:
+  # 手动触发
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build
+    runs-on: macos-latest
+    steps:
+      # 使用本项目
+      - uses: actions/checkout@v6
+
+      # 设置flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          # The Flutter version to make available on the path
+          flutter-version: 3.35.7
+          # The Flutter build release channel
+          channel: stable
+          cache: true
+
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.0.8'
+          actions-cache-folder: '.xmake-cache'
+
+      # Get flutter dependencies and build
+      - name: Build
+        working-directory: gui/danmakufactory_flutter
+        run: |
+          flutter pub get
+          flutter build macos -v --release
+
+      - name: Package App
+        run: |
+          cd gui/danmakufactory_flutter/build/macos/Build/Products/Release
+          zip -r danmakufactory_macos_arm.zip danmakufactory_flutter.app
+          cp danmakufactory_macos_arm.zip $GITHUB_WORKSPACE/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: danmakufactory_macos_arm
+          path: danmakufactory_macos_arm.zip

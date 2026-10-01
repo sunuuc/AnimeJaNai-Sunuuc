@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 
+using MpvNet.Windows.WPF.Controls;
 using MpvNet.Windows.UI;
 
 namespace MpvNet.Windows.WPF;
@@ -87,15 +88,12 @@ public partial class InputWindow : Window
             Close();
 
         if (e.Key == Key.F3 || e.Key == Key.F6 || (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control))
-        {
-            Keyboard.Focus(SearchControl.SearchTextBox);
-            SearchControl.SearchTextBox.SelectAll();
-        }
+            SearchControl.FocusInput(selectAll: true);
     }
 
     void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e) => CollectionView.Refresh();
 
-    void Window_Loaded(object sender, RoutedEventArgs e) => Keyboard.Focus(SearchControl.SearchTextBox);
+    void Window_Loaded(object sender, RoutedEventArgs e) => SearchControl.FocusInput();
 
     void Window_Closed(object sender, EventArgs e)
     {

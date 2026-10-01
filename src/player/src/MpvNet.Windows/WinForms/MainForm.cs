@@ -1036,7 +1036,10 @@ public partial class MainForm : Form
                     if (MpvWindowHandle == IntPtr.Zero)
                         MpvWindowHandle = FindWindowEx(Handle, IntPtr.Zero, "mpv", null);
 
-                    if (MpvWindowHandle != IntPtr.Zero && !ignore)
+                    bool keyboardMessage = m.Msg is 0x0100 or 0x0101 or 0x0104 or 0x0105;
+                    bool playerIsForeground = GetForegroundWindow() == Handle;
+                    if (MpvWindowHandle != IntPtr.Zero && !ignore
+                        && (!keyboardMessage || playerIsForeground))
                         m.Result = SendMessage(MpvWindowHandle, m.Msg, m.WParam, m.LParam);
                 }
                 break;

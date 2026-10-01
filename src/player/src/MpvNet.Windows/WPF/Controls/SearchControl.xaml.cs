@@ -59,7 +59,14 @@ public partial class SearchControl : UserControl
 
     public static readonly DependencyProperty TextProperty =
         DependencyProperty.Register("Text", typeof(string),
-            typeof(SearchControl), new PropertyMetadata(OnCustomerChangedCallBack));
+            typeof(SearchControl), new FrameworkPropertyMetadata(null,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnCustomerChangedCallBack));
+
+    public void FocusInput(bool selectAll = false)
+    {
+        if (Window.GetWindow(this) is { } window)
+            TextInputFocus.Focus(window, SearchTextBox, selectAll);
+    }
 
     static void OnCustomerChangedCallBack(
         DependencyObject sender, DependencyPropertyChangedEventArgs e) =>

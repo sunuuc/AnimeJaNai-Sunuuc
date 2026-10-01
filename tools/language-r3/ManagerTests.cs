@@ -54,12 +54,11 @@ InterfaceLanguage.Save(selected);InterfaceLanguage.Reload();bool zh=InterfaceLan
 Check(UiText.T("Profiles")== (zh?"配置方案":"Profiles"),"embedded resource "+selected);
 Check(UiText.F($"Remove Chain {7}")==(zh?"移除处理链 7":"Remove Chain 7"),"dynamic format "+selected);
 var vm=new MainWindowViewModel();vm.HandleShowGlobalSettings();
-string[] raw=vm.DefaultUpscaleSlots.Select(s=>s.ProfileName).ToArray();
-Console.WriteLine("Default profile names before UI: "+JsonSerializer.Serialize(raw));
-Check(raw.SequenceEqual(new[]{"Quality","Balanced","Performance"}),"default profile names preserved in raw configuration");
+string[] raw=vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName).ToArray();
+Check(typeof(MainWindowViewModel).GetProperty("DefaultUpscaleSlots")==null,
+      "builtin default presets removed from the manager model");
 var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.UIThread.RunJobs();
-Console.WriteLine("Default profile names after UI: "+JsonSerializer.Serialize(vm.DefaultUpscaleSlots.Select(s=>s.ProfileName)));
-Check(raw.SequenceEqual(vm.DefaultUpscaleSlots.Select(s=>s.ProfileName)),"display converters cannot write translated or null profile names");
+Check(raw.SequenceEqual(vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName)),"custom profile names preserved");
 var tabs=w.GetLogicalDescendants().OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
 Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components"),"constructed tab headers "+selected);
 var selector=w.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name=="InterfaceLanguageSelector");
@@ -68,12 +67,12 @@ foreach(string page in new[]{"global","profile","components"})
 {
     vm.SelectedTabIndex=page=="components"?1:0;
     if(page=="global")vm.HandleShowGlobalSettings();
-    if(page=="profile")vm.HandleShowDefaultProfile(vm.DefaultUpscaleSlots.First().SlotNumber);
+    if(page=="profile")vm.HandleShowCustomProfile(vm.AnimeJaNaiConf.UpscaleSlots.First().SlotNumber);
     Dispatcher.UIThread.RunJobs();
     using(var bitmap=new RenderTargetBitmap(new PixelSize(1100,800))){bitmap.Render(w);bitmap.Save(Path.Combine(evidence,"manager-"+selected+"-"+page+".png"));}
     string text=string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null));
     File.WriteAllText(Path.Combine(evidence,"manager-"+selected+"-"+page+".txt"),text);
-    if(page!="components")foreach(string original in raw)Check(text.Contains(UiText.T(original)),"visible profile label "+original+" / "+selected+" / "+page);
+    Check(!w.GetLogicalDescendants().OfType<ItemsControl>().Any(c=>c.ItemsSource?.GetType().Name=="DefaultUpscaleSlots"),"manager uses only custom profiles");
 }
 selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
 Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"selector saves correct stable language ID "+selected);

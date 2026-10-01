@@ -9,8 +9,29 @@ function M.escape(s)
     return M.clean(s):gsub('\\', '\\\239\187\191'):gsub('{','\\{'):gsub('}', '\\}'):gsub('\r?\n','\\N')
 end
 -- UTF-8 codepoints without depending on Lua 5.3's utf8 module (mpv uses LuaJIT).
+local UTF8_CODEPOINT='[%z\1-\127\194-\244][\128-\191]*'
+local function each_codepoint(value) return M.clean(value):gmatch(UTF8_CODEPOINT) end
 function M.chars(s)
-    local t={}; for c in M.clean(s):gmatch('[%z\1-\127\194-\244][\128-\191]*') do t[#t+1]=c end; return t
+    local t={}; for c in each_codepoint(s) do t[#t+1]=c end; return t
+end
+function M.char_count(s)
+    local count=0
+    for _ in each_codepoint(s) do count=count+1 end
+    return count
+end
+function M.limit_chars(s,limit)
+    local value=M.clean(s);local count=0
+    for _ in each_codepoint(value) do
+        count=count+1
+        if count>limit then
+            local out,n={},0
+            for c in each_codepoint(value) do
+                n=n+1;if n>limit then break end;out[#out+1]=c
+            end
+            return table.concat(out)
+        end
+    end
+    return value
 end
 function M.ellipsize(s, max, size)
     local out,used={},0
@@ -21,6 +42,31 @@ function M.ellipsize(s, max, size)
         out[#out+1]=c;used=used+width
     end
     return table.concat(out)
+end
+function M.ass_text_width(value,size)
+    local width=0
+    for _,c in ipairs(M.chars(value)) do
+        if #c>1 then width=width+size
+        elseif c:match('%s') then width=width+size*.32
+        elseif c=='%' then width=width+size*.8
+        elseif c:match('[ilI.,!;:|]') then width=width+size*.3
+        else width=width+size*.6 end
+    end
+    return width
+end
+function M.volume_osd_layout(pw,ph,scale,label,font_size)
+    pw,ph=math.max(1,pw),math.max(1,ph)
+    scale=M.clamp(tonumber(scale) or 1,.45,2)
+    font_size=math.max(1,tonumber(font_size) or 16)
+    local text_width=M.ass_text_width(label,font_size*scale)
+    local padding_x=12*scale
+    local height=32*scale
+    local width=math.min(math.max(1,pw-16*scale),math.max(56*scale,text_width+padding_x*2))
+    local x=(pw-width)/2
+    local center_y=ph*.70
+    local y=center_y-height/2
+    return {x=x,y=y,width=width,height=height,center_x=x+width/2,center_y=y+height/2,
+        text_width=text_width,scale=scale}
 end
 function M.time(v)
     if not M.finite(v) then return '--:--' end
@@ -33,6 +79,26 @@ function M.rate(v)
     if v>=1000000 then return string.format('%.2f MB/s',v/1000000) end
     return string.format('%.1f KB/s',v/1000)
 end
+function M.theme(accent)
+    accent=accent or '9F74D0'
+    return {
+        accent=accent,text='F7F3F6',secondary='CEC7CF',muted='A49CA5',
+        panel='211F23',surface='2B292E',hover='39353D',selected='493743',
+        border='141216',divider='4A454C',track='807982',buffer='C8C1C9',
+        scrim='000000',
+    }
+end
+M.metrics={
+    menu_margin=16,menu_header=56,menu_padding=10,
+    row_min=52,row_text=18,row_line=22,row_detail=14,row_detail_line=19,
+    row_padding=16,icon_column=56,separator=16,slider=84,
+    control_compact_step=48,control_step=56,control_compact_edge=28,control_edge=42,
+    control_y=40,control_width=40,control_hit_height=20,speed_width=58,volume_width=130,volume_offset=8,
+    volume_min_width=36,seek_x=22,seek_track_y=88,seek_top=102,seek_bottom=74,
+    network_width=104,network_gap=8,
+    menu_speed_bottom=94,menu_bottom=106,
+    icon_size=68,small_icon_size=40,icon_hover_radius=14,
+}
 function M.title(title,path)
     title=M.clean(title):gsub('[\r\n]+',' ')
     if title=='' then
@@ -47,35 +113,41 @@ function M.title(title,path)
     if title=='' then title='视频播放' end
     return title
 end
--- Player UI layout 1.2.0: the ASS PlayRes IS the window, so glyphs are rasterised at
+-- Player UI layout 1.3.0: the ASS PlayRes IS the window, so glyphs are rasterised at
 -- native size and never resampled -- resampling was what made the text soft.
 -- ui_scale*dpi scales glyph and icon sizes, and shrinks further when the window
 -- is too narrow for the control row.
-function M.layout(pw,ph,count,dpi,ui_scale)
+function M.layout(pw,ph,dpi,ui_scale)
     pw,ph=math.max(1,pw),math.max(1,ph)
     local want=M.clamp(tonumber(ui_scale) or 1.00,.45,1.5)*M.clamp(tonumber(dpi) or 1,.75,1.5)
     local w,h=pw,ph
     local built
     for _=1,12 do
-        local compact=w<1000*want
-        local step=(compact and 54 or 76)*want
-        local edge=(compact and 38 or 54)*want
-        local y=h-46*want
+        local compact=w<1600*want
+        local step=(compact and M.metrics.control_compact_step or M.metrics.control_step)*want
+        local edge=(compact and M.metrics.control_compact_edge or M.metrics.control_edge)*want
+        local y=h-M.metrics.control_y*want
         local controls={}
         local function button(id,x,bw)
-            bw=(bw or 44)*want
-            controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,y0=y-22*want,y1=y+22*want}
+            bw=(bw or M.metrics.control_width)*want
+            controls[#controls+1]={id=id,x=x,y=y,x0=x-bw/2,x1=x+bw/2,
+                y0=y-M.metrics.control_hit_height*want,y1=y+M.metrics.control_hit_height*want}
         end
         button('previous',edge);button('play',edge+step);button('next',edge+2*step);button('volume',edge+3*step)
-        local right={'fullscreen'}
-        for _,id in ipairs({'settings','danmaku','sub','audio'}) do right[#right+1]=id end
+        local right={'fullscreen','settings','danmaku','sub','audio','speed'}
         local x=w-edge
         for _,id in ipairs(right) do button(id,x);x=x-step end
-        button('speed',x,58)
-        local vx=edge+3*step+26*want
-        local ex=math.min(vx+130*want,x-(58*want)/2-14*want)
-        local volume=ex-vx>=46*want and {x0=vx,x1=ex,y0=y-15*want,y1=y+15*want,y=y} or nil
-        local ok=true
+        local volume_button=edge+3*step
+        local vx=volume_button+M.metrics.control_width*want/2+M.metrics.volume_offset*want
+        local network_width=M.metrics.network_width*want
+        local network_gap=M.metrics.network_gap*want
+        local volume={x0=vx,x1=vx+M.metrics.volume_width*want,
+            y0=y-15*want,y1=y+15*want,y=y}
+        local network_x0=volume.x1+network_gap
+        local network_x1=network_x0+network_width
+        local speed_x=w-edge-5*step
+        local network={x0=network_x0,x1=network_x1,y0=y-15*want,y1=y+15*want,y=y}
+        local ok=network.x0>=0 and network.x1<=speed_x-M.metrics.control_width*want/2-12*want
         for i,b in ipairs(controls) do
             if b.x0<0 or b.x1>w or b.y0<0 or b.y1>h then ok=false;break end
             for j=i+1,#controls do
@@ -85,9 +157,11 @@ function M.layout(pw,ph,count,dpi,ui_scale)
             if not ok then break end
         end
         if ok then
-            built={w=w,h=h,scale=1,ui=want,controls=controls,volume=volume,
-                seek={x0=22*want,x1=w-22*want,y0=h-118*want,y1=h-92*want,y=h-105*want},
-                title_y=h-186*want,detail_y=h-142*want,margin=26*want,compact=compact,small=false}
+            built={w=w,h=h,scale=1,ui=want,controls=controls,volume=volume,network_rate=network,
+                seek={x0=M.metrics.seek_x*want,x1=w-M.metrics.seek_x*want,
+                    y0=h-M.metrics.seek_top*want,y1=h-M.metrics.seek_bottom*want,y=h-M.metrics.seek_track_y*want},
+                title_y=math.max(18*want,h-160*want),detail_y=math.max(42*want,h-126*want),
+                margin=26*want,compact=compact,small=false}
             break
         end
         want=want*0.86
@@ -135,35 +209,6 @@ function M.fps_sampler()
         return (n-s[1].n)/(now-s[1].t)
     end
     return self
-end
-local function unescape(s)
-    return s:gsub('&lt;','<'):gsub('&gt;','>'):gsub('&quot;','"'):gsub('&apos;',"'")
-        :gsub('&#(%d+);',function(n) n=tonumber(n);return n>=32 and n<127 and string.char(n) or '' end)
-        :gsub('&amp;','&')
-end
--- Bilibili-compatible XML only. No XML entity expansion, network fetching or code modes.
-function M.parse_danmaku(xml)
-    if type(xml)~='string' or #xml>16*1024*1024 then return nil,'弹幕文件超过 16 MiB' end
-    if xml:upper():find('<!DOCTYPE',1,true) or xml:upper():find('<!ENTITY',1,true) then return nil,'不支持 XML 外部实体' end
-    local out={}
-    for params,text in xml:gmatch('<d%s+p%s*=%s*["\']([^"\']+)["\'][^>]*>(.-)</d>') do
-        local fields={};for field in (params..','):gmatch('(.-),') do fields[#fields+1]=field end
-        local t,mode,color=tonumber(fields[1]),tonumber(fields[2]),tonumber(fields[4])
-        if M.finite(t) and t>=0 and t<604800 and (mode==1 or mode==4 or mode==5 or mode==6) then
-            text=M.clean(unescape(text)):gsub('[\r\n]+',' ')
-            local chars=M.chars(text);if #chars>120 then text=table.concat(chars,'',1,120) end
-            if text~='' then out[#out+1]={t=t,mode=mode,text=text,color=M.finite(color) and M.clamp(math.floor(color),0,16777215) or 16777215} end
-        end
-        if #out>=50000 then break end
-    end
-    table.sort(out,function(a,b)return a.t<b.t end)
-    if #out==0 then return nil,'没有可显示的普通 XML 弹幕' end
-    return out
-end
-function M.lower_bound(events,t)
-    local lo,hi=1,#events+1
-    while lo<hi do local mid=math.floor((lo+hi)/2);if events[mid].t<t then lo=mid+1 else hi=mid end end
-    return lo
 end
 function M.local_media(path,opened,network)
     if network or type(path)~='string' or path=='' then return false end

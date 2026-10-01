@@ -17,42 +17,64 @@ def wrapped(module_name: str) -> str:
     return "(function()\n-- inlined module: " + module_name + "\n" + body + "\nend)()"
 
 
-def replace_once(path: Path, needle: str, replacement: str) -> None:
+def inline_module(path: Path, module_name: str, loader: str) -> None:
     text = path.read_text(encoding="utf-8-sig")
-    marker = "-- inlined module: "
-    if needle not in text:
-        if marker in text:
-            return
-        raise RuntimeError(f"Player UI module inclusion context changed: {path.name}: {needle}")
-    if text.count(needle) != 1:
-        raise RuntimeError(f"Ambiguous Player UI module inclusion: {path.name}: {needle}")
-    path.write_text(text.replace(needle, replacement), encoding="utf-8")
+    marker = "-- inlined module: " + module_name
+    replacement = wrapped(module_name)
+    if marker in text:
+        if text.count(marker) != 1:
+            raise RuntimeError(f"Ambiguous Player UI module inclusion: {path.name}: {module_name}")
+        marker_at = text.index(marker)
+        start = text.rfind("(function()", 0, marker_at)
+        end = text.find("\nend)()", marker_at)
+        if start < 0 or end < 0:
+            raise RuntimeError(f"Malformed inlined module block: {path.name}: {module_name}")
+        text = text[:start] + replacement + text[end + len("\nend)()"):]
+    else:
+        if loader not in text:
+            raise RuntimeError(f"Player UI module inclusion context changed: {path.name}: {loader}")
+        if text.count(loader) != 1:
+            raise RuntimeError(f"Ambiguous Player UI module inclusion: {path.name}: {module_name}")
+        text = text.replace(loader, replacement)
+    path.write_text(text, encoding="utf-8")
 
 
 player_ui = SCRIPTS / "player_ui.lua"
-replace_once(
+inline_module(
     player_ui,
+    "player_ui_core.lua",
     "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_core.lua'}))",
-    wrapped("player_ui_core.lua"),
 )
-replace_once(
+inline_module(
     player_ui,
+    "player_ui_metrics.lua",
     "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_metrics.lua'}))",
-    wrapped("player_ui_metrics.lua"),
 )
-replace_once(
+inline_module(
     player_ui,
+    "player_ui_menu.lua",
     "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_menu.lua'}))",
-    wrapped("player_ui_menu.lua"),
 )
 
-replace_once(
-    SCRIPTS / "player_ui_danmaku.lua",
+danmaku = SCRIPTS / "player_ui_danmaku.lua"
+inline_module(
+    danmaku,
+    "player_ui_core.lua",
     "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_core.lua'}))",
-    wrapped("player_ui_core.lua"),
+)
+inline_module(
+    danmaku,
+    "player_ui_danmaku_online.lua",
+    "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_danmaku_online.lua'}))",
 )
 
-for path in (player_ui, SCRIPTS / "player_ui_danmaku.lua"):
+inline_module(
+    danmaku,
+    "player_ui_danmaku_render.lua",
+    "dofile(mp.command_native({'expand-path','~~/script-modules/player_ui_danmaku_render.lua'}))",
+)
+
+for path in (player_ui, danmaku):
     text = path.read_text(encoding="utf-8")
     if "dofile(mp.command_native({'expand-path','~~/script-modules/" in text:
         raise RuntimeError(f"Runtime module loader remains in {path.name}")

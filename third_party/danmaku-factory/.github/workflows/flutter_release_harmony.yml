@@ -1,0 +1,90 @@
+name: Flutter Release Harmony
+on:
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      is_use_oh_flutter_cache:
+        description: '是否使用oh flutter缓存'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      # 使用本项目
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl xz-utils zip libglu1-mesa
+        shell: bash
+
+      - name: Setup HarmonyOS toolchain
+        uses: ErBWs/setup-ohos@v1
+        with:
+          version: latest
+          cache: true
+
+      # 设置jdk
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # 缓存 flutter-ohos SDK
+      - name: Cache flutter-ohos
+        uses: actions/cache@v5
+        id: cache-flutter-ohos
+        with:
+          path: ${{ github.workspace }}/flutter
+          key: flutter-ohos-oh-dev-${{ runner.os }}
+
+      # 如果 强制更新 或 缓存不存在 才 clone
+      - name: Setup flutter-ohos
+        if: inputs.is_use_oh_flutter_cache == 'false' || steps.cache-flutter-ohos.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf $GITHUB_WORKSPACE/flutter
+          git clone -b oh-3.35.7-dev https://gitcode.com/openharmony-tpc/flutter_flutter.git $GITHUB_WORKSPACE/flutter
+        shell: bash
+
+      # 添加 flutter PATH
+      - name: Add flutter to PATH
+        run: |
+          echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Flutter Doctor
+        run: flutter doctor -v
+        shell: bash
+
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.0.8'
+          actions-cache-folder: '.xmake-cache'
+
+      # 切换到Flutter项目目录并构建
+      - name: Get Flutter dependencies
+        working-directory: gui/danmakufactory_flutter
+        run: flutter pub get
+        shell: bash
+
+
+      - name: Build
+        working-directory: gui/danmakufactory_flutter
+        run: |
+          flutter build hap -v --release
+        shell: bash
+        continue-on-error: true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: danmakufactory_unsigned
+          path: gui/danmakufactory_flutter/ohos/entry/build/default/outputs/default/entry-default-unsigned.hap

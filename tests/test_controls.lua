@@ -53,11 +53,16 @@ local function test()
     statustext='Upscale Profile: '..n..'. Test\nOriginal Video Resolution: 1920x1080\nActive Upscale Chain: 1\n'
     local t=periodics[#periodics];assert(t and t.alive);t.fn();t.fn()
   end
+  local function building(n)
+    statustext='Upscale Profile: '..n..'. Test\nOriginal Video Resolution: 1920x1080\nActive Upscale Chain: 1\nBuilding TensorRT engine\n'
+    local t=periodics[#periodics];assert(t and t.alive);t.fn()
+  end
   dofile(root..'/portable_config/scripts/animejanai_slot.lua')
   assert(props['user-data/animejanai/stats-path']=='stats.log')
   assert(repaired and not repaired:find('apply%-profile upscale%-on'),'unsafe legacy key was not neutralized')
   hooks.on_load();assert(writes==1 and filters[1].params.slot=='7' and filters[1].params.stats=='stats.log')
-  events['file-loaded']();assert(props.pause==true,'startup was not held until configured status')
+  events['file-loaded']();assert(props.pause==false,'ordinary startup does not wait for AI status polling')
+  building(7);assert(props.pause==true,'explicit TensorRT build status temporarily pauses startup')
   status(7);assert(props.pause==false,'startup pause was not released')
   messages['aji-slot']('8');timeout();assert(slots[#slots]==8 and writes==1,'single key did not switch exactly once')
   status(8)

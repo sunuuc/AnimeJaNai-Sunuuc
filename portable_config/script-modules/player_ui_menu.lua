@@ -1,41 +1,96 @@
--- Anchored popovers and a full-height playlist drawer.
+-- Anchored player controls and settings popovers.
 -- All rows are derived from player state; no network lookups or guessed media metadata.
 return function(c)
-    local M={boxes={},rows={},hover_timer=nil,hover_target=nil}
+    local M={boxes={},rows={},hover_timer=nil,hover_target=nil,dismiss_timer=nil}
     local s,core=c.state,c.core
-    local white,muted,panel,accent='FFFFFF','BEBEBE','2C2C2C',c.accent
+    local theme=c.theme or core.theme(c.accent)
+    local metrics=core.metrics
+    local data_cache,measure_cache={},{}
+    local white,muted,panel,surface,accent=theme.text,theme.muted,theme.panel,theme.surface,theme.accent
+    function M.invalidate() data_cache={};measure_cache={} end
     local function close_timer()
         if M.hover_timer then M.hover_timer:kill();M.hover_timer=nil end
         M.hover_target=nil
     end
+    local function dismiss_timer()
+        if M.dismiss_timer then M.dismiss_timer:kill();M.dismiss_timer=nil end
+    end
     function M.close()
-        close_timer();M.boxes={};M.rows={};s.menu=nil;s.parent=nil;s.scroll=0;s.parent_scroll=0;s.menu_drag=nil
+        local was_open=s.menu~=nil
+        close_timer();dismiss_timer();M.invalidate();M.boxes={};M.rows={};s.menu=nil;s.parent=nil;s.scroll=0;s.parent_scroll=0;s.menu_drag=nil
+        if was_open and c.on_close then c.on_close() end
     end
     function M.open(kind,parent)
         if not M.allowed[kind] then return end
-        close_timer();M.hover_blocked=nil
+        close_timer();dismiss_timer();M.hover_blocked=nil
         if s.menu==kind and not parent then M.close();return end
+        M.invalidate()
         if parent then s.parent=parent else s.parent=nil;s.parent_scroll=0 end
         s.menu=kind;s.scroll=0;s.menu_drag=nil
         if kind=='ai' then c.read_presets() end
-        if kind=='playlist' then s.scroll=math.max(0,c.num('playlist-pos',0)*112-112) end
     end
     function M.back()
         if not s.menu then return false end
+        dismiss_timer()
         if s.parent then M.hover_blocked=s.menu;s.menu=s.parent;s.parent=nil;s.scroll=s.parent_scroll or 0;s.parent_scroll=0;close_timer()
         else M.close() end
         return true
     end
+    local LANG={ja='日语',jp='日语',jpn='日语',zh='中文',chi='中文',zho='中文',
+        en='英语',eng='英语',ko='韩语',kor='韩语',fr='法语',fre='法语',fra='法语',
+        de='德语',ger='德语',deu='德语',es='西班牙语',spa='西班牙语',
+        pt='葡萄牙语',por='葡萄牙语',ru='俄语',rus='俄语',it='意大利语',ita='意大利语',
+        th='泰语',tha='泰语',vi='越南语',vie='越南语',ar='阿拉伯语',ara='阿拉伯语',
+        id='印尼语',ind='印尼语',nl='荷兰语',nld='荷兰语',pl='波兰语',pol='波兰语'}
+    local CODEC={subrip='SRT',srt='SRT',ass='ASS',ssa='ASS',webvtt='WebVTT',vtt='WebVTT',
+        mov_text='MOV 文本',microdvd='MicroDVD',subviewer='SubViewer',text='文本',
+        dvd_subtitle='DVD 图形字幕',dvb_subtitle='DVB 图形字幕',hdmv_pgs_subtitle='PGS 图形字幕',
+        pgs='PGS 图形字幕',dvb_teletext='图文电视',eia_608='隐藏字幕',
+        aac='AAC',ac3='AC3',eac3='E-AC3',dts='DTS',truehd='TrueHD',flac='FLAC',
+        opus='Opus',mp3='MP3',vorbis='Vorbis',pcm_s16le='PCM',pcm_s24le='PCM'}
+    local function lang_label(value)
+        if not value or value=='' then return nil end
+        local key=value:lower():gsub('_','-')
+        if key:match('^zh') then
+            if key:match('hans') or key:match('^zh%-cn') or key:match('^zh%-sg') then return '中文（简体）' end
+            if key:match('hant') or key:match('^zh%-tw') or key:match('^zh%-hk') or key:match('^zh%-mo') then return '中文（繁体）' end
+            return '中文'
+        end
+        return LANG[key] or LANG[key:match('^%a+') or ''] or value
+    end
+    local function codec_label(value)
+        if not value or value=='' then return nil end
+        local key=value:lower()
+        return CODEC[key] or key:upper()
+    end
+    local function title_label(value)
+        if not value or value=='' then return nil end
+        local title=value:gsub('^%s+',''):gsub('%s+$','')
+        if title:match('%?') or title:match('://') or title:match('/') then
+            title=(title:match('^[^?]*') or title)
+            title=title:gsub('^%a[%w+.-]*://',''):gsub('^.*[/\\]','')
+            title=title:gsub('%%(%x%x)',function(hex)return string.char(tonumber(hex,16))end)
+        end
+        if title=='' or title:match('^[Ss]tream%.[%w]+$') then return nil end
+        return title
+    end
     local function track_name(t)
         local parts={}
-        if t.title and t.title~='' then parts[#parts+1]=core.title(t.title,'') end
-        if t.lang and t.lang~='' then parts[#parts+1]=t.lang end
-        if t.codec then parts[#parts+1]='('..t.codec:upper()..')' end
-        if t.type=='audio' and t['audio-channels'] then parts[#parts+1]=t['audio-channels']..' 声道' end
-        return #parts>0 and table.concat(parts,' · ') or ((t.type=='sub' and '字幕 ' or '音轨 ')..t.id)
+        local function add(value) if value and value~='' then parts[#parts+1]=value end end
+        local lang=lang_label(t.lang)
+        local name=title_label(t.title) or (t.external and title_label(t['external-filename'] or '') or nil)
+        add(lang);add(name);add(codec_label(t.codec))
+        if t.type=='audio' and t['audio-channels'] then add(t['audio-channels']..' 声道') end
+        if t.external then add('外挂') end
+        if #parts==0 then return (t.type=='sub' and '字幕 ' or '音轨 ')..t.id end
+        if not lang and not name then add('#'..t.id) end
+        return table.concat(parts,' · ')
     end
     function M.data(kind)
+        local cached=data_cache[kind]
+        if cached then return cached.title,cached.items end
         local a={};local title=M.allowed[kind]
+        if kind=='speed' or kind=='ai' or kind=='scale' then title=nil end
         local function row(text,fn,selected,extra)
             local r=extra or {};r.text=text;r.fn=fn;r.selected=selected;r.disabled=fn==nil and not r.target and not r.slider
             a[#a+1]=r;return r
@@ -48,19 +103,20 @@ return function(c)
             link('字幕设置','sub-settings','sub')
             link('弹幕设置','danmaku-settings','danmaku')
             link('统计信息','stats','info')
+            row('显示时间',c.toggle_clock,c.clock(),{stay=true})
         elseif kind=='speed' then
-            title=nil
             for _,v in ipairs({8,5,3,2,1.5,1.25,1,.5}) do local n=v
                 local label=v%1==0 and string.format('%.1fx',v) or string.format('%gx',v)
                 row(label,function()c.set_number('speed',n)end,math.abs(c.num('speed',1)-v)<.001)
             end
         elseif kind=='sub' or kind=='audio' then
             local typ=kind=='sub' and 'sub' or 'audio'
-            local p=kind=='audio' and 'aid' or (s.sub_slot==2 and 'secondary-sid' or 'sid')
+            local p=kind=='audio' and 'aid' or 'sid'
             local selected=tostring(c.prop(p,'no'))
             row('关闭',function()c.set(p,'no')end,selected=='no',{stay=true,key=p..':no'})
             for _,t in ipairs(c.prop('track-list',{}) or {}) do
-                if t.type==typ then local id=t.id
+                local danmaku=c.prop('user-data/player_ui/danmaku',{}) or {}
+                if t.type==typ and not (typ=='sub' and t.id==danmaku.track) then local id=t.id
                     row(track_name(t),function()
                         c.set_number(p,id)
                         if p=='sid' then c.set_bool('sub-visibility',true) end
@@ -68,33 +124,31 @@ return function(c)
                 end
             end
             separator()
-            row(kind=='sub' and '添加字幕' or '添加音轨',function()c.open_file(kind)end,false,{icon='plus'})
+            row(kind=='sub' and '导入本地字幕' or '添加音轨',function()c.open_file(kind)end,false,{icon='plus'})
             if kind=='audio' then link('音频设置','audio-settings') end
         elseif kind=='danmaku' then
             local d=c.prop('user-data/player_ui/danmaku',{}) or {}
             row('关闭',function()if d.enabled then c.command('script-message','player_ui-danmaku-toggle')end end,not d.loaded or not d.enabled,{stay=true})
-            if d.loaded then
+            if d.autoload_state=='loading' then
+                row('自动加载中…',nil,false,{status=true})
+            elseif not d.loaded and d.autoload_state=='error' then
+                row('自动加载失败',nil,false,{status=true})
+            elseif d.loaded then
                 row(core.title('',d.file),function()if not d.enabled then c.command('script-message','player_ui-danmaku-toggle')end end,d.enabled,
                     {stay=true,wrap=5,detail='共 '..tostring(d.count or 0)..' 条弹幕'})
             end
             separator()
-            if d.loaded then row(d.enabled and '隐藏弹幕' or '显示弹幕',function()c.command('script-message','player_ui-danmaku-toggle')end,false,{stay=true}) end
-            row('加载本地弹幕',function()c.command('script-message','player_ui-danmaku-choose')end)
-            link('弹幕设置','danmaku-settings')
+            row('搜索弹幕',function()c.command('script-message','player_ui-danmaku-search')end)
+            row('导入本地弹幕',function()c.command('script-message','player_ui-danmaku-choose')end)
         elseif kind=='ai' then
-            title=nil
             local id=c.current_slot()
             row('关闭',function()c.select_slot(0)end,id==0,{hint='Ctrl+0',key='preset:0'})
             for n=1,9 do local v=n;local name=c.presets()[n]
                 if name then row(name,function()c.select_slot(v)end,id==v,{hint='Ctrl+'..v,key='preset:'..v}) end
             end
-            for _,t in ipairs({{1001,'质量'},{1002,'均衡'},{1003,'性能'}}) do local v=t[1]
-                row(t[2],function()c.select_slot(v)end,id==v,{hint='Shift+'..(v-1000),key='preset:'..v})
-            end
             separator()
             row('配置管理器',c.manager,false,{icon='settings'})
         elseif kind=='scale' then
-            title=nil
             local keep=c.bool('keepaspect',true);local original=c.prop('video-unscaled','no')
             local pan=c.num('panscan',0)
             for _,r in ipairs({{'适应窗口','fit'},{'填充裁剪','fill'},{'拉伸铺满','stretch'},{'原始尺寸','original'}}) do local mode=r[2]
@@ -118,147 +172,167 @@ return function(c)
             row('延后 0.1 秒',function()c.command('add','audio-delay','0.1')end,false,{stay=true})
             row('重置延迟',function()c.set_number('audio-delay',0)end,false,{stay=true})
         elseif kind=='danmaku-settings' then
+            row('弹幕线路…',function()c.command('script-message','player_ui-danmaku-manage')end,false,{icon='settings'})
             local d=c.prop('user-data/player_ui/danmaku',{}) or {}
-            row('不透明度',nil,false,{slider={value=d.opacity or 85,min=10,max=100,step=1,format='%.0f%%',set=function(v)c.command('script-message','player_ui-danmaku-opacity',tostring(v))end}})
-            row('显示区域',nil,false,{slider={value=d.area or 50,min=25,max=70,step=1,format='%.0f%%',set=function(v)c.command('script-message','player_ui-danmaku-area',tostring(v))end}})
-            if d.loaded then separator();row('清除弹幕',function()c.command('script-message','player_ui-danmaku-clear')end) end
-        elseif kind=='playlist' then
-            local list=c.prop('playlist',{}) or {};local current=c.num('playlist-pos',-1)
-            title='播放列表'
-            for i,t in ipairs(list) do local pos=i-1
-                local duration=core.finite(t.duration) and t.duration or (pos==current and c.num('duration') or nil)
-                row(core.title(t.title or '',t.filename),function()c.set_number('playlist-pos',pos)end,current==pos,
-                    {h=112,wrap=2,number=i,key='entry:'..tostring(t.id or t.filename or i),detail=duration and core.time(duration) or nil})
+            local settings=d.settings or {}
+            local function set(key,value) c.command('script-message','player_ui-danmaku-setting',key,tostring(value)) end
+            local function slider(label,key,value,min,max,step,format)
+                row(label,nil,false,{slider={value=value,min=min,max=max,step=step,
+                    format=format,set=function(v)set(key,v)end}})
             end
+            slider('显示区域','area',(settings.displayArea or 1)*100,10,100,5,'%.0f%%')
+            slider('不透明度','opacity-percent',(settings.opacity or 180)*100/255,1,100,1,'%.0f%%')
+            slider('弹幕字号','fontsize',settings.fontsize or 38,12,100,1,'%.0f')
+            slider('速度','speed',12/(settings.scrolltime or 12),.5,3,.1,'%.1f×')
+            separator()
+            for _,group in ipairs({{label='屏蔽固定弹幕',modes={'TOP','BOTTOM'}},
+                {label='屏蔽滚动弹幕',modes={'R2L','L2R'}},{label='屏蔽彩色弹幕',modes={'COLOR'}}}) do
+                local selected={}
+                for _,mode in ipairs(group.modes) do selected[mode]=true end
+                local blocked=false
+                for _,value in ipairs(settings.blockmode or {}) do if selected[value] then blocked=true end end
+                row(group.label,function()
+                    local values={}
+                    for _,value in ipairs(settings.blockmode or {}) do if not selected[value] then values[#values+1]='"'..value..'"' end end
+                    if not blocked then for _,mode in ipairs(group.modes) do values[#values+1]='"'..mode..'"' end end
+                    set('blockmode','['..table.concat(values,',')..']')
+                end,blocked,{stay=true})
+            end
+            row('屏蔽词…',function()c.command('script-message','player_ui-danmaku-words')end)
         else
             title,a=c.info(kind)
             for _,r in ipairs(a) do r.h=52;r.wrap=2;r.key=r.key or r.text end
         end
+        data_cache[kind]={title=title,items=a}
         return title,a
     end
     M.allowed={settings='设置',speed='播放速度',sub='字幕',audio='音轨',danmaku='弹幕',ai='超分与补帧',scale='缩放模式',
-        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',playlist='播放列表',chapters='章节'}
+        ['sub-settings']='字幕设置',['danmaku-settings']='弹幕设置',['audio-settings']='音频设置',stats='统计信息',chapters='章节'}
     local function width(kind,l)
-        local widths={speed=144,settings=244,sub=310,audio=330,danmaku=310,ai=374,scale=204,stats=480,playlist=600,chapters=400}
-        return math.min(widths[kind] or 330,l.w-24)
+        local widths={speed=216,settings=200,sub=344,audio=344,danmaku=312,ai=256,scale=280,stats=440,chapters=368}
+        local u=l.ui or 1
+        return math.min((widths[kind] or 344)*u,math.max(1,l.w-2*metrics.menu_margin*u))
     end
-    local function measure(items,w,kind)
-        local y=0
+    local function measure(items,w,kind,u)
+        local key=string.format('%s:%.2f:%.3f',kind,w,u)
+        local cached=measure_cache[key]
+        if cached and cached.items==items then return cached.total,cached.rows end
+        local y,rows=0,{}
         for _,r in ipairs(items) do
-            local indent=r.icon and 58 or 24
-            local available=w-indent-22-(r.hint and 64 or 0)-(r.target and 24 or 0)-(kind=='playlist' and 44 or 0)
-            r.lines=core.wrap(r.text or '',available,20,r.wrap or 2)
-            r.h=r.h or (r.separator and 12 or r.slider and 88 or math.max(kind=='ai' and 48 or 60,#r.lines*27+22+(r.detail and 27 or 0)))
-            r.top=y;y=y+r.h
+            local indent=r.icon and metrics.icon_column*u or metrics.row_padding*u+8*u
+            local available=w-indent-30*u-(r.hint and 52*u or 0)-(r.target and 28*u or 0)
+            local lines=core.wrap(r.text or '',available,metrics.row_text*u,r.wrap or 2)
+            local height=r.h and r.h*u or r.separator and metrics.separator*u or r.slider and metrics.slider*u
+                or math.max(kind=='ai' and 48*u or metrics.row_min*u,
+                    #lines*metrics.row_line*u+(r.detail and metrics.row_detail_line*u+5*u or 0)+metrics.row_padding*u)
+            rows[#rows+1]={row=r,top=y,height=height,lines=lines}
+            y=y+height
         end
-        return y
+        measure_cache[key]={items=items,total=y,rows=rows}
+        return y,rows
     end
     local function anchor(l,id)
         for _,b in ipairs(l.controls) do if b.id==id then return b.x end end
         return l.w-232
     end
-    local function header_height(kind,title) return kind=='playlist' and 60 or title and 58 or 0 end
-    local function makebox(l,kind,parent)
-        local title,items=M.data(kind);local w=width(kind,l);local hh=header_height(kind,title)
-                local total=measure(items,w,kind);local bottom=l.h-(kind=='speed' and 102 or 116)
-        if kind=='playlist' then
-            return {kind=kind,title=title,items=items,x0=l.w-w,x1=l.w,y0=0,y1=l.h,header=60,total=total,view=l.h-72,content=60,drawer=true}
-        end
-        local h=math.min(hh+total+12,bottom-12);local y=bottom-h
-        local x=core.clamp(anchor(l,kind)-w/2,12,l.w-w-12)
-        if parent then
-            x=parent.x0-w-4
-            if x<12 then x=parent.x1+4 end
-            if x+w>l.w-12 then x=core.clamp(parent.x0-w-4,12,l.w-w-12) end
-            y=core.clamp(parent.y1-h,12,bottom-h)
-        end
-        return {kind=kind,title=title,items=items,x0=x,x1=x+w,y0=y,y1=y+h,header=hh,total=total,view=h-hh-12,content=y+hh+6}
+    local function header_height(kind,title,u) return title and metrics.menu_header*u or 0 end
+    local function makebox(l,kind)
+        local u=l.ui or 1
+        local title,items=M.data(kind);local w=width(kind,l);local hh=header_height(kind,title,u)
+        local total,rows=measure(items,w,kind,u);local bottom=l.h-(kind=='speed' and metrics.menu_speed_bottom or metrics.menu_bottom)*u
+        local pad=metrics.menu_padding*u
+        local margin=math.min(metrics.menu_margin*u,math.max(0,(l.w-w)/2))
+        local max_height=math.max(1,l.h-2*margin)
+        local h=math.min(hh+total+pad*2,max_height,math.max(1,bottom-margin));local y=math.max(margin,bottom-h)
+        local max_x=math.max(margin,l.w-w-margin)
+        local x=core.clamp(anchor(l,kind)-w/2,margin,max_x)
+        return {kind=kind,title=title,items=items,rows=rows,x0=x,x1=x+w,y0=y,y1=y+h,header=hh,total=total,
+            view=math.max(0,h-hh-pad*2),content=y+hh+pad,ui=u}
     end
     function M.draw(l,d,buttons)
         M.boxes={};M.rows={}
         if not s.menu then return M.rows end
         local function add(b) b.menu=true;buttons[#buttons+1]=b end
-        local function drawbox(b,parent)
-            local w=b.x1-b.x0;local scroll_key=parent and 'parent_scroll' or 'scroll'
+        local function drawbox(b,scroll_key,is_child)
+            local u=b.ui or 1;local w=b.x1-b.x0
+            scroll_key=scroll_key or 'scroll'
             s[scroll_key]=core.clamp(s[scroll_key] or 0,0,math.max(0,b.total-b.view));b.offset=s[scroll_key];b.scroll_key=scroll_key
             M.boxes[#M.boxes+1]=b
-            if b.drawer then
-                d.rect(b.x0,0,b.x1,l.h,'000000',65)
-                d.icon('close',b.x0+30,28,false,false,true)
-                add({id='menu-close',x0=b.x0+8,x1=b.x0+52,y0=5,y1=51})
-            else
-                d.round(b.x0-1.5,b.y0-1.5,b.x1+1.5,b.y1+1.5,15,'121212',15)
-                d.round(b.x0,b.y0,b.x1,b.y1,14,panel,0)
-            end
+            d.round(b.x0,b.y0+3*u,b.x1,b.y1+3*u,9*u,theme.border,56)
+            d.round(b.x0,b.y0,b.x1,b.y1,9*u,panel,5)
             if b.title then
-                if b.drawer then d.text(b.x0+65,29,22,b.title,4,white,true)
-                else d.text(b.x0+16,b.y0+29,23,b.title,4,white,true,w-125) end
-            end
-            if b.kind=='sub' then
-                local x=b.x1-112;local y=b.y0+20
-                d.round(x,y,x+96,y+32,5,'242424',0)
-                for i=1,2 do
-                    local xx=x+2+(i-1)*47
-                    if (s.sub_slot or 1)==i then d.round(xx,y+2,xx+45,y+30,4,'494949',0) end
-                    d.text(xx+22.5,y+16,19,tostring(i),5,white)
-                    add({id='subtitle-slot-'..i,tab=i,x0=xx,x1=xx+45,y0=y,y1=y+32})
-                end
+                d.text(b.x0+metrics.row_padding*u,b.y0+29*u,22*u,b.title,4,white,true,w-80*u,.8)
             end
             local bottom=b.content+b.view
-            for _,r in ipairs(b.items) do
+            for _,entry in ipairs(b.rows) do
+                local r=entry.row
                 if not r.separator then M.rows[#M.rows+1]=r end
                 local index=#M.rows
-                local yy=b.content+r.top-b.offset;local y1=yy+r.h
+                local yy=b.content+entry.top-b.offset;local y1=yy+entry.height
                 if y1>b.content and yy<bottom then
-                    d.clip(b.x0+4,b.content,b.x1-4,bottom,function()
-                        if r.separator then d.rect(b.x0+6,yy+6,b.x1-6,yy+7,'4A4A4A',30);return end
-                        local box={id='row-'..index,index=index,x0=b.x0+6,x1=b.x1-6,y0=math.max(yy,b.content),y1=math.min(y1,bottom),key=r.key or r.text}
+                    -- Keep vertical clipping for scrolled rows, but do not clip text
+                    -- to the panel's horizontal edge. libass can crop CJK glyphs at
+                    -- that boundary after DPI scaling even when the anchor is inset.
+                    d.clip(0,b.content,l.w,bottom,function()
+                        if r.separator then d.rect(b.x0+12*u,yy+entry.height/2,b.x1-12*u,yy+entry.height/2+u,theme.divider,18);return end
+                        local box={id='row-'..index,index=index,x0=b.x0+6*u,x1=b.x1-6*u,y0=math.max(yy,b.content),y1=math.min(y1,bottom),key=r.key or r.text}
                         local hovered=core.inside(box,s.x,s.y)
                         local picked=r.selected or (r.target and r.target==s.menu)
-                        if not b.drawer and (picked or hovered and not r.disabled) then d.round(box.x0,yy+3,box.x1,y1-3,12,picked and '383838' or '353535',0) end
-                        if picked and not b.drawer then d.round(b.x0+8,yy+r.h/2-14,b.x0+12,yy+r.h/2+14,2,accent,0) end
+                        if hovered or picked then
+                            d.round(box.x0+2*u,yy+3*u,box.x1-2*u,y1-3*u,6*u,theme.hover,5)
+                        end
+                        if picked then d.round(b.x0+8*u,yy+entry.height/2-12*u,b.x0+11*u,yy+entry.height/2+12*u,1.5*u,accent,0) end
                         if not r.disabled then add(box) end
-                        local left=b.x0+24
-                        if b.drawer then
-                            left=b.x0+70
-                            if picked then d.circle(b.x0+35,yy+r.h/2,13,accent,0);d.text(b.x0+35,yy+r.h/2,18,'✓',5,white,true)
-                            else d.text(b.x0+35,yy+r.h/2,20,string.format('%02d',r.number),5,muted) end
-                        elseif r.icon then d.icon(r.icon,b.x0+30,yy+r.h/2,false,false,true);left=b.x0+56 end
-                        local color=b.drawer and picked and accent or white
+                        local left=b.x0+metrics.row_padding*u+8*u
+                        if r.icon then d.icon(r.icon,b.x0+30*u,yy+entry.height/2,false,false,true);left=b.x0+metrics.icon_column*u end
+                        local color=r.disabled and not r.status and muted or white
                         if r.slider then
-                            local slider=r.slider;local sx=b.x0+24;local ex=b.x1-26;local sy=yy+62
-                            d.text(left,yy+22,20,r.text,4,white)
-                            d.text(ex,yy+22,19,string.format(slider.format,slider.value),6,muted)
-                            d.rect(sx,sy-2,ex,sy+2,'666666',0)
+                            local slider=r.slider;local sx=b.x0+metrics.row_padding*u;local ex=b.x1-metrics.row_padding*u;local sy=yy+62*u
+                            d.text(left,yy+22*u,metrics.row_text*u,r.text,4,color,false,nil,.8)
+                            d.text(ex,yy+22*u,metrics.row_text*u,string.format(slider.format,slider.value),6,muted,false,nil,.8)
+                            d.round(sx,sy-2*u,ex,sy+2*u,2*u,theme.track,0)
                             local xx=sx+(ex-sx)*core.clamp((slider.value-slider.min)/(slider.max-slider.min),0,1)
-                            d.rect(sx,sy-2,xx,sy+2,accent,0);d.circle(xx,sy,7,accent,0)
-                            add({id='slider-'..index,slider=index,x0=sx-8,x1=ex+8,y0=sy-18,y1=sy+18,start=sx,finish=ex})
+                            d.round(sx,sy-2*u,xx,sy+2*u,2*u,accent,0);d.circle(xx,sy,6*u,accent,0)
+                            add({id='slider-'..index,slider=index,x0=sx-8*u,x1=ex+8*u,y0=sy-18*u,y1=sy+18*u,start=sx,finish=ex})
                         else
-                            local th=#r.lines*27+(r.detail and 27 or 0);local ty=yy+(r.h-th)/2
-                            for _,line in ipairs(r.lines) do d.text(left,ty,20,line,7,color,b.drawer);ty=ty+27 end
-                            if r.detail then d.text(left,ty,18,r.detail,7,b.drawer and color or muted,false,w-(left-b.x0)-24) end
-                            if r.target then d.text(b.x1-25,yy+r.h/2,28,'›',5,white)
-                            elseif r.hint then d.text(b.x1-19,yy+r.h/2,14,r.hint,6,muted) end
+                            local detail_height=r.detail and (metrics.row_detail_line+5)*u or 0
+                            local text_height=#entry.lines*metrics.row_line*u+detail_height
+                            local ty=yy+(entry.height-text_height)/2
+                            for _,line in ipairs(entry.lines) do d.text(left,ty,metrics.row_text*u,line,7,color,false,nil,.8);ty=ty+metrics.row_line*u end
+                            if r.detail then d.text(left,ty+2*u,metrics.row_detail*u,r.detail,7,muted,false,w-(left-b.x0)-24*u,.8) end
+                            if r.target then d.text(b.x1-25*u,yy+entry.height/2,27*u,'›',6,theme.secondary,false,nil,.8)
+                            elseif r.hint then d.text(b.x1-19*u,yy+entry.height/2,13*u,r.hint,6,muted,false,nil,.8) end
                         end
                     end)
                 end
             end
             if b.total>b.view then
-                local height=math.max(28,b.view*b.view/b.total)
+                local height=math.max(28*u,b.view*b.view/b.total)
                 local sy=b.content+(b.view-height)*b.offset/(b.total-b.view)
-                d.round(b.x1-7,sy,b.x1-4,sy+height,1.5,'AAAAAA',40)
-                add({id='menu-scroll-'..b.kind,x0=b.x1-13,x1=b.x1,y0=b.content,y1=b.content+b.view,scroll_key=scroll_key,
+                d.round(b.x1-7*u,sy,b.x1-4*u,sy+height,2*u,theme.secondary,45)
+                add({id='menu-scroll-'..b.kind,x0=b.x1-13*u,x1=b.x1,y0=b.content,y1=b.content+b.view,scroll_key=scroll_key,
                     start=b.content,range=b.view-height,max=b.total-b.view,height=height,sy=sy})
             end
         end
-        local parent
-        if s.parent and s.parent~=s.menu then parent=makebox(l,s.parent);drawbox(parent,true) end
-        local b=makebox(l,s.menu,parent);drawbox(b,false)
+        local b=makebox(l,s.menu)
+        if s.parent then
+            local parent=makebox(l,s.parent)
+            local u=l.ui or 1;local gap=8*u;local margin=metrics.menu_margin*u
+            local child_width=b.x1-b.x0;local left=parent.x0-child_width-gap
+            if left<margin then
+                local right=parent.x1+gap
+                left=right+child_width<=l.w-margin and right or margin
+            end
+            local dx=left-b.x0;local dy=parent.y1-b.y1
+            b.x0=b.x0+dx;b.x1=b.x1+dx;b.y0=b.y0+dy;b.y1=b.y1+dy;b.content=b.content+dy
+            drawbox(parent,'parent_scroll',false)
+            drawbox(b,'scroll',true)
+        else drawbox(b,'scroll',false) end
         return M.rows
     end
     function M.pick(b)
-        if b.id=='menu-close' or b.id=='menu-dismiss' then M.close()
-        elseif b.tab then s.sub_slot=b.tab
+        if b.id=='menu-back' then M.back()
+        elseif b.id=='menu-dismiss' then M.close()
         elseif b.index then
             local r=M.rows[b.index]
             if r and r.target then
@@ -293,8 +367,20 @@ return function(c)
         end
         return s.menu~=nil
     end
-    function M.hover(b)
-        if not s.menu then close_timer();return end
+    function M.hover(b,suppress_dismiss)
+        if not s.menu then close_timer();dismiss_timer();return end
+        if suppress_dismiss then close_timer();dismiss_timer();return end
+        local id=b and b.id
+        local menu_surface=b and b.menu and id~='menu-dismiss'
+        local menu_trigger=id=='settings' or id=='speed' or id=='audio' or id=='sub'
+            or id=='danmaku'
+        if menu_surface or menu_trigger then dismiss_timer()
+        elseif not M.dismiss_timer then
+            M.dismiss_timer=c.after(.45,function()
+                M.dismiss_timer=nil
+                if s.menu then M.close() end
+            end)
+        end
         local r=b and b.index and M.rows[b.index]
         local target=r and r.target
         if target~=M.hover_blocked then M.hover_blocked=nil end
@@ -317,10 +403,10 @@ return function(c)
         if not s.menu then return b end
         if b and b.menu then return b end
         for _,box in ipairs(M.boxes) do if core.inside(box,x,y) then return {id='menu-surface',menu=true} end end
-        if s.menu=='playlist' then return {id='menu-dismiss',menu=true} end
-        if b and (b.id=='settings' or b.id=='speed' or b.id=='audio' or b.id=='sub' or b.id=='danmaku' or b.id=='playlist') then return b end
+        if b and (b.id=='settings' or b.id=='speed' or b.id=='audio'
+            or b.id=='sub' or b.id=='danmaku') then return b end
         return {id='menu-dismiss',menu=true}
     end
-    function M.shutdown()close_timer()end
+    function M.shutdown()close_timer();dismiss_timer()end
     return M
 end

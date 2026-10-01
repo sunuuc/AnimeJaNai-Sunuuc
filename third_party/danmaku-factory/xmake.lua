@@ -1,0 +1,33 @@
+local PROJECT_NAME = path.basename(os.projectdir())
+
+add_rules("mode.debug", "mode.release")
+
+set_project(PROJECT_NAME)
+
+add_requires("pcre2", {
+    system = false,
+    configs = {shared = false}
+})
+
+target("cli")
+    set_basename(PROJECT_NAME)
+    set_kind("binary")
+    -- gnu11 (not c11): exposes POSIX prototypes such as readlink() from
+    -- <unistd.h>, which strict ISO C11 hides behind feature-test macros.
+    set_languages("gnu11")
+    set_version("2.0.0", {build = "%Y%m%d%H%M"})
+
+    add_packages("pcre2")
+    add_files("src/*.c", "src/**/*.c")
+
+    if is_plat("windows") then
+        add_syslinks("shell32", "user32")
+    end
+
+    on_package(function (target)
+        if is_mode("release") then
+            import("scripts.package")
+
+            package.package_release(target)
+        end
+    end)

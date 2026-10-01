@@ -1,0 +1,43 @@
+name: Flutter Release Windows
+on:
+  # 手动触发
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      # 使用本项目
+      - uses: actions/checkout@v6
+        #windows C++组件
+      - uses: microsoft/setup-msbuild@v3
+
+      # 设置flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          # The Flutter version to make available on the path
+          flutter-version: 3.35.7
+          # The Flutter build release channel
+          channel: stable
+          cache: true
+
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.0.8'
+          actions-cache-folder: '.xmake-cache'
+
+      # Get flutter dependencies and build
+      - name: Build
+        working-directory: gui/danmakufactory_flutter
+        run: | 
+          flutter pub get
+          flutter build windows -v
+
+      # Upload generated apk to the artifacts.
+      - uses: actions/upload-artifact@v7
+        with:
+          # Artifact name
+          name: danmakufactory_win_amd64
+          # 导出文件夹
+          path: gui/danmakufactory_flutter/build/windows/x64/runner/Release/

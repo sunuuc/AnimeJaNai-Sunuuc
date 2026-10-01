@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 using System.Windows.Interop;
 using System.Windows;
 
@@ -20,6 +21,9 @@ namespace MpvNet;
 public class GuiCommand
 {
     Dictionary<string, Action<IList<string>>>? _commands;
+    DanmakuSourcesWindow? _danmakuSourcesWindow;
+    DanmakuSearchWindow? _danmakuSearchWindow;
+    DanmakuBlocklistWindow? _danmakuBlocklistWindow;
 
     public event Action<float>? ScaleWindow;
     public event Action<string>? MoveWindow;
@@ -46,6 +50,9 @@ public class GuiCommand
         ["show-commands"] = args => ShowCommands(),
         ["show-conf-editor"] = args => ShowDialog(typeof(ConfWindow)),
         ["show-decoders"] = args => ShowDecoders(),
+        ["show-danmaku-sources"] = ShowDanmakuSources,
+        ["show-danmaku-search"] = ShowDanmakuSearch,
+        ["show-danmaku-blocklist"] = ShowDanmakuBlocklist,
         ["show-demuxers"] = args => ShowDemuxers(),
         ["show-info"] = args => ShowMediaInfo(new[] { "osd" }),
         ["show-input-editor"] = args => ShowDialog(typeof(InputWindow)),
@@ -74,6 +81,91 @@ public class GuiCommand
         Window? win = Activator.CreateInstance(winType) as Window;
         new WindowInteropHelper(win).Owner = MainForm.Instance!.Handle;
         win?.ShowDialog();
+    }
+
+    void ShowDialog(Window win)
+    {
+        new WindowInteropHelper(win).Owner = MainForm.Instance!.Handle;
+        win.ShowDialog();
+    }
+
+    void ShowDanmakuSources(IList<string> args)
+    {
+        if (args.Count > 41)
+            return;
+
+        if (_danmakuSourcesWindow is { IsVisible: true })
+        {
+            _danmakuSourcesWindow.Activate();
+            return;
+        }
+
+        var window = new DanmakuSourcesWindow(args);
+        new WindowInteropHelper(window).Owner = MainForm.Instance!.Handle;
+        _danmakuSourcesWindow = window;
+        window.Closed += (_, _) =>
+        {
+            _danmakuSourcesWindow = null;
+            RestorePlayerOwner();
+        };
+        ElementHost.EnableModelessKeyboardInterop(window);
+        window.Show();
+    }
+
+    void ShowDanmakuSearch(IList<string> args)
+    {
+        if (_danmakuSearchWindow is { IsVisible: true })
+        {
+            _danmakuSearchWindow.Activate();
+            return;
+        }
+
+        var window = new DanmakuSearchWindow(args.Count > 0 ? args[0] : "",
+            args.Count > 1 && int.TryParse(args[1], out int season) ? season : null);
+        new WindowInteropHelper(window).Owner = MainForm.Instance!.Handle;
+        _danmakuSearchWindow = window;
+        window.Closed += (_, _) =>
+        {
+            _danmakuSearchWindow = null;
+            RestorePlayerOwner();
+        };
+        ElementHost.EnableModelessKeyboardInterop(window);
+        window.Show();
+    }
+
+    void ShowDanmakuBlocklist(IList<string> args)
+    {
+        if (_danmakuBlocklistWindow is { IsVisible: true })
+        {
+            _danmakuBlocklistWindow.Activate();
+            return;
+        }
+
+        var window = new DanmakuBlocklistWindow(args.Count > 0 ? args[0] : "");
+        new WindowInteropHelper(window).Owner = MainForm.Instance!.Handle;
+        _danmakuBlocklistWindow = window;
+        window.Closed += (_, _) =>
+        {
+            _danmakuBlocklistWindow = null;
+            RestorePlayerOwner();
+        };
+        ElementHost.EnableModelessKeyboardInterop(window);
+        window.Show();
+    }
+
+    static void RestorePlayerOwner()
+    {
+        if (MainForm.Instance is not { IsDisposed: false, IsHandleCreated: true } owner)
+            return;
+
+        owner.BeginInvoke(new Action(() =>
+        {
+            if (owner.IsDisposed)
+                return;
+
+            owner.Activate();
+            owner.BringToFront();
+        }));
     }
 
     void LoadSubtitle(IList<string> args)

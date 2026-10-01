@@ -53,5 +53,17 @@
       "sha256": "bb002ecc92cb628c1627ba687d5e709d4d201e432e06a94ba0028aff5f631f0f"
     }
   ],
-  "gpu_target": "rtx5080-laptop"
+  "gpu_target": "rtx5080-laptop",
+  "danmaku_factory": {
+    "repo": "hihkm/DanmakuFactory",
+    "source_commit": "1c575c6cda49d32457fd3d7436c722c8999c0633",
+    "source_path": "third_party/danmaku-factory",
+    "build": "tools/standalone/build_danmaku_factory.py"
+  },
+  "libass": {
+    "repo": "libass/libass",
+    "source_commit": "896614fa263f9f64944f7b8650ff6806d5328c4d",
+    "source_path": "third_party/libass",
+    "build": "tools/standalone/build_libass.py"
+  }
 }

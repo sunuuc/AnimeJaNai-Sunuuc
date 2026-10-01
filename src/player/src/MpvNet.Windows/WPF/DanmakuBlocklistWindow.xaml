@@ -1,0 +1,28 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MpvNet.Windows.WPF.DanmakuBlocklistWindow"
+        Title="弹幕屏蔽词" Width="520" Height="420" MinWidth="400" MinHeight="300"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}"
+        FontSize="14" Loaded="Window_Loaded">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="每行一个词，包含这些词的弹幕将被隐藏。" TextWrapping="Wrap"
+                   Foreground="{Binding Theme.Foreground2}" Margin="0,0,0,12" />
+        <TextBox x:Name="WordsBox" Grid.Row="1" AcceptsReturn="True" MaxLength="20000"
+                 Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}"
+                 BorderBrush="{Binding Theme.Foreground2}" Padding="8"
+                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" />
+        <TextBlock x:Name="Status" Grid.Row="2" TextWrapping="Wrap" Visibility="Collapsed"
+                   Foreground="{Binding Theme.Foreground2}" Margin="0,10,0,0" />
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="取消" Padding="18,7" Margin="0,0,8,0" Click="Cancel_Click" />
+            <Button Content="保存" Padding="22,7" Click="Save_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

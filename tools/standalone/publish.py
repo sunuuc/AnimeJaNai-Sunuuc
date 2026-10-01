@@ -1,7 +1,9 @@
 "Publish the tested full package and corresponding source tree."
 from pathlib import Path
-import base64,json,os,subprocess,zipfile
-from build import R,H,E,DIST,REPO,META,LOCK,FONTS,sha,dump,run,api
+import base64,json,os,subprocess,sys,zipfile
+from build import R,H,E,DIST,REPO,META,LOCK,FONTS,sha,dump,run,api,source_release_files
+
+run(sys.executable,H/'verify_player_sources.py')
 
 for line in (DIST/'SHA256SUMS.txt').read_text().splitlines():
     h,n=line.split('  ',1)
@@ -23,14 +25,6 @@ for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-hando
     playlist=next(t for t in result if t['case']=='player_ui-playlist-selected')
     assert playlist['wrong_episode_requests']==0 and playlist['selected_episode_requests']==1,playlist
 
-for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
-    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
-for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
-    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
-for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
-    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
-for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
-    result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
 head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 assert head==os.environ['GITHUB_SHA'],'Main changed during the build'
 assets=json.loads((DIST/'artifacts.json').read_text())
@@ -52,10 +46,9 @@ temp.replace(sourcezip)
 user_assets=[DIST/x['name'] for x in assets]
 checksums=DIST/'SHA256SUMS.txt'
 checksums.write_text(''.join(sha(p)+'  '+p.name+'\n' for p in user_assets+[sourcezip]),encoding='utf-8')
-paths=[p for p in (R/'src').rglob('*') if p.is_file() and not any(x in ('bin','obj','.git') for x in p.relative_to(R/'src').parts)]
-paths += [p for p in (R/'portable_config').rglob('*') if p.is_file()]
-paths += [p for p in (R/'tests').rglob('*') if p.is_file() and p.suffix in ('.py','.lua')]
-paths += [H/'dependencies.json',H/'build.py',H/'publish.py',H/'test_complete.py',R/'tools/language-r3/ManagerTests.cs']
+paths=source_release_files(('src','portable_config','tests','third_party','THIRD_PARTY_LICENSES','docs'))
+paths += [H/'dependencies.json',H/'build.py',H/'publish.py',H/'test_complete.py',
+          H/'inline_player_ui_modules.py',H/'verify_player_sources.py',R/'tools/language-r3/ManagerTests.cs']
 tree=[]
 for p in paths:
     assert p.suffix.lower() not in FONTS|{'.exe','.dll'},p

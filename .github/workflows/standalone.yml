@@ -15,6 +15,9 @@ on:
       - 'portable_config/**'
       - 'animejanai/**'
       - 'tools/standalone/**'
+      - 'third_party/**'
+      - 'docs/danmaku-renderer.md'
+      - 'THIRD_PARTY_LICENSES/**'
       - 'tools/language-r3/**'
       - 'tests/**'
       - 'docs/standalone.md'
@@ -32,9 +35,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
-      - name: Prepare playback and RTX 5080 Laptop sources
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.14'}
+      - name: Verify and inline player sources
         run: |
-          python tools/standalone/prepare_playback.py
+          python tools/standalone/verify_player_sources.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/standalone/inline_player_ui_modules.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -85,6 +90,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Player UI input, layout, track and danmaku tests on Windows
         run: python tests/test_player_ui_windows.py stage complete-evidence/player_ui
+      - name: Player UI online danmaku transport tests
+        run: python tests/test_danmaku_online.py --mpv stage/mpv.exe
       - name: Local HTTP playback and request-count regressions
         run: python tests/test_network_playback.py stage complete-evidence/network
       - name: External startup, Player UI playlist selection, and deleted-original regression
