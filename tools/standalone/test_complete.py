@@ -164,7 +164,7 @@ def manager():
             while time.monotonic()<end:
                 assert proc.poll() is None,('Manager exited',proc.returncode)
                 windows=windows_for(proc.pid)
-                if any('AnimeJaNai' in title for title in windows):break
+                if any(title in ('NekoAnimeVE Manager', 'NekoAnimeVE 管理器') for title in windows):break
                 time.sleep(.2)
             else:raise RuntimeError('Manager did not create its visible main window: '+repr(windows))
             detail=verify_process(proc.pid,APP/'NekoAnimeVEManager.exe',APP,OUT/'bundles',OUT/'self-contained-manager-modules.json')
