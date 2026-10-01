@@ -9,12 +9,17 @@ META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
 REPO='sunuuc/mpv-NekoAnimeVE'
 from gpu_target import TARGET, prune, validate as validate_gpu_target
+from security_verify import require_result as require_security_result
+from security_verify import scan as scan_security
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
 SOURCE_ADDITIONS={
     'tools/standalone/build_libass.py',
     'tools/standalone/libass-build-packages.json',
     'tools/standalone/build_danmaku_factory.py',
+    'tools/standalone/security_verify.py',
+    'tools/standalone/security-policy.json',
+    'tools/standalone/test_security_verify.py',
     'THIRD_PARTY_LICENSES/PCRE2-BSD.txt',
     'tests/test_danmaku_canvas.py',
     'tests/test_mpv_danmaku_viewport.py',
@@ -252,6 +257,7 @@ def inspect_payload():
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
 
 def package():
+    require_security_result(ST,E/'security/results.json')
     run(sys.executable,H/'verify_player_sources.py')
     for name,marker in [('manager-tests.txt','PASS Manager language suite'),('player-tests.txt','PASS Player language suite'),('parser-tests.txt','PASS')]:
         if marker not in (R/'language-evidence'/name).read_text(encoding='utf-8-sig'):raise RuntimeError('UI regression failed: '+name)
@@ -266,6 +272,10 @@ def package():
     shutil.rmtree(info/'validation',ignore_errors=True)
     shutil.rmtree(info/'ui-validation',ignore_errors=True)
     cp(E,info/'validation');cp(R/'language-evidence',info/'ui-validation')
+    # Validation artifacts can contain additional executable fixtures. Scan the
+    # final package tree, then keep the exact report that gates publication.
+    scan_security(ST,E/'security',R/'downloads/antivirus')
+    cp(E/'security',info/'validation/security')
     dump(info/'provenance.json',{'version':META['version'],'input_commit':os.environ['GITHUB_SHA'],
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,
       'gpu_inference_tested':False,'player_ui_server_tested':False})
@@ -290,6 +300,7 @@ def package():
         archive.unlink()
     dump(DIST/'artifacts.json',[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
     shutil.rmtree(ST);extract(archives[0],R/'clean-install')
+    require_security_result(R/'clean-install',E/'security/results.json')
     run(sys.executable,R/'tests/test_gpu_target.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')

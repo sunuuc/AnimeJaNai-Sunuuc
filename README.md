@@ -4,7 +4,9 @@ Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管
 
 ## 下载与使用
 
-[下载正式版](https://github.com/sunuuc/mpv-NekoAnimeVE/releases/latest)
+**正式版暂缓提供下载。** 2026-10-01，360 对发布包中的 `DanmakuFactory.exe` 报告 `Trojan.Generic` / `Win64/Heur.Generic.H8oAbrkA`。1.1.9 已撤回为草稿，等待安全复核。独立扫描未检出不能确认误报。请勿为运行本程序恢复隔离文件、关闭杀毒或添加信任。
+
+复核进展和重新发布条件见 [安全发布说明](docs/security-release.md)。
 
 Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
 

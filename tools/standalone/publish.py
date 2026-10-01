@@ -2,6 +2,9 @@
 from pathlib import Path
 import base64,json,os,subprocess,sys,zipfile
 from build import R,H,E,DIST,REPO,META,LOCK,FONTS,sha,dump,run,api,source_release_files
+from security_verify import require_result as require_security_result
+
+require_security_result(R/'clean-install',E/'security/results.json')
 
 run(sys.executable,H/'verify_player_sources.py')
 

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "reported_files": [
+    {
+      "sha256": "db3734fb45118ba08c4929214d4aef000875c2e80ac04130651bc482e5d9b58f",
+      "component": "DanmakuFactory",
+      "vendor": "360",
+      "detection": "Win64/Heur.Generic.H8oAbrkA",
+      "status": "review-pending"
+    }
+  ],
+  "required_reviews": [
+    {"path": "animejanai/danmaku/DanmakuFactory.exe", "vendor": "360"}
+  ],
+  "reviews": []
+}
