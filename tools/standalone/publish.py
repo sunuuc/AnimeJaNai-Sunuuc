@@ -14,6 +14,8 @@ assert len(fresh)==5 and all(x['passed'] for x in fresh)
 
 for path in (E/'player_ui/results.json',E/'fresh-install/player_ui/results.json'):
     result=json.loads(path.read_text());assert len(result)==2 and all(t['passed'] for t in result),path
+for path in (E/'danmaku/results.json',E/'fresh-install/danmaku/results.json'):
+    result=json.loads(path.read_text());assert len(result)==4 and all(t['passed'] for t in result),path
 for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
     result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
 for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
@@ -33,7 +35,7 @@ LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
 sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
 
-# Keep source rebuild inputs available after superseded downloads are removed.
+# Record the exact runtime input for rebuilding this release.
 temp=sourcezip.with_suffix('.pending.zip')
 with zipfile.ZipFile(sourcezip) as src,zipfile.ZipFile(temp,'w',zipfile.ZIP_DEFLATED) as dst:
     for item in src.infolist():
@@ -66,7 +68,7 @@ old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==MET
 assert not old,'Release tag already exists; refusing to overwrite'
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')
 rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
-    'name':f'AnimeJaNai-zh-CN {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
+    'name':f'AnimeJaNai-Sunuuc {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
 run('gh','release','upload',META['tag'],'-R',REPO,*user_assets,sourcezip,checksums)
 uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
 for p in user_assets+[sourcezip,checksums]:
@@ -74,11 +76,11 @@ for p in user_assets+[sourcezip,checksums]:
     assert a.get('digest')=='sha256:'+sha(p) and a['state']=='uploaded'
 assert {a['name'] for a in uploaded['assets']}=={p.name for p in user_assets+[sourcezip,checksums]}
 api(f'repos/{REPO}/git/refs/heads/main',{'sha':commit,'force':False},'PATCH')
-api(f'repos/{REPO}/releases/{rel["id"]}',{'draft':False},'PATCH')
+api(f'repos/{REPO}/releases/{rel["id"]}',{'draft':False,'make_latest':'true'},'PATCH')
 published=api(f'repos/{REPO}/releases/tags/{META["tag"]}')
-assert published['id']==rel['id'] and not published['draft']
+assert published['id']==rel['id'] and not published['draft'] and published['prerelease']==META['prerelease']
 
-# Validate the public artifact before retiring superseded downloads.
+# Validate every published download against the tested local artifact.
 import hashlib, urllib.request
 public_assets=[]
 for file in user_assets+[sourcezip,checksums]:
@@ -91,8 +93,5 @@ for file in user_assets+[sourcezip,checksums]:
     assert count==file.stat().st_size and digest.hexdigest()==sha(file),file.name
     public_assets.append({'name':file.name,'bytes':count,'sha256':digest.hexdigest()})
 dump(DIST/'public-downloads.json',{'passed':True,'assets':public_assets})
-for previous in api(f'repos/{REPO}/releases?per_page=100'):
-    if not previous['draft'] and previous['tag_name'].startswith('standalone-v') and previous['tag_name']!=META['tag']:
-        run('gh','release','delete',previous['tag_name'],'-R',REPO,'--yes','--cleanup-tag')
 dump(DIST/'publication.json',{'release_id':rel['id'],'source_commit':commit,'build_commit':head,'tag':META['tag'],'assets':assets})
 print('PUBLISHED',META['tag'],commit)

@@ -8,7 +8,7 @@ import time
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-INSTALL=Path(r'D:\Apps\mpv-AnimeJaNai')
+INSTALL=Path(os.environ.get('ANIMEJANAI_INSTALL',r'D:\Apps\mpv-AnimeJaNai'))
 LIBRARY=Path(os.environ.get('ANIMEJANAI_LIBASS',INSTALL/'libass-9.dll'))
 FACTORY=Path(os.environ.get('DANMAKU_FACTORY',INSTALL/'animejanai/danmaku/DanmakuFactory.exe'))
 

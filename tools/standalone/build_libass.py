@@ -5,10 +5,12 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
 import urllib.request
+from gpu_target import pe_imports
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGES = Path(__file__).with_name('libass-build-packages.json')
@@ -40,8 +42,8 @@ def build(output, compiler=None, cache=None):
     source = ROOT / 'third_party/libass'
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    work = output.parent / 'libass-build'
-    work.mkdir(exist_ok=True)
+    work = ROOT / '_build_libass'
+    work.mkdir(parents=True, exist_ok=True)
     upstream = json.loads((source / 'UPSTREAM.json').read_text(encoding='utf-8'))
     config = {'ARCH_X86': 1, 'ARCH_X86_64': 1, 'CONFIG_ASM': 1, 'CONFIG_LARGE_TILES': 0,
               'CONFIG_DIRECTWRITE': 1, 'CONFIG_THREADS': 1, 'CONFIG_ICONV': 1, 'CONFIG_UNIBREAK': 1,
@@ -69,6 +71,19 @@ def build(output, compiler=None, cache=None):
                     *[str(source / 'libass' / name) for name in sources], *objects, str(exports),
                     '-L' + str(compiler / 'lib'), '-lfreetype', '-lharfbuzz', '-lfribidi', '-lunibreak', '-liconv',
                     '-lgdi32', '-lole32', '-luuid', '-o', str(output)], env=env, check=True)
+    # Ship the runtime DLLs from the same pinned compiler packages as libass.
+    # Follow imports so indirect FreeType/Harfbuzz dependencies are included too.
+    pending = [output]
+    copied = set()
+    while pending:
+        for name in pe_imports(pending.pop()):
+            dependency = compiler / 'bin' / name
+            if name.lower() in copied or not dependency.is_file():
+                continue
+            copied.add(name.lower())
+            target = output.parent / name
+            shutil.copy2(dependency, target)
+            pending.append(target)
     print('Built libass:', hashlib.sha256(output.read_bytes()).hexdigest())
 
 

@@ -4,7 +4,7 @@ Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管
 
 ## 下载与使用
 
-[下载](https://github.com/sunuuc/AnimeJaNai-zh-CN/releases)
+[下载正式版](https://github.com/sunuuc/AnimeJaNai-Sunuuc/releases/latest)
 
 Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
 
@@ -14,11 +14,11 @@ Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 Tens
 
 ## 播放界面
 
-Player UI 风格控制栏提供标题、进度与缓冲、播放、音量、倍速、音轨、字幕、弹幕、设置和全屏。鼠标移开后自动隐藏，网络视频在右上角显示当前读取速度。
+Player UI 风格控制栏提供标题、进度与缓冲、播放、音量、倍速、音轨、字幕、弹幕、设置和全屏。鼠标移开后自动隐藏，网络视频读取速度显示在底栏音量条右侧。
 
 倍速、音轨和字幕菜单在对应按钮上方展开。字幕菜单可分别选择主字幕和第二字幕；设置菜单中可以调整缩放模式、超分补帧预设、字幕和弹幕，并查看媒体信息与性能统计。
 
-外部程序传入多项播放列表时，右侧列表按实际标题与顺序选播。网络视频不生成进度缩略图、不预读下一项。弹幕支持本地 XML，与字幕独立显示。视频旁的同名 XML 可自动加载。
+外部程序传入多项播放列表时，按实际标题与顺序选播。网络视频不生成进度缩略图、不预读下一项。弹幕通过 DanmakuFactory 转为 ASS，由 mpv/libass 原生显示；支持同名 XML 自动加载及多线路并行搜索。
 
 ## 快捷键
 

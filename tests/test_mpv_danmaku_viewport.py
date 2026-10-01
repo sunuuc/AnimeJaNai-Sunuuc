@@ -56,9 +56,9 @@ class Viewport(unittest.TestCase):
             shutil.copy2(INSTALL / 'portable_config/mpv-animejanai.conf', config / 'mpv-animejanai.conf')
             converter = app / 'animejanai/danmaku'; converter.mkdir(parents=True)
             shutil.copy2(INSTALL / 'animejanai/danmaku/DanmakuFactory.exe', converter / 'DanmakuFactory.exe')
-            clip = app / 'black.mkv'
-            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=black:s=640x360:r=24:d=20',
-                            '-c:v', 'libx264', '-preset', 'ultrafast', '-y', str(clip)], check=True, timeout=30)
+            clip = app / 'black.y4m'
+            frame = b'FRAME\n' + b'\x10' * (160 * 90) + b'\x80' * (160 * 90 // 2)
+            clip.write_bytes(b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n' + frame * (24 * 20))
             xml = app / 'comments.xml'
             xml.write_text('<i><d p="0,1,25,16777215">BLACK BAR 弹幕</d></i>', encoding='utf-8')
             original_env = {name: os.environ.get(name) for name in ('LOCALAPPDATA', 'TEMP')}

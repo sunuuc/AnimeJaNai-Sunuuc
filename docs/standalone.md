@@ -1,16 +1,25 @@
-# AnimeJaNai-zh-CN 1.1.6
+# AnimeJaNai-Sunuuc 1.1.7
 
 Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持动漫 AI 超分和 RIFE 补帧。
 
 ## 使用
 
-解压 `AnimeJaNai-zh-CN-1.1.6-rtx5080-laptop-win-x64-full.7z`，运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
+解压 `AnimeJaNai-zh-CN-1.1.7-rtx5080-laptop-win-x64-full.7z`，运行 `mpvnet.exe`。配置管理器为 `AnimeJaNaiManager.exe`。
 
 包内包含 TensorRT 运行库、SM120 内核、超分与补帧模型。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
 支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。兼容 Player UI 把媒体参数放在空 `--{ ... --}` 参数组中的调用方式。
 
-1.1.6 修复了 Player UI 传入 `playlist` 时的选集。Player UI 会把 `playlist`、`playlist-start` 等参数放在一个空的 `--{ ... --}` 参数组里，1.1.6 最初的做法是把它们当作启动选项在 `mpv_initialize` 之前交给 mpv；但 `playlist` 不是 libmpv 可设置的启动选项，这样会让播放器在初始化阶段死锁（不发出任何请求、不返回）。现在 `playlist` 在初始化之后用 `loadlist` 载入，再用 `playlist-play-index` 选中目标集，因此不会先打开播放列表首项。所选集数、续播位置、标题、字幕和认证参数按同一次启动调用生效。
+## 本版更新
+
+- 弹幕使用 DanmakuFactory 转换和 mpv/libass 原生渲染，移除逐帧脚本轮询。
+- 弹幕使用整个窗口区域，包括上下黑边。窗口、全屏切换时直接按当前尺寸渲染，不再延迟重新生成字幕轨道。
+- 弹幕移动速度独立于视频倍速；提供速度、显示区域、不透明度、字号、类型屏蔽及屏蔽词。
+- 多线路并行自动搜索，首先使用成功返回的匹配；该集没有数据时按线路顺序尝试其他线路与平台。每轮自动搜索只请求每条线路一次。
+- 搜索及线路编辑使用原生 WPF 输入框，修复英文输入、光标移动与焦点；统一暗色主题，过滤空平台，简化请求失败提示。
+- 恢复底栏音量条，网速显示在音量条旁；音量提示为中下方紧凑提示框，移除额外的原生进度提示。
+- 保留官方窗口标题栏，默认小窗启动；左上角时钟可关闭。弹幕图标仅在悬停或菜单打开时高亮。
+- 修复外部播放列表选集及续播初始化，加载或缓冲时显示中央动画。
 
 Player UI 控制栏运行模块已并入脚本，完整包解压到含中文字符的目录时也不需要再通过 Lua `dofile` 打开模块文件。
 
@@ -18,11 +27,25 @@ Player UI 控制栏运行模块已并入脚本，完整包解压到含中文字�
 
 底栏提供播放、进度、音量、倍速、音轨、字幕、弹幕、设置和全屏。设置中可选择超分与补帧预设，查看统计信息及性能。主字幕与第二字幕可以分别选择。界面按窗口 1:1 像素绘制、不经过缩放，文字始终是原生光栅而不是被拉伸过的；控件尺寸与文字描边由 `portable_config/script-opts/player_ui.conf` 的 `ui_scale`（默认 1.00）与 `text_outline`（默认 1，0 为无描边）控制，界面文字全程无阴影。
 
-正在打开或缓冲时，画面中央显示「正在加载…／正在缓冲…」、当前标题和进度指示，底栏自动隐藏后提示仍在，因此黑屏不再与卡死无法区分。
+正在打开或缓冲时，画面中央显示加载动画。
 
 网络视频显示当前读取速度，不生成进度缩略图、不预读下一项。外部播放列表在初始化完成后用 `loadlist` 载入，再以 `playlist-play-index` 选中目标项目，不会先打开列表首项。
 
 诊断文件位于 `portable_config`：`startup-diagnostic.json` 记录调用方式、播放列表选择方式和加载阶段，`playback-diagnostic.json` 记录播放状态；均不记录媒体地址、标题、认证头或令牌。
+
+## 弹幕线路
+
+在「设置 → 弹幕设置」中管理线路。发布包不包含个人线路地址、密钥、播放历史或媒体认证信息；首次使用请配置自己的线路，未配置时不会自动联网搜索。
+
+底栏字幕与弹幕菜单分别提供「导入本地字幕」「导入本地弹幕」。视频旁的同名 XML 可自动加载。
+
+## 验收范围
+
+构建流程检查自包含程序、运行库、SM120 内核、模型、许可证和校验值，并对压缩包解压后的完整程序再次运行回归测试。
+
+播放测试使用本地生成视频和回环 HTTP 服务；弹幕测试覆盖原生渲染、黑边、首次缩放帧、轨道生命周期、速度、屏蔽与多线路搜索回退。构建验证不访问个人视频服务器。
+
+GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服务器响应不属于云端验收结果。原生 ASS 动画随 mpv 实际呈现帧率显示，不能保证超过视频呈现帧率。
 
 ## 快捷键
 
@@ -39,10 +62,10 @@ Player UI 控制栏运行模块已并入脚本，完整包解压到含中文字�
 
 ## 文件
 
-- `AnimeJaNai-zh-CN-1.1.6-rtx5080-laptop-win-x64-full.7z`：完整程序
-- `AnimeJaNai-zh-CN-1.1.6-sources.zip`：源码
+- `AnimeJaNai-zh-CN-1.1.7-rtx5080-laptop-win-x64-full.7z`：完整程序
+- `AnimeJaNai-zh-CN-1.1.7-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
 
 ## 许可证
 
-AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、thumbfast、TensorRT 及其他组件按各自许可证分发。第三方声明随程序包提供。
+AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、DanmakuFactory、libass、thumbfast、TensorRT 及其他组件按各自许可证分发。第三方声明随程序包提供。

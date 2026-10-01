@@ -7,7 +7,7 @@ import configparser, hashlib, json, os, re, shutil, subprocess, sys, time, urlli
 R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete-evidence'
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
-REPO='sunuuc/AnimeJaNai-zh-CN'
+REPO='sunuuc/AnimeJaNai-Sunuuc'
 from gpu_target import TARGET, prune, validate as validate_gpu_target
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
@@ -87,7 +87,7 @@ def source_release_files(folders):
     files=[]
     for folder in folders:
         for path in (R/folder).rglob('*'):
-            if path.is_symlink() or not path.is_file() or any(x in ('bin','obj','__pycache__','.git') for x in path.relative_to(R/folder).parts):continue
+            if path.is_symlink() or not path.is_file() or path.suffix.lower() in FONTS or any(x in ('bin','obj','__pycache__','.git') for x in path.relative_to(R/folder).parts):continue
             relative=path.relative_to(R).as_posix()
             if relative in tracked or relative in SOURCE_ADDITIONS or relative.startswith(('third_party/danmaku-factory/','third_party/libass/')):files.append(path)
     return sorted(files,key=lambda path:path.relative_to(R).as_posix())
@@ -253,6 +253,8 @@ def package():
     for n in ('results.json','scripts-results.json'):
         results=json.loads((E/'runtime'/n).read_text(encoding='utf-8'))
         if not results or not all(r['passed'] for r in results):raise RuntimeError('Runtime tests failed')
+    danmaku=json.loads((E/'danmaku/results.json').read_text(encoding='utf-8'))
+    if len(danmaku)!=4 or not all(r['passed'] for r in danmaku):raise RuntimeError('Native danmaku tests failed')
     shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     inspect_payload();DIST.mkdir(exist_ok=True)
     info=ST/'build-info/standalone'
@@ -289,12 +291,13 @@ def package():
     run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')
     run(sys.executable,R/'tests/test_startup_playback.py',R/'clean-install',E/'fresh-install/startup')
     run(sys.executable,R/'tests/test_player_ui_empty_scope.py',R/'clean-install',E/'fresh-install/player_ui-handoff')
+    run(sys.executable,H/'test_danmaku_package.py',R/'clean-install',E/'fresh-install/danmaku')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
     sourcezip=DIST/f'AnimeJaNai-zh-CN-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
         for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
             if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
-        for n in ('LICENSE','release.json','docs/standalone.md'):z.write(R/n,n)
+        for n in ('LICENSE','release.json'):z.write(R/n,n)
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[sourcezip]),encoding='utf-8')
     cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')
     print('FULL PACKAGE VERIFIED',[(p.name,p.stat().st_size) for p in archives],flush=True)

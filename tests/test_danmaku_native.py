@@ -80,9 +80,9 @@ class NativeDanmaku(unittest.TestCase):
             app=Path(tmp);config=app/'portable_config';config.mkdir()
             converter=app/'animejanai/danmaku';converter.mkdir(parents=True)
             shutil.copy2(FACTORY,converter/'DanmakuFactory.exe')
-            clip=app/'fixture.mkv'
-            subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','testsrc2=s=640x360:r=24:d=60',
-                '-c:v','libx264','-preset','ultrafast','-y',str(clip)],check=True,capture_output=True,timeout=30)
+            clip=app/'fixture.y4m'
+            frame=b'FRAME\n'+b'\x60'*(160*90)+b'\x80'*(160*90//2)
+            clip.write_bytes(b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n'+frame*(24*60))
             xml=app/'fixture.xml'
             xml.write_text('<i><d p="0,1,25,16777215">English &amp; 中文</d>'
                 '<d p="1,5,25,65280">TOP</d><d p="2,4,25,255">BOTTOM</d>'

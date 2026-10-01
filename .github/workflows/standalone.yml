@@ -43,10 +43,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/standalone/inline_player_ui_modules.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tools/standalone/prepare_gpu_target.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tools/standalone/prepare_startup.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/test_gpu_target.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify release-page shortcut is absent
@@ -70,9 +66,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile self-contained Windows applications
         run: |
-          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-1.1.6 -o publish-player
+          $releaseVersion = (Get-Content release.json | ConvertFrom-Json).version
+          dotnet publish player/src/MpvNet.Windows/MpvNet.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=7.1.2.0-sunuuc-full-$releaseVersion -o publish-player
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-1.1.6 -o publish-manager
+          dotnet publish manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:InformationalVersion=0.6.0-sunuuc-full-$releaseVersion -o publish-manager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet publish tools/standalone/Updater.csproj -c Release -o publish-updater
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -92,6 +89,8 @@ jobs:
         run: python tests/test_player_ui_windows.py stage complete-evidence/player_ui
       - name: Player UI online danmaku transport tests
         run: python tests/test_danmaku_online.py --mpv stage/mpv.exe
+      - name: Native danmaku composition, resize, lifecycle and route fallback
+        run: python tools/standalone/test_danmaku_package.py stage complete-evidence/danmaku
       - name: Local HTTP playback and request-count regressions
         run: python tests/test_network_playback.py stage complete-evidence/network
       - name: External startup, Player UI playlist selection, and deleted-original regression
