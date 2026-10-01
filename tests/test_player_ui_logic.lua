@@ -513,6 +513,10 @@ local function suite()
    'invalid route edits leave the current sources and private config unchanged')
   json_responses['sources-single-json']={selected=1,servers={{name='ME',url='https://danmaku.example'}}}
   messages['player_ui-danmaku-save-servers']('sources-single-json')
+  local before_initial_title=next_async
+  observers['media-title']('media-title','string',props['media-title'])
+  check(next_async==before_initial_title,'initial title notification cannot search before start-file')
+  event_handlers['start-file'][#event_handlers['start-file']]()
   event_handlers['file-loaded'][#event_handlers['file-loaded']]()
  local search_job=pending_async[next_async]
  local anime_keyword=online_api.urlencode('间谍过家家')
@@ -707,6 +711,10 @@ check(next_async>before_link_title,
  check(next_async==early_search_count and early_match.aborted==nil,
   'file-loaded does not restart an automatic request already started during opening')
  event_handlers['end-file'][#event_handlers['end-file']]()
+ local after_end=next_async
+ observers['media-title']('media-title','string',props['media-title'])
+ advance(.3)
+ check(next_async==after_end,'title notifications after end-file cannot start another search')
   os.getenv,io.open,os.remove,os.rename=old_getenv,old_open,old_remove,old_rename
  package.loaded.mp=saved.mp;package.loaded['mp.options']=saved.opts;package.loaded['mp.utils']=saved.utils
 end
