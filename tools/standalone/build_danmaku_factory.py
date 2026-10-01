@@ -51,7 +51,11 @@ def build(output, zig=None, pcre=None):
     sources = sorted((ROOT / 'third_party/danmaku-factory/src').rglob('*.c'))
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([str(zig.resolve()), 'cc', '-std=gnu11', '-O2', '-s',
+    # A portable release must not inherit AVX/CPU features from the build host.
+    # Canonical source paths also keep diagnostics independent of checkout paths.
+    subprocess.run([str(zig.resolve()), 'cc', '-target', 'x86_64-windows-gnu',
+                    '-mcpu=baseline', '-ffile-prefix-map=' + str(ROOT.resolve()) + '=.',
+                    '-std=gnu11', '-O2', '-s',
                     '-DPCRE2_STATIC', '-DPCRE2_CODE_UNIT_WIDTH=8', '-DHAVE_CONFIG_H',
                     '-DSUPPORT_PCRE2_8', '-DSUPPORT_UNICODE', '-I' + str(src.resolve()),
                     *map(str, sources), *[str(src.resolve() / name) for name in pcre_sources],

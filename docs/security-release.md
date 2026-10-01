@@ -46,3 +46,5 @@ python tools/standalone/security_verify.py scan stage complete-evidence/security
 播放器、管理器和下载器使用微软标准的 self-contained 文件夹发布，运行库与应用分别保存，仍然无需用户安装 .NET。最终发布对所有 EXE、DLL 和脚本逐个扫描，不排除运行库，也不修改检测规则。
 
 本地单文件候选包的 ClamAV 1.5.4 检测命中 `Win.Malware.Aotera-10060486-0`。其数据库规则同时查找五段 .NET 通用运行库字符串；该命中尚未获得厂商复核。候选单文件包不发布，改为标准独立运行库文件并重新完整扫描。
+
+转换器固定使用 `x86_64-windows-gnu` 与 `-mcpu=baseline`，避免默认本机 CPU 优化使发布包依赖构建机器的 AVX 等指令。`-ffile-prefix-map` 固定源文件路径，从不同检出目录生成相同文件。此前未固定目标的云端构建曾重新生成旧报告哈希，安全门已拒绝该候选包；旧哈希仍然阻断。

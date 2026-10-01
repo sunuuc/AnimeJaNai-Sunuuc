@@ -15,6 +15,11 @@ from components import prepare, validate
 from build import copy_validation_reports
 
 class ComponentContracts(unittest.TestCase):
+    def test_converter_targets_generic_windows_x64(self):
+        source=(ROOT/'tools/standalone/build_danmaku_factory.py').read_text(encoding='utf-8')
+        self.assertIn("'-target', 'x86_64-windows-gnu'",source)
+        self.assertIn("'-mcpu=baseline'",source)
+        self.assertIn('-ffile-prefix-map=',source)
     def test_validation_package_excludes_generated_models_and_media(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);source=root/'source';target=root/'reports';source.mkdir()
