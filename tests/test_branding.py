@@ -53,6 +53,9 @@ class BrandingTests(unittest.TestCase):
         self.assertIn('"} - NekoAnimeVE"', title)
         about = (ROOT / 'src/player/src/MpvNet.Windows/WPF/Views/AboutWindow.xaml').read_text(encoding='utf-8')
         self.assertIn('>NekoAnimeVE', about)
+        resources = (ROOT / 'src/player/src/MpvNet.Windows/WPF/WpfApplication.cs').read_text(encoding='utf-8')
+        self.assertIn('NekoAnimeVE;component/WPF/Resources.xaml', resources)
+        self.assertNotIn('mpvnet;component', resources)
 
     def test_original_upstream_model_and_license_identity_is_preserved(self):
         self.assertIn('the-database/AnimeJaNaiManager', (ROOT / 'README.md').read_text(encoding='utf-8'))

@@ -14,7 +14,7 @@ public class WpfApplication
         Application.Current!.DispatcherUnhandledException += (sender, e) => Terminal.WriteError(e.Exception);
 
         Application.Current?.Resources.MergedDictionaries.Add(
-            Application.LoadComponent(new Uri("mpvnet;component/WPF/Resources.xaml",
+            Application.LoadComponent(new Uri("NekoAnimeVE;component/WPF/Resources.xaml",
                 UriKind.Relative)) as ResourceDictionary);
     }
 }
