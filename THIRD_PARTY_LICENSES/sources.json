@@ -690,5 +690,29 @@
   "MSYS2/gettext-runtime/libasprintf/COPYING.LIB": {
     "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
     "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "Microsoft/.NET-runtime-MIT.txt": {
+    "source": "https://www.nuget.org/packages/microsoft.netcore.app.runtime.win-x64/10.0.12; package LICENSE.TXT",
+    "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+  },
+  "Microsoft/.NET-third-party-notices.txt": {
+    "source": "https://www.nuget.org/packages/microsoft.netcore.app.runtime.win-x64/10.0.12; package THIRD-PARTY-NOTICES.TXT",
+    "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+  },
+  "Microsoft/WindowsDesktop-MIT.txt": {
+    "source": "https://www.nuget.org/packages/microsoft.windowsdesktop.app.runtime.win-x64/10.0.12; package LICENSE",
+    "sha256": "a89886665765362eb77e0f8e26602c924520041d1711b2eedc136434fe4d01ab"
+  },
+  "NuGet/SkiaSharp-MIT.txt": {
+    "source": "https://www.nuget.org/packages/skiasharp/3.119.4; package LICENSE.txt",
+    "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+  },
+  "NuGet/HarfBuzzSharp-MIT.txt": {
+    "source": "https://www.nuget.org/packages/harfbuzzsharp/8.3.1.5; package LICENSE.txt",
+    "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+  },
+  "Inter-OFL-1.1.txt": {
+    "source": "https://raw.githubusercontent.com/rsms/inter/v4.1/LICENSE.txt",
+    "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
   }
 }

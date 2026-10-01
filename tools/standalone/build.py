@@ -10,7 +10,6 @@ LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
 REPO='sunuuc/mpv-NekoAnimeVE'
 from components import prepare as prepare_components, validate as validate_components
 from security_verify import require_result as require_security_result
-from security_verify import scan as scan_security
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or next((str(p) for p in (Path(r'C:\Program Files\7-Zip\7z.exe'),Path(r'D:\Apps\7-Zip\7z.exe')) if p.is_file()),'7z')
 SOURCE_ADDITIONS={
@@ -235,9 +234,10 @@ def package():
     shutil.rmtree(info/'ui-validation',ignore_errors=True)
     copy_validation_reports(E,info/'validation')
     copy_validation_reports(R/'language-evidence',info/'ui-validation')
-    # Validation artifacts can contain additional executable fixtures. Scan the
-    # final package tree, then keep the exact report that gates publication.
-    scan_security(ST,E/'security',R/'downloads/antivirus')
+    # Adding reports must leave the scanned executable/script inventory exactly
+    # unchanged. The release check rejects new files, changed bytes, stale scans
+    # and changed policy rather than treating earlier evidence as sufficient.
+    require_security_result(ST,E/'security/results.json')
     cp(E/'security',info/'validation/security')
     dump(info/'provenance.json',{'version':META['version'],'input_commit':os.environ['GITHUB_SHA'],
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,

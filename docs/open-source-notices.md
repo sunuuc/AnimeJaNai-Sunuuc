@@ -30,6 +30,8 @@
 - AnimeJaNai 超分模型与项目采用 **CC BY-NC-SA 4.0**。需要署名、限非商业使用、修改后按相同方式共享；完整条件以 `LICENSE` 为准。
 - RIFE 来源：<https://github.com/hzwer/ECCV2022-RIFE>，原项目 MIT 原文为 `THIRD_PARTY_LICENSES/RIFE-MIT.txt`；模型由固定版本的上游 AnimeJaNai 组件包提供。保留模型来源，不宣称本项目训练了模型。
 - Real-ESRGAN 来源：<https://github.com/xinntao/Real-ESRGAN>；模型使用的架构名称和上游模型文件名保留不变，原项目 BSD 3-Clause 原文为 `THIRD_PARTY_LICENSES/Real-ESRGAN-BSD.txt`。
+- .NET 与 Windows Desktop 运行库：MIT，完整原文及 .NET 第三方声明在 `THIRD_PARTY_LICENSES/Microsoft/`。
+- SkiaSharp、HarfBuzzSharp：随包保留 NuGet 组件的 MIT 原文于 `THIRD_PARTY_LICENSES/NuGet/`；Inter 字体：SIL OFL 1.1，原文为 `THIRD_PARTY_LICENSES/Inter-OFL-1.1.txt`。
 - Avalonia（MIT）：<https://github.com/AvaloniaUI/Avalonia>；FluentAvalonia（MIT）：<https://github.com/amwx/FluentAvalonia>；ReactiveUI（MIT）：<https://github.com/reactiveui/ReactiveUI>。各自的 MIT 原文保留在 `THIRD_PARTY_LICENSES/`。
 - TensorRT / CUDA：NVIDIA 厂商许可，**不是开源许可证**；固定运行库版本为 TensorRT 11.1 / CUDA 13.3。原许可与附带第三方声明在 `THIRD_PARTY_LICENSES/NVIDIA/`。
 - DirectML（Microsoft 软件许可）：<https://github.com/microsoft/DirectML>；ONNX Runtime（MIT）：<https://github.com/microsoft/onnxruntime>；原声明在 `animejanai/inference/THIRD_PARTY_NOTICES.txt`，许可原文为 `THIRD_PARTY_LICENSES/DirectML.txt` 与 `THIRD_PARTY_LICENSES/ONNX-Runtime-MIT.txt`。
