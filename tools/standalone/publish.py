@@ -67,7 +67,7 @@ for p in paths:
         header=blob_reader.stdout.readline().split()
         committed=blob_reader.stdout.read(int(header[2]));blob_reader.stdout.read(1)
         if raw.replace(b'\r\n',b'\n')==committed.replace(b'\r\n',b'\n'):
-            entry['sha']=previous;tree.append(entry);continue
+            continue
     try:entry['content']=raw.decode('utf-8').replace('\r\n','\n')
     except UnicodeDecodeError:entry['sha']=api(f'repos/{REPO}/git/blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})['sha']
     tree.append(entry)
