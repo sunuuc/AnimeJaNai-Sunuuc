@@ -4,13 +4,13 @@
     "assets": [
       {
         "repo": "sunuuc/NekoAnimeVE",
-        "tag": "standalone-v1.1.7",
-        "name": "AnimeJaNai-zh-CN-1.1.7-rtx5080-laptop-win-x64-full.7z",
-        "sha256": "286d607d6ef805036769973aecf3784f3d37f3eec5d4caa4b9c9b6994f32221a",
-        "bytes": 1098066124
+        "tag": "standalone-v1.1.8",
+        "name": "NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z",
+        "sha256": "5d4c99f7964df91951b30dde542bb18d9743e6ee56b155ed29feb1da13cf7b49",
+        "bytes": 1097816231
       }
     ],
-    "version": "1.1.7"
+    "version": "1.1.8"
   },
   "ui_source": {
     "repo": "sunuuc/AnimeJaNai-zh-CN",
