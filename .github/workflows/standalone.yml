@@ -73,8 +73,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet publish tools/standalone/Updater.csproj -c Release -o publish-updater
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Restore pinned build dependencies
+        uses: actions/cache/restore@v4
+        with:
+          path: downloads
+          key: standalone-dependencies-${{ hashFiles('tools/standalone/dependencies.json', 'tools/standalone/libass-build-packages.json', 'tools/standalone/build_danmaku_factory.py') }}
       - name: Assemble RTX 5080 Laptop runtime, models and licenses
         run: python tools/standalone/build.py stage
+      - name: Save verified build dependencies
+        uses: actions/cache/save@v4
+        with:
+          path: downloads
+          key: standalone-dependencies-${{ hashFiles('tools/standalone/dependencies.json', 'tools/standalone/libass-build-packages.json', 'tools/standalone/build_danmaku_factory.py') }}
       - name: Verify SM120-only kernels and native dependencies
         run: python tests/test_gpu_target.py stage complete-evidence
       - name: FPS, external playlist and controller tests

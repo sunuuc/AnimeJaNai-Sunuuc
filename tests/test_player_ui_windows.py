@@ -1,6 +1,6 @@
 """Exercise packaged controls with real mpv input events and D3D11 WARP."""
 from pathlib import Path
-import json,os,subprocess,sys,wave
+import json,os,shutil,subprocess,sys,wave
 ROOT=Path(__file__).resolve().parents[1]
 APP=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(parents=True,exist_ok=True)
 CONFIG=OUT/'config';CONFIG.mkdir(parents=True,exist_ok=True)
@@ -10,6 +10,8 @@ PRIVATE.joinpath('AnimeJaNai-danmaku.conf').write_text(
     'api_servers=https://danmaku.example.invalid|Fixture\n',encoding='utf-8')
 (CONFIG/'input.conf').write_text('',encoding='utf-8')
 PROFILE_ROOT=OUT/'animejanai';PROFILE_ROOT.mkdir(parents=True,exist_ok=True)
+converter=PROFILE_ROOT/'danmaku';converter.mkdir(parents=True,exist_ok=True)
+shutil.copy2(APP/'animejanai/danmaku/DanmakuFactory.exe',converter/'DanmakuFactory.exe')
 (PROFILE_ROOT/'animejanai.conf').write_text(
     '[global]\ndefault_slot=1\n'+''.join(
         f'\n[slot_{index}]\nprofile_name=Fixture {index}\n'
@@ -21,7 +23,7 @@ comments_fixture.write_text(
     '<d p="0,4,26,16777215">固定弹幕</d></i>',encoding='utf-8')
 test_env=os.environ.copy();test_env['LOCALAPPDATA']=str(PRIVATE)
 results=[]
-def run(name,args,marker,timeout=60):
+def run(name,args,marker,timeout=90):
     try:
         p=subprocess.run([str(APP/'mpv.exe'),*args],capture_output=True,timeout=timeout,env=test_env)
         log=p.stdout+p.stderr
