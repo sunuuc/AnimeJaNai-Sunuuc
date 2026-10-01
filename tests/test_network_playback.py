@@ -99,6 +99,11 @@ class Frontend:
             ui=self.get('user-data/player_ui/ui',{})
             check(not ui.get('visible') and not ui.get('controls'),'idle/error does not show playback controls')
             evidence=capture_client(self.proc.pid,target)
+            failed=self.get('user-data/player_ui/playback',{}).get('phase')=='failed'
+            if failed:
+                check(evidence['bright_pixels']>=100,'failed playback displays the error text')
+            else:
+                check(evidence['bright_pixels']<100,'idle player has no playback controls or status text')
             (OUT/(name+'-capture.json')).write_text(json.dumps(evidence,indent=2),encoding='utf-8')
         else:
             self.wait(lambda:self.get('user-data/player_ui/ui',{}).get('overlay_ok') is True,'overlay not rendered')

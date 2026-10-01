@@ -104,8 +104,6 @@ def capture_client(pid: int, destination: Path) -> dict:
         rgb = bytearray(width*height*3)
         rgb[0::3], rgb[1::3], rgb[2::3] = bgra[2::4], bgra[1::4], bgra[0::4]
         bright = sum(1 for v in rgb[0::3] if v > 180)
-        if bright < 100 or len(set(rgb)) < 8:
-            raise RuntimeError('Captured client has no visible controls or error text')
         def chunk(kind, body):
             return struct.pack('>I', len(body))+kind+body+struct.pack('>I', zlib.crc32(kind+body)&0xffffffff)
         scanlines = b''.join(b'\0'+rgb[y*width*3:(y+1)*width*3] for y in range(height))
