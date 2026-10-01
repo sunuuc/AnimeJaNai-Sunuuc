@@ -355,7 +355,7 @@ class DanmakuFlowTest(unittest.TestCase):
         root=Path(self.runtime.name)
         self.config=root/'portable_config';self.config.mkdir()
         converter=root/'animejanai/danmaku';converter.mkdir(parents=True)
-        factory=Path(os.environ.get('DANMAKU_FACTORY',ROOT/'_probe/upstream-danmaku/cli/DanmakuFactory.exe'))
+        factory=Path(os.environ.get('DANMAKU_FACTORY',MPV.parent/'animejanai/danmaku/DanmakuFactory.exe'))
         shutil.copy2(factory,converter/'DanmakuFactory.exe')
 
     def test_movie_titles_without_episode_markers_search_automatically(self):
@@ -734,7 +734,11 @@ end)
                 self.assertEqual(proc.returncode, 0, (outcome, proc.stderr.decode('utf-8', 'replace')[-1200:]))
                 self.assertEqual(outcome, {'count': 1, 'state': 'loaded', 'source': 3})
                 self.assertEqual(len([path for path in AutoSearchHandler.seen
-                    if '/api/v2/search/anime?' in path]), 3)
+                    if '/api/v2/search/anime?' in path]), 3, AutoSearchHandler.seen)
+                for prefix in ('/wrong/', '/empty/', '/'):
+                    self.assertEqual(len([path for path in AutoSearchHandler.seen
+                        if path.startswith(prefix + 'api/v2/search/anime?')]), 1,
+                        AutoSearchHandler.seen)
                 self.assertIn('/api/v2/bangumi/101', AutoSearchHandler.seen)
                 self.assertIn('/api/v2/comment/205?withRelated=true', AutoSearchHandler.seen)
                 self.assertFalse(any('/api/v2/bangumi/102' in path for path in AutoSearchHandler.seen))

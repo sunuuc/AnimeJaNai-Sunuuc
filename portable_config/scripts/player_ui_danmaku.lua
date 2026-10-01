@@ -868,6 +868,7 @@ local picker,generation,request_jobs,request_serial=nil,0,{},0
 local renderer
 local publish
 local autoload_generation=-1
+local autoload_file_active=false
 local match_current
 local autoload_probe_timer,autoload_metadata_ready,autoload_title_baseline=nil,-1,''
 local cancel_online
@@ -1770,7 +1771,7 @@ local function schedule_automatic_match(expected_generation,attempts)
 end
 try_automatic_match=function(expected_generation,attempts)
     attempts=attempts or 0
-    if expected_generation~=generation or not o.autoload_danmaku
+    if not autoload_file_active or expected_generation~=generation or not o.autoload_danmaku
         or autoload_generation==expected_generation then return end
     local path=mp.get_property('path','')
     if path=='' then return end
@@ -2020,6 +2021,7 @@ mp.register_script_message('player_ui-danmaku-words',function()
 end)
 mp.register_script_message('player_ui-danmaku-save-words',renderer.set_words)
 mp.register_event('start-file',function()
+    autoload_file_active=true
     generation=generation+1;autoload_generation=-1;autoload_metadata_ready=-1
 
     autoload_title_baseline=mp.get_property('media-title','')
@@ -2046,6 +2048,7 @@ mp.register_event('file-loaded',function()
     end
 end)
 mp.register_event('end-file',function()
+    autoload_file_active=false
     generation=generation+1;autoload_metadata_ready=-1
 
     if autoload_probe_timer then autoload_probe_timer:kill();autoload_probe_timer=nil end
