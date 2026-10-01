@@ -178,8 +178,8 @@ public static class InputHelp
         Add(b, new (_("Config") + " > " + _("Setup"), _("Register image file associations"), "script-message-to mpvnet reg-file-assoc image"));
         Add(b, new (_("Config") + " > " + _("Setup"), _("Unregister file associations"), "script-message-to mpvnet reg-file-assoc unreg"));
         Add(b, new (_("Config") + " > " + _("Setup"), "-"));
-        Add(b, new (_("Config") + " > " + _("Setup"), _("Add mpv.net to Path environment variable"), "script-message-to mpvnet add-to-path"));
-        Add(b, new (_("Config") + " > " + _("Setup"), _("Remove mpv.net from Path environment variable"), "script-message-to mpvnet remove-from-path"));
+        Add(b, new (_("Config") + " > " + _("Setup"), _("Add NekoAnimeVE to Path environment variable"), "script-message-to mpvnet add-to-path"));
+        Add(b, new (_("Config") + " > " + _("Setup"), _("Remove NekoAnimeVE from Path environment variable"), "script-message-to mpvnet remove-from-path"));
 
         Add(b, new (_("Tools"), _("Set/clear A-B loop points"), "ab-loop", "l"));
         Add(b, new (_("Tools"), _("Toggle infinite file looping"), "cycle-values loop-file inf no", "L"));

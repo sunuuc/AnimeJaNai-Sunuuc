@@ -67,7 +67,7 @@
 
             <TextBlock.ContextMenu>
                 <ContextMenu Name="MainContextMenu">
-                    <MenuItem Header="Show mpv.net options" InputGestureText="Ctrl+n" Command="{Binding Data.ShowMpvNetSpecificSettingsCommand, Source={StaticResource BindingProxy}}" />
+                    <MenuItem Header="Show NekoAnimeVE options" InputGestureText="Ctrl+n" Command="{Binding Data.ShowMpvNetSpecificSettingsCommand, Source={StaticResource BindingProxy}}" />
                     <Separator />
                     <MenuItem Header="Preview mpv.conf" InputGestureText="F5" Command="{Binding Data.PreviewMpvConfFileCommand, Source={StaticResource BindingProxy}}" />
                     <MenuItem Header="Preview NekoAnimeVE.conf" InputGestureText="F6" Command="{Binding Data.PreviewMpvNetConfFileCommand, Source={StaticResource BindingProxy}}" />
