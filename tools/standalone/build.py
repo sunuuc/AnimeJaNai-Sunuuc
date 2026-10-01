@@ -1,4 +1,4 @@
-"""Full portable builder. Bootstrap once; subsequent runtime inputs use our release.
+"""Portable core and optional component asset builder using pinned upstream inputs.
 Commands: prepare / stage / package. Publishing is implemented in publish.py.
 No command reads or modifies a user's installation.
 """
@@ -8,12 +8,21 @@ R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
 REPO='sunuuc/mpv-NekoAnimeVE'
-from gpu_target import TARGET, prune, validate as validate_gpu_target
+from components import prepare as prepare_components, validate as validate_components
 from security_verify import require_result as require_security_result
 from security_verify import scan as scan_security
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
-SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
+SEVEN=shutil.which('7z') or next((str(p) for p in (Path(r'C:\Program Files\7-Zip\7z.exe'),Path(r'D:\Apps\7-Zip\7z.exe')) if p.is_file()),'7z')
 SOURCE_ADDITIONS={
+    'tools/standalone/components.py',
+    'tools/standalone/component-catalog.json',
+    'tools/standalone/updater-upstream.json',
+    'tests/test_optional_components.py',
+    'docs/open-source-notices.md',
+    'THIRD_PARTY_LICENSES/NVIDIA/CUDA_LICENSE_9215a6ea5a_LICENSE',
+    'THIRD_PARTY_LICENSES/NVIDIA/TensorRT_LICENSE_bee83db7cc_Acknowledgements.txt',
+    'THIRD_PARTY_LICENSES/NVIDIA/TensorRT_LICENSE.html',
+    'THIRD_PARTY_LICENSES/NVIDIA/sources.json',
     'tools/standalone/build_libass.py',
     'tools/standalone/libass-build-packages.json',
     'tools/standalone/build_danmaku_factory.py',
@@ -54,6 +63,10 @@ def run(*args,**kwargs):return subprocess.run(list(map(str,args)),check=True,**k
 def download(item):
     dest=R/'downloads'/item['name'];dest.parent.mkdir(exist_ok=True)
     if dest.exists() and sha(dest)==item['sha256']:return dest
+    if item['repo']==REPO:
+        run('gh','release','download',item['tag'],'-R',REPO,'--pattern',item['name'],'--dir',dest.parent,'--clobber')
+        if sha(dest)!=item['sha256']:raise RuntimeError('Download hash mismatch: '+item['name'])
+        return dest
     url=f'https://github.com/{item["repo"]}/releases/download/{item["tag"]}/{item["name"]}'
     for attempt in range(3):
         try:
@@ -94,7 +107,7 @@ def source_release_files(folders):
         for path in (R/folder).rglob('*'):
             if path.is_symlink() or not path.is_file() or path.suffix.lower() in FONTS or any(x in ('bin','obj','__pycache__','.git') for x in path.relative_to(R/folder).parts):continue
             relative=path.relative_to(R).as_posix()
-            if relative in tracked or relative in SOURCE_ADDITIONS or relative.startswith(('third_party/danmaku-factory/','third_party/libass/')):files.append(path)
+            if relative in tracked or relative in SOURCE_ADDITIONS or relative.startswith(('third_party/danmaku-factory/','third_party/libass/','THIRD_PARTY_LICENSES/')):files.append(path)
     return sorted(files,key=lambda path:path.relative_to(R).as_posix())
 def replace_once(p,old,new):
     s=p.read_text(encoding='utf-8-sig')
@@ -105,62 +118,28 @@ def replace_once(p,old,new):
 def prepare():
     E.mkdir(exist_ok=True)
     if not (R/'src/player').exists():
-        srczip=download(LOCK['ui_source']);extract(srczip,R/'source-bootstrap')
-        for name in ('player','manager'):cp(R/'source-bootstrap'/name,R/'src'/name)
-        shutil.rmtree(R/'source-bootstrap');srczip.unlink()
-        for p in (R/'src').rglob('*'):
-            if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
-    manager=R/'src/manager/AnimeJaNaiConfEditor'
-    p=manager/'Views/MainWindow.axaml'
-    replace_once(p,'<CheckBox Grid.Column="0" IsChecked="{Binding Selected}" VerticalAlignment="Center" Margin="0,0,12,0" />',
-        '<CheckBox Grid.Column="0" IsChecked="{Binding Selected}" IsEnabled="False" VerticalAlignment="Center" Margin="0,0,12,0" />')
-    replace_once(p,'<Button Content="{local:Text Key=s85045ccc056780a7}" Command="{Binding ComponentManager.Apply}" IsEnabled="{Binding ComponentManager.NotBusy}" Classes="active" />',
-        '<TextBlock Text="{local:Text Key=standaloneComponentsNote}" TextWrapping="Wrap" MaxWidth="600" />')
-    for p in [manager/'LanguageStrings.json',R/'src/player/src/MpvNet/LanguageStrings.json']:
-        data=json.loads(p.read_text(encoding='utf-8'))
-        text='Full portable edition: components are bundled. Get complete updates from this project\'s release page.'
-        data['keys']['standaloneComponentsNote']=text
-        data['translations'][text]='完整便携版已内置组件，无需单独安装或删除；更新请从本项目发布页下载完整程序。'
-        dump(p,data)
+        raise RuntimeError('Player and manager sources must be present in the source checkout')
     for name in ('player','manager'):cp(R/'src'/name,R/name)
     for name in ('Manager','Player'):
         dest=R/'tests-generated'/(name.lower()+'-tests');dest.mkdir(parents=True,exist_ok=True)
         for ext in ('cs','csproj'):cp(R/f'tools/language-r3/{name}Tests.{ext}',dest/f'{name}Tests.{ext}')
     (R/'language-evidence').mkdir(exist_ok=True)
-    dump(E/'source-inputs.json',{'ui_bootstrap':LOCK['ui_source'],'workflow_commit':os.environ.get('GITHUB_SHA'),
+    dump(E/'source-inputs.json',{'workflow_commit':os.environ.get('GITHUB_SHA'),
        'source_files':{p.relative_to(R/'src').as_posix():sha(p) for p in (R/'src').rglob('*') if p.is_file()}})
 
 def stage():
     if ST.exists():shutil.rmtree(ST)
-    seed=LOCK.get('runtime_seed')
-    if seed:
-        for item in seed['assets']:download(item)
-        extract(R/'downloads'/seed['assets'][0]['name'],R/'seed-unpack')
-        cp(app_root(R/'seed-unpack'),ST);shutil.rmtree(R/'seed-unpack')
-        records=json.loads((ST/'build-info/standalone/components.json').read_text(encoding='utf-8'))
-    else:
-        base=download(LOCK['bootstrap_core']);extract(base,R/'base-unpack')
-        cp(app_root(R/'base-unpack'),ST);shutil.rmtree(R/'base-unpack');base.unlink()
-        native=download(LOCK['native_and_ui_resources']);extract(native,ST);native.unlink()
-        records=[]
-        for item in LOCK['components']:
-            archive=download(item);temp=R/'component-unpack';extract(archive,temp)
-            files=[]
-            for p in temp.rglob('*'):
-                if not p.is_file():continue
-                rel=p.relative_to(temp).as_posix()
-                if not rel.startswith('animejanai/'):raise RuntimeError('Unexpected component location: '+rel)
-                files.append({'path':rel,'bytes':p.stat().st_size,'sha256':sha(p)})
-                cp(p,ST/rel)
-            if not files:raise RuntimeError('Empty component pack')
-            records.append({'name':item['id'],'source':item,'files':files})
-            shutil.rmtree(temp);archive.unlink()
-    dump(E/'component-inputs.json',records)
+    base=download(LOCK['bootstrap_core']);extract(base,R/'base-unpack')
+    cp(app_root(R/'base-unpack'),ST);shutil.rmtree(R/'base-unpack')
+    native=download(LOCK['native_and_ui_resources']);extract(native,ST)
     shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     shutil.rmtree(ST/'portable_config/scripts',ignore_errors=True)
     cp(R/'portable_config',ST/'portable_config')
     cp(R/'animejanai/animejanai.conf',ST/'animejanai/animejanai.conf')
     cp(R/'THIRD_PARTY_LICENSES',ST/'THIRD_PARTY_LICENSES');cp(R/'LICENSE',ST/'LICENSE')
+    cp(R/'THIRD_PARTY_LICENSES/DirectML.txt',ST/'animejanai/inference/DirectML_LICENSE.txt')
+    cp(R/'docs/open-source-notices.md',ST/'OPEN_SOURCE_NOTICES.md')
+    cp(H/'updater-upstream.json',ST/'build-info/standalone/updater-upstream.json')
     run(sys.executable,H/'build_danmaku_factory.py','--output',ST/'animejanai/danmaku/DanmakuFactory.exe')
     cp(R/'docs/danmaku-renderer.md',ST/'弹幕说明.md')
 
@@ -168,10 +147,15 @@ def stage():
     # compiled product entry points belong in this distribution.
     for name in ('mpvnet.exe','AnimeJaNaiManager.exe','AnimeJaNaiUpdater.exe'):
         (ST/name).unlink(missing_ok=True)
-    for folder in ('publish-player','publish-manager','publish-updater'):
+    # The shared self-contained runtime uses the Windows Desktop framework
+    # supplied by the player. Copy it last so its full desktop assemblies are
+    # retained instead of the Core framework's forwarding assemblies.
+    for folder in ('publish-manager','publish-updater','publish-player'):
         for p in (R/folder).rglob('*'):
             if p.is_file() and p.suffix.lower() in ('.exe','.dll','.json'):cp(p,ST/p.relative_to(R/folder))
-    run(sys.executable,H/'build_libass.py','--output',ST/'libass-9.dll')
+    libass_args=['--output',ST/'libass-9.dll']
+    if os.environ.get('LIBASS_TOOLCHAIN'):libass_args+=['--toolchain',os.environ['LIBASS_TOOLCHAIN']]
+    run(sys.executable,H/'build_libass.py',*libass_args)
     cp(R/'third_party/libass/UPSTREAM.json',ST/'build-info/native/libass-source.json')
     cp(R/'third_party/libass/COPYING',ST/'THIRD_PARTY_LICENSES/libass-ISC.txt')
     candidates=list(Path(r'C:\Program Files\Microsoft Visual Studio\2022').glob('*/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT'))
@@ -181,8 +165,6 @@ def stage():
         dump(E/'vc-runtime.json',{'directory':str(crt),'files':{p.name:sha(p) for p in crt.glob('*.dll')}})
     for p in list(ST.rglob('*')):
         if p.is_file() and p.suffix.lower() in FONTS:p.unlink()
-    from vendor_notices import collect
-    collect(ST,E)
     (ST/'portable_config/scripts/modernx.lua').unlink(missing_ok=True)
     (ST/'portable_config/script-opts/modernx.conf').unlink(missing_ok=True)
     p=ST/'portable_config/scripts/thumbfast.lua';s=p.read_text(encoding='utf-8')
@@ -192,12 +174,13 @@ def stage():
         p=ST/'portable_config'/n;s=p.read_text(encoding='utf-8')
         s=s.replace('apply-profile upscale-on; script-message aji-slot','script-message aji-slot')
         p.write_text(s,encoding='utf-8')
-    records=prune(ST,records,E)
-    dump(ST/'build-info/standalone/components.json',records)
-    dump(ST/'manifest.json',{'name':META['name'],'version':META['version'],'distribution':'full-portable','repository':REPO,'component_version':'3.6.0','gpu_target':TARGET})
+    component_assets=prepare_components(ST,DIST,META,SEVEN)
+    dump(E/'component-assets.json',component_assets)
+    dump(E/'components.json',validate_components(ST))
+    dump(ST/'manifest.json',{'name':META['name'],'version':META['version'],'distribution':'portable','repository':REPO,'component_version':'3.6.0','platform':'win-x64'})
     cp(R/'docs/standalone.md',ST/'使用说明.md')
     for name in ('准备使用.txt','README-full.txt'):
-        (ST/name).write_text('完整便携版：直接运行 NekoAnimeVE.exe。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n首次生成 AI 引擎需要等待，显卡驱动仍由系统提供。\n',encoding='utf-8')
+        (ST/name).write_text('直接运行 NekoAnimeVE.exe；管理器的组件页可选择下载模型和显卡组件。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n不内置模型，默认普通播放；显卡驱动由系统提供。\n',encoding='utf-8')
     inspect_payload()
 
 def clean_session_files(app):
@@ -219,41 +202,14 @@ def inspect_payload():
        'portable_config/script-modules/player_ui_menu.lua','portable_config/script-modules/player_ui_danmaku_online.lua',
        'portable_config/script-modules/player_ui_danmaku_render.lua','animejanai/danmaku/DanmakuFactory.exe',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
-       'animejanai/inference/nvinfer_11.dll','animejanai/inference/trtexec.exe','Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
+       'animejanai/inference/aji_dml.dll','7za.exe','OPEN_SOURCE_NOTICES.md','LICENSE',
+       'THIRD_PARTY_LICENSES/mpv-source/Copyright','THIRD_PARTY_LICENSES/DirectML.txt',
+       'Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
     for name in required:
         if not (ST/name).is_file() or (ST/name).stat().st_size==0:raise RuntimeError('Incomplete package: '+name)
-    conf=(ST/'animejanai/animejanai.conf').read_text(encoding='utf-8-sig')
-    models=set(re.findall(r'^chain_\d+_model_\d+_name=(.+)$',conf,re.M))
-    for n in models:
-        if not (ST/'animejanai/onnx'/(n.strip()+'.onnx')).is_file():raise RuntimeError('Missing preset model: '+n)
-    parser=configparser.ConfigParser(interpolation=None,strict=False);parser.read_string(conf)
-    rife_required=set()
-    for section in parser.values():
-        for k,code in section.items():
-            match=re.fullmatch(r'chain_(\d+)_rife_model',k)
-            if not match:continue
-            code=code.strip()
-            if not code.isdigit() or len(code) not in (2,3,4):raise RuntimeError('Invalid configured RIFE code: '+code)
-            name='rife_v'+code[0]+'.'+code[1:3]
-            if len(code)==4 and code[-1]=='1':name+='_lite'
-            if section.get('chain_'+match[1]+'_rife_ensemble','no').strip().lower() in ('yes','true','1'):name+='_ensemble'
-            rife_required.add(name+'.onnx')
-    for name in rife_required:
-        if not (ST/'animejanai/rife'/name).is_file():raise RuntimeError('Missing configured RIFE file: '+name)
-    rife=list((ST/'animejanai/rife').glob('*.onnx'))
-    if not rife or not rife_required:raise RuntimeError('Missing RIFE model collection')
-    for family in ('120',):
-        if not list((ST/'animejanai/inference').glob('nvinfer_builder_resource_sm'+family+'*')):raise RuntimeError('Missing kernel family '+family)
-    licenses=[p for p in (ST/'animejanai/inference').iterdir() if 'LICENSE' in p.name.upper()]
-    texts={p.name:p.read_text(encoding='utf-8',errors='replace') for p in licenses if p.is_file()}
-    dump(E/'license-inventory.json',texts)
-    trt=any('TENSORRT' in n.upper() or ('TensorRT' in t and 'AGREEMENT' in t and 'NVIDIA' in t) for n,t in texts.items())
-    cuda=any('CUDA' in n.upper() or ('CUDA' in t and 'AGREEMENT' in t and 'NVIDIA' in t) for n,t in texts.items())
-    if not trt or not cuda:raise RuntimeError('Missing NVIDIA license texts; inspect license-inventory.json')
+    component_report=validate_components(ST)
     if any(p.suffix.lower() in FONTS for p in files):raise RuntimeError('Unexpected standalone font file')
-    validate_gpu_target(ST,E)
-    dump(E/'payload.json',{'required_files':required,'preset_models':sorted(models),'rife_models':len(rife),'required_rife_files':sorted(rife_required),
-       'license_files':[p.relative_to(ST).as_posix() for p in licenses],
+    dump(E/'payload.json',{'required_files':required,**component_report,
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
 
 def package():
@@ -280,7 +236,7 @@ def package():
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,
       'gpu_inference_tested':False,'player_ui_server_tested':False})
     dump(info/'SHA256.json',{p.relative_to(ST).as_posix():sha(p) for p in ST.rglob('*') if p.is_file() and p!=info/'SHA256.json'})
-    archive=DIST/f'{META["name"]}-{META["version"]}-rtx5080-laptop-win-x64-full.7z'
+    archive=DIST/f'{META["name"]}-{META["version"]}-win-x64.7z'
     run(SEVEN,'a','-t7z','-mx=3','-mmt=2','-bd',archive,'.',cwd=ST,stdout=subprocess.DEVNULL)
     run(SEVEN,'t',archive,stdout=subprocess.DEVNULL)
     archives=[archive]
@@ -298,10 +254,11 @@ def package():
                         out.write(data);remaining-=len(data)
                 archives.append(part);index+=1
         archive.unlink()
-    dump(DIST/'artifacts.json',[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
+    native=LOCK['native_and_ui_resources'];cp(download(native),DIST/native['name'])
+    dump(DIST/'artifacts.json',json.loads((E/'component-assets.json').read_text())+[native]+[{'repo':REPO,'tag':META['tag'],'name':p.name,'sha256':sha(p),'bytes':p.stat().st_size} for p in archives])
     shutil.rmtree(ST);extract(archives[0],R/'clean-install')
     require_security_result(R/'clean-install',E/'security/results.json')
-    run(sys.executable,R/'tests/test_gpu_target.py',R/'clean-install',E/'fresh-install')
+    run(sys.executable,R/'tests/test_optional_components.py',R/'clean-install')
     run(sys.executable,H/'test_complete.py',R/'clean-install',E/'fresh-install')
     run(sys.executable,R/'tests/test_player_ui_windows.py',R/'clean-install',E/'fresh-install/player_ui')
     run(sys.executable,R/'tests/test_network_playback.py',R/'clean-install',E/'fresh-install/network')
@@ -314,7 +271,7 @@ def package():
         for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
             if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
         for n in ('LICENSE','release.json'):z.write(R/n,n)
-    (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[sourcezip]),encoding='utf-8')
+    (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[DIST/native['name']]+[DIST/a['name'] for a in json.loads((E/'component-assets.json').read_text())]+[sourcezip]),encoding='utf-8')
     cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')
     print('FULL PACKAGE VERIFIED',[(p.name,p.stat().st_size) for p in archives],flush=True)
 

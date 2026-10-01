@@ -1,0 +1,694 @@
+{
+  "Avalonia-MIT.txt": {
+    "source": "https://raw.githubusercontent.com/AvaloniaUI/Avalonia/12.0.4/licence.md",
+    "sha256": "213814d306090074d234d760239ff0f67eb9b8d20eefb4d5631bb39dbe0b769b"
+  },
+  "FluentAvalonia-MIT.txt": {
+    "source": "https://raw.githubusercontent.com/amwx/FluentAvalonia/master/LICENSE",
+    "sha256": "6ba05bda2f20a8b76ed6fa4c538759d13a3efbfa59747011356950813e6150b9"
+  },
+  "ReactiveUI-MIT.txt": {
+    "source": "https://raw.githubusercontent.com/reactiveui/ReactiveUI/main/LICENSE",
+    "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+  },
+  "ONNX-Runtime-MIT.txt": {
+    "source": "https://raw.githubusercontent.com/microsoft/onnxruntime/main/LICENSE",
+    "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+  },
+  "RIFE-MIT.txt": {
+    "source": "https://raw.githubusercontent.com/hzwer/ECCV2022-RIFE/main/LICENSE",
+    "sha256": "f629619f078e3ed699f1ea401248cb7796c36334e3b8ec0eb2c082eceaa5f084"
+  },
+  "Real-ESRGAN-BSD.txt": {
+    "source": "https://raw.githubusercontent.com/xinntao/Real-ESRGAN/master/LICENSE",
+    "sha256": "4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2"
+  },
+  "DirectML.txt": {
+    "source": "the-database/mpv-AnimeJaNai 3.6.0 trt-runtime component, Microsoft license",
+    "sha256": "a05138e3a085ff60a44881eedfa58dccb03ecc1d7b1f6ae888418e8c2fec4b8d"
+  },
+  "mpv-source/Copyright": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a09691405e4c9c294f02122d28de355b8c360be4b84accefb8a443e99d1d648c"
+  },
+  "mpv-source/LICENSE.GPL": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "498d32907f132c2cd7d3ae269f304aed87156293f63e724b83d9f62ed787d55a"
+  },
+  "mpv-source/LICENSE.LGPL": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "13f4287cd5be7913cf1d39434b6e9fe779be1e56744f6d8f9a5a0121d62f7f17"
+  },
+  "MSYS2/aom/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "4764a286d8b2faeaf42f4418e7d7a28d58fc8fd4d00a3d0a7f44b0a4099de7f2"
+  },
+  "MSYS2/aom/PATENTS": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "661fb8e504744e95587b556b94a58343448300606a41bea8c7a9b97125696e61"
+  },
+  "MSYS2/binutils/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
+  },
+  "MSYS2/binutils/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d"
+  },
+  "MSYS2/binutils/COPYING3": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
+  "MSYS2/binutils/COPYING3.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+  },
+  "MSYS2/brotli/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94"
+  },
+  "MSYS2/bzip2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3"
+  },
+  "MSYS2/c-ares/LICENSE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "460f5e768fda3752ca2169a95df062578a10fb126bfd65f3b9b1a1bed2f84807"
+  },
+  "MSYS2/cairo/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "67228a9f7c5f9b67c58f556f1be178f62da4d9e2e6285318d8c74d567255abdf"
+  },
+  "MSYS2/cairo/COPYING-LGPL-2.1": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "9e9e8608c4cdda51a78cc3a385f4ec9a2e4c96d5ecad74ac8bca5fca3e563b7d"
+  },
+  "MSYS2/cairo/COPYING-MPL-1.1": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "53692a2ed6c6a2c6ec9b32dd0b820dfae91e0a1fcdf625ca9ed0bdf8705fcc4f"
+  },
+  "MSYS2/crt/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+  },
+  "MSYS2/crt/COPYING.MinGW-w64-runtime.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+  },
+  "MSYS2/crt/COPYING.MinGW-w64.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+  },
+  "MSYS2/curl/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "82f2f4427d6545ee5aaac4f0b80428da6cc8ba41c2cf5da3a03680ec327b9681"
+  },
+  "MSYS2/dav1d/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "dd92c3c2247c5651606fc23a5e2d6a1ebc5ace9a3e49cbde0e12f05ad1cb1ee5"
+  },
+  "MSYS2/dav1d/PATENTS": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "335eca574598bf4ca181b12f708d6669e5a5e78c8e1513e5b35fa1f03901484b"
+  },
+  "MSYS2/expat/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87"
+  },
+  "MSYS2/ffnvcodec-headers/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "ee73e7577cfac7f231fb8a35b2404af227d2ed3d038711931ac373bc63a6c956"
+  },
+  "MSYS2/flac/COPYING.Xiph": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7866ee98760fc1f0156b4fe6bf530257e02be487ab3fd94e2b63799dd32d6b2c"
+  },
+  "MSYS2/fontconfig/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "51a51aa9823704fd90bccc616cdd17ebabb5b2b3e9cbde886ca02c7002288067"
+  },
+  "MSYS2/freetype/FTL.TXT": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f"
+  },
+  "MSYS2/freetype/GPLv2.TXT": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c4120c6752c910c299e3bd9cb3a46ff262c268303ca2069b61f92f10a5656c18"
+  },
+  "MSYS2/fribidi/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+  },
+  "MSYS2/gcc-libgfortran/COPYING.RUNTIME": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+  },
+  "MSYS2/gcc-libs/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+  },
+  "MSYS2/gcc-libs/COPYING.RUNTIME": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+  },
+  "MSYS2/gcc-libs/COPYING3": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
+  "MSYS2/gcc-libs/README": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "33400d067fa3e2bd670a0868dcdb60c9486e8f559b675cf9ff1ff55d4e0d06ab"
+  },
+  "MSYS2/gdk-pixbuf2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+  },
+  "MSYS2/gettext-runtime/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7ef2cdfe58e0c0460657b6598b49af29d4e03c1e41cbaf0e1da1eb8ad74b95d0"
+  },
+  "MSYS2/ggml/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "MSYS2/glib2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "fa6f36630bb1e0c571d34b2bbdf188d08495c9dbf58f28cac112f303fc1f58fb"
+  },
+  "MSYS2/glslang/LICENSE.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "17e70c676e1521ff3e4686f04a2053d93a7e28a33be8de7ec37ab0ff72feb677"
+  },
+  "MSYS2/graphite2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "2c272829ff23f182c8bf7ea12fedea69b0ae148663123ed5240c117cb129c9c1"
+  },
+  "MSYS2/graphite2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cab46cd45adbfea4b1d0f14b033c70062c73074fa0b56532c2f351576ddf455e"
+  },
+  "MSYS2/gsm/license.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "81c68a3374937ed9b5e4929c709e81a2c4b35b5d1f450ecf8c473e2daea46ff6"
+  },
+  "MSYS2/harfbuzz/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64"
+  },
+  "MSYS2/headers/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+  },
+  "MSYS2/headers/COPYING.MinGW-w64-runtime.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+  },
+  "MSYS2/headers/COPYING.MinGW-w64.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+  },
+  "MSYS2/headers/ddk-readme.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8d8f9924e4ea5466932000bdb9a4104da1d8ca3e4c979bb8207225522ba63826"
+  },
+  "MSYS2/highway/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af"
+  },
+  "MSYS2/imath/LICENSE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c20236d3b39fd20eba8e3d1fb3b892a5483df2e7d8d61bf43f165d3fac22f601"
+  },
+  "MSYS2/jbigkit/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "91df39d1816bfb17a4dda2d3d2c83b1f6f2d38d53e53e41e8f97ad5ac46a0cad"
+  },
+  "MSYS2/lcms2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6dbd60437f8ef91d8de1f08ad75882547fd4931bfcc3566a0735f28db1484d31"
+  },
+  "MSYS2/lcms2/LICENSE-fast_float": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c53a65c2fd561c87eaabf1072ef5dcab8653042bc15308465f52413585eb6271"
+  },
+  "MSYS2/lerc/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "77a8b761727c75e2167b15bfdf61b2c0bcf8792271228bebe80779106ad00671"
+  },
+  "MSYS2/libarchive/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "30e556b3959e3985d66efefec5eaac51d4995053caa1d3cffe6eb916f146f229"
+  },
+  "MSYS2/libb2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6a1ee543e5282cd9061881edf462e6fdab181f328da71fc2c9a6950a80e94d01"
+  },
+  "MSYS2/libbluray/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "b3aa400aca6d2ba1f0bd03bd98d03d1fe7489a3bbb26969d72016360af8a5c9d"
+  },
+  "MSYS2/libdatrie/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+  },
+  "MSYS2/libdeflate/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "4ad69099cb4374836fd27583d9991e2838cd86b6e4666ab26b2d32582c91e73a"
+  },
+  "MSYS2/libdovi/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "e9d76c149b1176de4aa0202cfb6a4a266a0c4cb71959f429d670c3a857f95e52"
+  },
+  "MSYS2/libdvdcss/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+  },
+  "MSYS2/libdvdnav/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670"
+  },
+  "MSYS2/libdvdread/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "d6cb0e9e560f51085556949a84af12b79a00f10ab8b66c752537faf7cd665572"
+  },
+  "MSYS2/libexif/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "36b6d3fa47916943fd5fec313c584784946047ec1337a78b440e5992cb595f89"
+  },
+  "MSYS2/libffi/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "17b64dc60f3b6897a60f971e288b973f655c2edcdf08b25f3c3dd5549857881c"
+  },
+  "MSYS2/libgme/license.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "d2efc89fbb7533572a472d34e07964951810a3a4f8d3159ecc2dcaa1452c5c26"
+  },
+  "MSYS2/libiconv/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
+  "MSYS2/libiconv/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/libiconv/README": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "4ae66e61d1c6593c84c47105b368d579bcee1af566dbb959ec63a0c48425dcf4"
+  },
+  "MSYS2/libjpeg-turbo/LICENSE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "ba6bceebcba0fdd35488477c2cca8c4632ce82c74dbfbc87d886ce6fc4433579"
+  },
+  "MSYS2/libjpeg-turbo/README.ijg": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6"
+  },
+  "MSYS2/libjpeg-turbo/README.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a44ba17ac66c57edaf0ea7c6e4b31358f08322c780e4e6af092082abb3e20793"
+  },
+  "MSYS2/libjxl/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede"
+  },
+  "MSYS2/liblc3/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "MSYS2/libmodplug/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "49942e7b3b175f549e751feb08b5270ca6f6c5fb7a1be9f9517db275ec32c92e"
+  },
+  "MSYS2/libmysofa/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "9c8713ccc5d6d93d20c7a1cfcb876e64baf551bfbe67faa4e60d39cda9ffd023"
+  },
+  "MSYS2/libogg/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "d2ab5758336489da61c12cc5bb757da5339c4ae9001f9bb0562b4370249af814"
+  },
+  "MSYS2/libplacebo/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "b3aa400aca6d2ba1f0bd03bd98d03d1fe7489a3bbb26969d72016360af8a5c9d"
+  },
+  "MSYS2/libpng/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526"
+  },
+  "MSYS2/libpsl/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "322392e6001b2b3b0fca705dc9f11f26e12441188ecde50eb1d22909980b2925"
+  },
+  "MSYS2/librsvg/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+  },
+  "MSYS2/libsamplerate/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "2c1f76ce2effdddb425018405d5690c0b1ab4e6976e35296b0a6db65c5e1a55d"
+  },
+  "MSYS2/libsndfile/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "ad01ea5cd2755f6048383c8d54c88459cd6fcb17757c5c8892f8c5ea060f6140"
+  },
+  "MSYS2/libsoxr/COPYING.LGPL": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "f2f118b9029ec1871b953639ecc46651b2fc7b62e295e6cf3ef2ac4c9a058b33"
+  },
+  "MSYS2/libsoxr/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "dc98676341fdcd29d9f279c9679d6a75288785b174ded8d1b2e316c366166135"
+  },
+  "MSYS2/libsoxr/LICENSE-PFFFT": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a9f3d236f3c14a41a1293f176d4c7c46d85404403417fcb8df6d6c9707104e42"
+  },
+  "MSYS2/libssh2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "f7f9633cf9ff2f1333f3d7ce46973a8716a4d2a2815ad56f30d437d5fea7bafe"
+  },
+  "MSYS2/libsystre/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "3200024286eb0a33c22da3a31c470df07c7b8cfbead2b9528195d67d107264ec"
+  },
+  "MSYS2/libtasn1/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "MSYS2/libtasn1/COPYING.LESSERv2": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/libthai/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/libtiff/LICENSE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0e27c2382d7b8147972bbb746e04059a1152c8d0fda9d03ef1399d1a433c4ade"
+  },
+  "MSYS2/libtre/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6a50ab50d856b30c965cf2dd899e577ec108c938242fd3a2e7a7a25eed996200"
+  },
+  "MSYS2/libunibreak/LICENCE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0c57e2ec42ece17791a75d2f9b2f8e0663181be008667a507f765b3ef22522db"
+  },
+  "MSYS2/libunistring/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "MSYS2/libunistring/LICENSE.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c"
+  },
+  "MSYS2/libva/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c86a782ee845b52472dae9b9d79fb915d333628ac0efe49cdce63644814931de"
+  },
+  "MSYS2/libvpl/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "bf1cfac2e2792b6e1e995ce103d70796aecaf2ec7e4c5fe5474f7acec7b4a677"
+  },
+  "MSYS2/libwebp/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf"
+  },
+  "MSYS2/libwinpthread/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+  },
+  "MSYS2/libxml2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "5d4873884a890122a4b9b20ad56ac6f7da1d796a5bfcf04a427970ac96217626"
+  },
+  "MSYS2/llama.cpp/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "MSYS2/lv2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "1e6bb175e193608b767ff25a4ed68b82c4db599491cf0d2694435cf60e9a4841"
+  },
+  "MSYS2/lzo2/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+  },
+  "MSYS2/meson/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "MSYS2/mpdecimal/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512"
+  },
+  "MSYS2/mpg123/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c22482728a634a8dfdb4ff72a96d4c1ed64cd8f3e79335c401751ac591609366"
+  },
+  "MSYS2/mujs/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0ca9b4fbfbcab8ac7d32475890d866efc02f4cffb6b6da5c0e9a0615cc3d82fe"
+  },
+  "MSYS2/nasm/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7436a7c46b6e4d969b41e1ce387885ae4ced25710662189ff2983665253729ac"
+  },
+  "MSYS2/ncurses/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "708999f95527e1ffa670c6fce288c6c600cb477dd04afcc1171422b3dd4ee226"
+  },
+  "MSYS2/nghttp2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6b94f3abc1aabd0c72a7c7d92a77f79dda7c8a0cb3df839a97890b4116a2de2a"
+  },
+  "MSYS2/nghttp3/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "58cc3fc8c6d6cb2485ab35eb5918e849b5bf1e56522974e106d7a39a88d61dcd"
+  },
+  "MSYS2/ngtcp2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "542dd526d2ea23565f0571cc68df6f05ed11248a90ff0f32de19d8ba589db513"
+  },
+  "MSYS2/ninja/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "eb7e9ab9690124c5c9f42bdc81383d886a3dede26345b6ed15bbad7caf81f7ea"
+  },
+  "MSYS2/OpenBLAS/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "190b5a9c8d9723fe958ad33916bd7346d96fab3c5ea90832bb02d854f620fcff"
+  },
+  "MSYS2/OpenBLAS/LICENSE-lapack": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "978539245c405775bf347b1256c36df4daf8b69a64b099e94b1d53742201621e"
+  },
+  "MSYS2/opencl-icd/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  "MSYS2/openexr/LICENSE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "84853c91d4c2e0310741d4773469d98bb93e61029608e0ba0882a3fffdf330bd"
+  },
+  "MSYS2/openjpeg/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "a6af136f3e15038a666b61f376612a07d9a4e48cb7c01adbf3e33b3f14ab49b6"
+  },
+  "MSYS2/openjph/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "5ddf5177863dfc9ab65fa129d587db651241f00e21ed2427b218bea997591f98"
+  },
+  "MSYS2/openssl/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+  },
+  "MSYS2/opus/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "01e1167d54a096d123cf6dfbbeb19587278845c6481d2d66d545669846079551"
+  },
+  "MSYS2/pango/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "d245807f90032872d1438d741ed21e2490e1175dc8aa3afa5ddb6c8e529b58e5"
+  },
+  "MSYS2/pcre2/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "99272c55f3dcfa07a8a7e15a5c1a33096e4727de74241d65fa049fccfdd59507"
+  },
+  "MSYS2/pcre2/LICENCE.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "197d8a73ffee0d6b09adba2f9c677b5f5aede24edf89258a68e48248d010d811"
+  },
+  "MSYS2/pixman/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "fac9270f0987b96ff4533fca3548c633e02083cbba4a0172a3b149b2e4019793"
+  },
+  "MSYS2/python-packaging/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48"
+  },
+  "MSYS2/python-packaging/LICENSE.APACHE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+  },
+  "MSYS2/python-packaging/LICENSE.BSD": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5"
+  },
+  "MSYS2/python3.14/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231"
+  },
+  "MSYS2/rav1e/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "2dd0a109751e939dec3f80ddcfbc1ba91553f18c574399e85c159632182a2c0a"
+  },
+  "MSYS2/rav1e/PATENTS": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7b14a70c194b19dbd0625e7eac839a63200f67484521ce5e8d8244b127e8907a"
+  },
+  "MSYS2/readline/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
+  "MSYS2/rubberband/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cedd4c1885d75991bf1077cc6e33359103cf04fbc996f20d30ab043d5fc5fcc5"
+  },
+  "MSYS2/SDL2/LICENSE.txt": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "97f35b302b361680ec1e891e95d2d52097bb95abff361434916d99dc1305f127"
+  },
+  "MSYS2/shaderc/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  "MSYS2/speex/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "2654a4264b2bfe298dedc508748d140111840c315cc8eb646a3a68c13fa75b01"
+  },
+  "MSYS2/speexdsp/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "2654a4264b2bfe298dedc508748d140111840c315cc8eb646a3a68c13fa75b01"
+  },
+  "MSYS2/spirv-cross/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "MSYS2/spirv-tools/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "MSYS2/sqlite3/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0b76663a90e034f3d7f2af5bfada4cedec5ebc275361899eccc5c18e6f01ff1f"
+  },
+  "MSYS2/srt/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85"
+  },
+  "MSYS2/svt-av1/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0acc2fcb27472bdc9aaf8b71f37055bbdac4f54671b7d922f241bd7fcd0dd3e6"
+  },
+  "MSYS2/svt-av1/PATENTS.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20678ab10402659106dc4c147c97b2a6e94b5c0695415e15a8f195ebc3547922"
+  },
+  "MSYS2/tzdata/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf"
+  },
+  "MSYS2/uchardet/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "107a29ccdd2d778aa2df5462f85dddfa099059abd22e064e07ec2cc9bafc37cd"
+  },
+  "MSYS2/vamp-plugin-sdk/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "91572fd197f7333fc1f94b02e66cbaf6e804451d0f59ba85488fb22777b2a52a"
+  },
+  "MSYS2/vapoursynth/COPYING.LESSER": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "b634ab5640e258563c536e658cad87080553df6f34f62269a21d554844e58bfe"
+  },
+  "MSYS2/vid.stab/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "03f095c5c70ea18ffb2b89dd58e4ee57e4f613d04632993f90c890f4cc125b99"
+  },
+  "MSYS2/vulkan-headers/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "95ad366d23fadf701d355bc45fb8b82ae2d700239471d35d41286ac3b08ff903"
+  },
+  "MSYS2/vulkan-loader/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "43c0a37e6a0fa7ff3c843b3ec5a4fac84b712558ddac103fbd4c1649662a9ece"
+  },
+  "MSYS2/whisper.cpp/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "MSYS2/wineditline/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "e1a9520a9b3143ad64adb356c5d2fca6bb09a3ad3950cf1f7213946543582440"
+  },
+  "MSYS2/winpthreads/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+  },
+  "MSYS2/xxhash/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+  },
+  "MSYS2/xz/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "616a3ad264ce29b8f1cb97e53037b139d406899ca8d1f799651e17bfa09830b8"
+  },
+  "MSYS2/xz/COPYING.0BSD": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "0b01625d853911cd0e2e088dcfb743261034a091bb379246cb25a14cc4c74bf1"
+  },
+  "MSYS2/xz/COPYING.GPLv2": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6"
+  },
+  "MSYS2/xz/COPYING.GPLv3": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "MSYS2/xz/COPYING.LGPLv2.1": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/zlib/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2"
+  },
+  "MSYS2/zstd/LICENSE": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8"
+  },
+  "MSYS2/zvbi/COPYING.md": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "6d679539253897582d38fcd1eabfa670c01c0ece73d8cd3dc97869fcf723f106"
+  },
+  "MSYS2/libjpeg-turbo/simd/jsimdext.inc": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "68c5d236785edf75344cebe8b9bec36568bd35c96eb72cc67ffecd66c17dbd74"
+  },
+  "MSYS2/libiconv/libcharset/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/gettext-runtime/intl/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  "MSYS2/gettext-runtime/libasprintf/COPYING": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "03133addae5b99a6148c538300e6d97074453089be1423b741bd081f18e2b298"
+  },
+  "MSYS2/gettext-runtime/libasprintf/COPYING.LIB": {
+    "source": "Previously verified full distribution license inventory; mpv upstream and pinned MSYS2 runtime packages",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  }
+}

@@ -46,10 +46,18 @@ class SecurityChecks(unittest.TestCase):
         self.assertTrue(policy_issues(self.files, self.policy))
 
     def test_preflight_stops_held_release_before_building(self):
+        dump(self.policy_path, self.policy)
         with self.assertRaises(RuntimeError):
-            preflight()
+            preflight(self.policy_path)
         self.approve_fixture()
         preflight(self.policy_path)
+
+    def test_accepted_rebuild_does_not_clear_the_old_report(self):
+        policy = json.loads(POLICY.read_text(encoding='utf-8'))
+        accepted = policy['release_assessment']['rebuilt_sha256']
+        self.assertEqual(policy_issues({self.name: accepted}, policy), [])
+        self.assertTrue(policy_issues({self.name: policy['reported_files'][0]['sha256']}, policy))
+        self.assertEqual(policy['release_assessment']['official_360_review'], 'not-obtained')
 
     def test_missing_component_cannot_bypass_review(self):
         self.assertTrue(policy_issues({'other.exe': '0' * 64}, self.policy))

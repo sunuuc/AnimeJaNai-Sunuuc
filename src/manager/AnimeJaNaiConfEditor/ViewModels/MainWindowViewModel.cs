@@ -47,9 +47,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         // Install state comes from the disk (works offline); GPU identity comes from the
         // component engine once its refresh completes.
 
-        public static bool TensorRtOnly =>
-            File.Exists(Path.Combine(DataDir, "inference", "gpu-target.json"));
-        public bool DirectMlAvailable => !TensorRtOnly;
+        public bool DirectMlAvailable => true;
 
         public static bool TrtOnDisk() =>
             File.Exists(Path.Combine(DataDir, "inference", "nvinfer_11.dll"));
@@ -87,25 +85,14 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public void RefreshComponentAwareness()
         {
+            _rifeModels = null;
             bool trtInstalled = TrtOnDisk();
             bool? nvidia = ComponentManager.GpuNvidia;
             bool trtUsable = trtInstalled && nvidia != false;
             TrtSelectable = trtUsable;
 
             string notice = "";
-            if (TensorRtOnly)
-            {
-                if (AnimeJaNaiConf != null)
-                {
-                    AnimeJaNaiConf.BackendAutoFallback = false;
-                    AnimeJaNaiConf.SetTensorRtSelected();
-                }
-                if (!trtUsable)
-                    notice = AnimeJaNai.Localization.UiText.T(nvidia == false
-                        ? "TensorRT requires an NVIDIA GPU."
-                        : "TensorRT is not installed.");
-            }
-            else if (trtUsable && AnimeJaNaiConf != null && AnimeJaNaiConf.DirectMlSelected &&
+            if (trtUsable && AnimeJaNaiConf != null && AnimeJaNaiConf.DirectMlSelected &&
                 AnimeJaNaiConf.BackendAutoFallback)
             {
                 // TensorRT is the natural path on NVIDIA: the DirectML selection was
@@ -139,12 +126,16 @@ namespace AnimeJaNaiConfEditor.ViewModels
             {
                 foreach (var chain in slot.Chains)
                 {
+                    chain.RifeModelList = new List<string>(RifeModels);
+                    foreach (var model in chain.Models) model.AllModels = GetAllModels();
                     chain.RaisePropertyChanged(nameof(UpscaleChain.RifeToggleEnabled));
                 }
             }
         }
 
         public ComponentManagerViewModel ComponentManager { get; } = new();
+        public string ProductVersion => "mpv-NekoAnimeVE " +
+            (typeof(MainWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "");
 
         private int _selectedTabIndex;
         public int SelectedTabIndex
@@ -153,10 +144,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
         }
 
-        // First-run setup: if the hardware's recommended components are missing
-        // (fresh slim install, or a GPU change), open on the Components tab and
-        // offer to install everything in one click - new users won't read the
-        // tab, and 3.3.0 set the bar by shipping preconfigured.
+        // Missing hardware components open the picker. Installation is always
+        // an explicit selection followed by Apply; startup performs no downloads.
         private async Task InitializeComponentManagerAsync()
         {
             await ComponentManager.RefreshAsync();
@@ -166,31 +155,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             }
             SelectedTabIndex = 1;
 
-            var missing = ComponentManager.MissingPreselected;
-            var lines = string.Join("\n",
-                missing.Select(p => $"\u2022  {p.Title} \u2014 {p.SizeText}"));
-            long totalMb = missing.Sum(p => p.Bytes) / 1048576;
-            var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
-            {
-                Title = AnimeJaNai.Localization.UiText.T("Set up NekoAnimeVE"),
-                Content = AnimeJaNai.Localization.UiText.F($"Components recommended for this PC are not installed:\n\n{lines}\n\nDownload and install them now ({totalMb:N0} MB)?"),
-                PrimaryButtonText = AnimeJaNai.Localization.UiText.T("Install"),
-                CloseButtonText = AnimeJaNai.Localization.UiText.T("Not now"),
-                DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
-            };
-            try
-            {
-                var result = await dialog.ShowAsync();
-                if (result == FluentAvalonia.UI.Controls.FAContentDialogResult.Primary)
-                {
-                    await ComponentManager.InstallMissingPreselectedAsync();
-                }
-            }
-            catch
-            {
-                // no dialog host (window closing etc.) - the Components tab with
-                // its banner and highlights remains the manual path
-            }
+
         }
 
 
@@ -436,7 +401,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public AvaloniaList<string> GetAllModels()
         {
-            return new AvaloniaList<string>(Directory.GetFiles(OnnxPath).Where(filename => Path.GetExtension(filename).Equals(".onnx", StringComparison.CurrentCultureIgnoreCase))
+            return new AvaloniaList<string>((Directory.Exists(OnnxPath) ? Directory.GetFiles(OnnxPath) : Array.Empty<string>()).Where(filename => Path.GetExtension(filename).Equals(".onnx", StringComparison.CurrentCultureIgnoreCase))
                 .Select(filename => Path.GetFileNameWithoutExtension(filename))
                 .Order().ToList());
         }
@@ -1331,7 +1296,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public void UserSelectDirectMl()
         {
-            if (MainWindowViewModel.TensorRtOnly) return;
             BackendAutoFallback = false;
             SetDirectMlSelected();
         }

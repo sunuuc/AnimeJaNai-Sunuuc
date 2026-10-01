@@ -1,0 +1,212 @@
+{
+  "package_version": "3.6.0",
+  "packs": [
+    {
+      "name": "trt-runtime",
+      "dep": "inference_runtime",
+      "asset": "component-trt-runtime.7z",
+      "bytes": 184539468,
+      "installed_bytes": 437230215,
+      "files": [
+        "animejanai/inference/cudart64_13.dll",
+        "animejanai/inference/DirectML_LICENSE.txt",
+        "animejanai/inference/nvinfer_11.dll",
+        "animejanai/inference/nvinfer_plugin_11.dll",
+        "animejanai/inference/nvonnxparser_11.dll",
+        "animejanai/inference/trtexec.exe"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-runtime.7z",
+      "sha256": "5742aad5b5feaa9cc4989b09cccb721445d82cf5178be1d26b2e78cc69f92391",
+      "requires": [],
+      "recommended": false
+    },
+    {
+      "name": "rife",
+      "dep": "rife",
+      "asset": "component-rife.7z",
+      "bytes": 462444033,
+      "installed_bytes": 506592464,
+      "files": [
+        "animejanai/rife/rife_v4.10.onnx",
+        "animejanai/rife/rife_v4.10_ensemble.onnx",
+        "animejanai/rife/rife_v4.11.onnx",
+        "animejanai/rife/rife_v4.11_ensemble.onnx",
+        "animejanai/rife/rife_v4.12.onnx",
+        "animejanai/rife/rife_v4.12_ensemble.onnx",
+        "animejanai/rife/rife_v4.12_lite.onnx",
+        "animejanai/rife/rife_v4.12_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.13.onnx",
+        "animejanai/rife/rife_v4.13_ensemble.onnx",
+        "animejanai/rife/rife_v4.13_lite.onnx",
+        "animejanai/rife/rife_v4.13_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.14.onnx",
+        "animejanai/rife/rife_v4.14_ensemble.onnx",
+        "animejanai/rife/rife_v4.14_lite.onnx",
+        "animejanai/rife/rife_v4.14_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.15.onnx",
+        "animejanai/rife/rife_v4.15_ensemble.onnx",
+        "animejanai/rife/rife_v4.15_lite.onnx",
+        "animejanai/rife/rife_v4.15_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.16_lite.onnx",
+        "animejanai/rife/rife_v4.16_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.17.onnx",
+        "animejanai/rife/rife_v4.17_ensemble.onnx",
+        "animejanai/rife/rife_v4.17_lite.onnx",
+        "animejanai/rife/rife_v4.17_lite_ensemble.onnx",
+        "animejanai/rife/rife_v4.18.onnx",
+        "animejanai/rife/rife_v4.18_ensemble.onnx",
+        "animejanai/rife/rife_v4.19.onnx",
+        "animejanai/rife/rife_v4.19_ensemble.onnx",
+        "animejanai/rife/rife_v4.20.onnx",
+        "animejanai/rife/rife_v4.20_ensemble.onnx",
+        "animejanai/rife/rife_v4.21.onnx",
+        "animejanai/rife/rife_v4.22.onnx",
+        "animejanai/rife/rife_v4.22_lite.onnx",
+        "animejanai/rife/rife_v4.23.onnx",
+        "animejanai/rife/rife_v4.24.onnx",
+        "animejanai/rife/rife_v4.24_ensemble.onnx",
+        "animejanai/rife/rife_v4.25.onnx",
+        "animejanai/rife/rife_v4.26.onnx",
+        "animejanai/rife/rife_v4.26_heavy.onnx",
+        "animejanai/rife/rife_v4.7.onnx",
+        "animejanai/rife/rife_v4.7_ensemble.onnx",
+        "animejanai/rife/rife_v4.8.onnx",
+        "animejanai/rife/rife_v4.8_ensemble.onnx",
+        "animejanai/rife/rife_v4.9.onnx",
+        "animejanai/rife/rife_v4.9_ensemble.onnx"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-rife.7z",
+      "sha256": "bb002ecc92cb628c1627ba687d5e709d4d201e432e06a94ba0028aff5f631f0f",
+      "requires": [],
+      "recommended": false
+    },
+    {
+      "name": "trt-ptx",
+      "dep": "inference_runtime",
+      "asset": "component-trt-ptx.7z",
+      "bytes": 207236020,
+      "installed_bytes": 241285744,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_ptx_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-ptx.7z",
+      "sha256": "ec44c7e1efe3d06dc59ddbcda6d858ae9f5a5dc3e3ec8dcfcc8881240eb4f150",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm100",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm100.7z",
+      "bytes": 246746820,
+      "installed_bytes": 284336752,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm100_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm100.7z",
+      "sha256": "379fdb781e309367f5ef46abc2151f6e6f0744e6e50a0e5f88c1efe069416939",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm120",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm120.7z",
+      "bytes": 225678405,
+      "installed_bytes": 263028336,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm120_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm120.7z",
+      "sha256": "204533a5e1ab1bbe4557902e8b58f83a33ee1c2d0a925a42e00cd9cf42468dec",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm75",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm75.7z",
+      "bytes": 88473256,
+      "installed_bytes": 116110960,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm75_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm75.7z",
+      "sha256": "c14c491229f94170968a81ad12d2f6c47887b770bb1c58de370b31a82b730108",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm80",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm80.7z",
+      "bytes": 157274709,
+      "installed_bytes": 186796144,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm80_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm80.7z",
+      "sha256": "59993958c4f58c39a42b558b5ad532bbaa10c9bc34505f9a0cc1c6a68c56a1e8",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm86",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm86.7z",
+      "bytes": 146690617,
+      "installed_bytes": 176118896,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm86_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm86.7z",
+      "sha256": "62d184244b58a0871d09d9973d34e8b7278a93e5742b350c09d48f60853bd147",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm89",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm89.7z",
+      "bytes": 155521297,
+      "installed_bytes": 185167984,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm89_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm89.7z",
+      "sha256": "ad3b2523e8c51ba53536ee30fd5d18f4a8971eb443fb39c72f6cb2807d308d3c",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    },
+    {
+      "name": "trt-sm90",
+      "dep": "inference_runtime",
+      "asset": "component-trt-sm90.7z",
+      "bytes": 413913999,
+      "installed_bytes": 454195824,
+      "files": [
+        "animejanai/inference/nvinfer_builder_resource_sm90_11.dll"
+      ],
+      "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-sm90.7z",
+      "sha256": "c41e754b6eb5cae25b486fd197f6ecf89be45755ec9dc5ae19b494a33dde2e1f",
+      "requires": [
+        "trt-runtime"
+      ],
+      "recommended": false
+    }
+  ]
+}

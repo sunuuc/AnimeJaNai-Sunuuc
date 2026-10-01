@@ -35,7 +35,7 @@ class BrandingTests(unittest.TestCase):
         publisher = (ROOT / 'tools/standalone/publish.py').read_text(encoding='utf-8')
         self.assertIn('f\'{META["name"]} {META["version"]}', publisher)
         documentation = (ROOT / 'docs/standalone.md').read_text(encoding='utf-8')
-        self.assertIn(PROJECT_NAME + '-' + META['version'] + '-rtx5080-laptop-win-x64-full.7z', documentation)
+        self.assertIn(PROJECT_NAME + '-' + META['version'] + '-win-x64.7z', documentation)
         self.assertIn(PROJECT_NAME + '-' + META['version'] + '-sources.zip', documentation)
         for filename in ('src/player/src/MpvNet.Windows/MpvNet.Windows.csproj',
                          'src/manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj',

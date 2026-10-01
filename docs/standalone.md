@@ -1,14 +1,14 @@
-# mpv-NekoAnimeVE 1.1.9
+# mpv-NekoAnimeVE 1.2.0
 
 项目和发行包名称为 mpv-NekoAnimeVE；播放器与管理器界面使用 NekoAnimeVE。播放器为 `NekoAnimeVE.exe`，管理器为 `NekoAnimeVEManager.exe`。
 
-Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持动漫 AI 超分和 RIFE 补帧。
+Windows x64 视频播放器，支持选择下载 AI 超分与 RIFE 补帧组件。NVIDIA 可使用 TensorRT，AMD / Intel 可使用内置 DirectML；普通播放无需安装模型。
 
 ## 使用
 
-解压 `mpv-NekoAnimeVE-1.1.9-rtx5080-laptop-win-x64-full.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
+解压 `mpv-NekoAnimeVE-1.2.0-win-x64.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
 
-包内包含 TensorRT 运行库、SM120 内核、超分与补帧模型。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
+发行包不内置模型与 TensorRT 显卡组件。打开管理器“组件”页，可选择推荐项或手动勾选；点击“应用”才下载，显示进度并验证 SHA-256。各超分模型单独下载，RIFE 为可选组件。默认关闭 AI 处理，安装后再在配置方案中选择模型与启用处理链。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
 支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。兼容 Player UI 把媒体参数放在空 `--{ ... --}` 参数组中的调用方式。
 
@@ -45,7 +45,7 @@ Player UI 控制栏运行模块已并入脚本，完整包解压到含中文字�
 
 ## 验收范围
 
-构建流程检查自包含程序、运行库、SM120 内核、模型、许可证和校验值，并对压缩包解压后的完整程序再次运行回归测试。
+构建流程检查自包含程序、基础后端、可选下载目录、不含模型的核心包、许可证和校验值，并对压缩包解压后的完整程序再次运行回归测试。
 
 播放测试使用本地生成视频和回环 HTTP 服务；弹幕测试覆盖原生渲染、黑边、首次缩放帧、轨道生命周期、速度、屏蔽与多线路搜索回退。构建验证不访问个人视频服务器。
 
@@ -66,9 +66,13 @@ GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服�
 
 ## 文件
 
-- `mpv-NekoAnimeVE-1.1.9-rtx5080-laptop-win-x64-full.7z`：完整程序
-- `mpv-NekoAnimeVE-1.1.9-sources.zip`：源码
+- `mpv-NekoAnimeVE-1.2.0-win-x64.7z`：完整程序
+- `mpv-NekoAnimeVE-1.2.0-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
+
+## 关于
+
+管理器“组件”右侧的“关于”页提供项目与上游链接、版本、修改说明和许可证入口。详细来源见 `OPEN_SOURCE_NOTICES.md`。
 
 ## 许可证
 

@@ -479,12 +479,17 @@
             <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{local:Text Key=s0a15081cc5a82610}" />
           </Grid>
         </Border>
+        <TextBlock Text="{local:Text Key=componentChoices}" TextWrapping="Wrap" Classes="help" />
+        <WrapPanel Orientation="Horizontal">
+          <Button Content="{local:Text Key=selectRecommended}" Command="{Binding ComponentManager.SelectRecommended}" IsEnabled="{Binding ComponentManager.NotBusy}" Margin="0,0,10,0" />
+          <Button Content="{local:Text Key=resetSelection}" Command="{Binding ComponentManager.ClearSelection}" IsEnabled="{Binding ComponentManager.NotBusy}" />
+        </WrapPanel>
         <ItemsControl ItemsSource="{Binding ComponentManager.Packs}" IsEnabled="{Binding ComponentManager.NotBusy}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ComponentItem">
               <Border Classes="border">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                  <CheckBox Grid.Column="0" IsChecked="{Binding Selected}" IsEnabled="False" VerticalAlignment="Center" Margin="0,0,12,0" />
+                  <CheckBox Grid.Column="0" IsChecked="{Binding Selected}" VerticalAlignment="Center" Margin="0,0,12,0" />
                   <StackPanel Grid.Column="1" Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
@@ -502,10 +507,43 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <StackPanel Orientation="Horizontal" Spacing="10">
-          <TextBlock Text="{local:Text Key=standaloneComponentsNote}" TextWrapping="Wrap" MaxWidth="600" />
+          <Button Content="{local:Text Key=s85045ccc056780a7}" Command="{Binding ComponentManager.Apply}" IsEnabled="{Binding ComponentManager.NotBusy}" Classes="active" />
           <Button Content="{local:Text Key=s0e91610117029a62}" Command="{Binding ComponentManager.Refresh}" IsEnabled="{Binding ComponentManager.NotBusy}" />
         </StackPanel>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding ComponentManager.IsBusy}" />
+        <Button Content="{local:Text Key=cancelDownload}" Command="{Binding ComponentManager.Cancel}" IsVisible="{Binding ComponentManager.IsBusy}" HorizontalAlignment="Left" />
         <TextBlock Text="{Binding ComponentManager.StatusLine}" TextWrapping="Wrap" Opacity="0.7" />
+      </StackPanel>
+    </ScrollViewer>
+  </TabItem>
+  <TabItem Header="{local:Text Key=about}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="24" Spacing="16" MaxWidth="920" HorizontalAlignment="Left">
+        <TextBlock Text="{Binding ProductVersion}" FontSize="26" FontWeight="SemiBold" />
+        <TextBlock Text="{local:Text Key=aboutPurpose}" TextWrapping="Wrap" />
+        <Border Classes="border">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{local:Text Key=aboutSources}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{local:Text Key=aboutCurrent}" TextWrapping="Wrap" />
+            <Button Content="sunuuc/mpv-NekoAnimeVE" Tag="https://github.com/sunuuc/mpv-NekoAnimeVE" Click="OpenAboutLink" HorizontalAlignment="Left" />
+            <TextBlock Text="{local:Text Key=aboutUpstream}" TextWrapping="Wrap" />
+            <Button Content="the-database/mpv-AnimeJaNai" Tag="https://github.com/the-database/mpv-AnimeJaNai" Click="OpenAboutLink" HorizontalAlignment="Left" />
+            <TextBlock Text="{local:Text Key=aboutChanges}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="border">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{local:Text Key=aboutLicenses}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{local:Text Key=aboutLicenseScope}" TextWrapping="Wrap" />
+            <TextBlock Text="{local:Text Key=aboutCredits}" TextWrapping="Wrap" />
+            <WrapPanel>
+              <Button Content="{local:Text Key=openLicense}" Tag="LICENSE" Click="OpenAboutFile" Margin="0,0,10,10" />
+              <Button Content="{local:Text Key=openNotices}" Tag="OPEN_SOURCE_NOTICES.md" Click="OpenAboutFile" Margin="0,0,10,10" />
+              <Button Content="{local:Text Key=openThirdParty}" Tag="THIRD_PARTY_LICENSES" Click="OpenAboutFile" Margin="0,0,10,10" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+        <TextBlock Text="{local:Text Key=aboutDownloads}" TextWrapping="Wrap" Classes="help" />
       </StackPanel>
     </ScrollViewer>
   </TabItem>

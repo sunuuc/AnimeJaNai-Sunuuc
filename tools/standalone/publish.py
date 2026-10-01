@@ -21,8 +21,6 @@ for path in (E/'danmaku/results.json',E/'fresh-install/danmaku/results.json'):
     result=json.loads(path.read_text());assert len(result)==4 and all(t['passed'] for t in result),path
 for path in (E/'network/results.json',E/'fresh-install/network/results.json'):
     result=json.loads(path.read_text());assert result and all(t['passed'] for t in result),path
-for path in (E/'gpu-target.json',E/'fresh-install/gpu-target.json'):
-    target=json.loads(path.read_text());assert target['passed'] and target['target']['id']=='rtx5080-laptop',path
 for path in (E/'startup/results.json',E/'fresh-install/startup/results.json'):
     result=json.loads(path.read_text());assert len(result)==7 and all(t['passed'] for t in result),path
 for path in (E/'player_ui-handoff/results.json',E/'fresh-install/player_ui-handoff/results.json'):
@@ -34,7 +32,6 @@ head=api(f'repos/{REPO}/git/ref/heads/main')['object']['sha']
 assert head==os.environ['GITHUB_SHA'],'Main changed during the build'
 assets=json.loads((DIST/'artifacts.json').read_text())
 assert assets and all(x['repo']==REPO for x in assets)
-LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
 sourcezip=DIST/f'{META["name"]}-{META["version"]}-sources.zip'
 
@@ -51,9 +48,7 @@ temp.replace(sourcezip)
 user_assets=[DIST/x['name'] for x in assets]
 checksums=DIST/'SHA256SUMS.txt'
 checksums.write_text(''.join(sha(p)+'  '+p.name+'\n' for p in user_assets+[sourcezip]),encoding='utf-8')
-paths=source_release_files(('src','portable_config','tests','third_party','THIRD_PARTY_LICENSES','docs'))
-paths += [H/'dependencies.json',H/'build.py',H/'publish.py',H/'test_complete.py',
-          H/'inline_player_ui_modules.py',H/'verify_player_sources.py',R/'tools/language-r3/ManagerTests.cs']
+paths=source_release_files(('src','tools','portable_config','animejanai','tests','third_party','THIRD_PARTY_LICENSES','docs'))
 tree=[]
 tracked_blobs={}
 for record in subprocess.check_output(['git','ls-tree','-r','-z','HEAD']).decode('utf-8').split('\0'):
@@ -82,11 +77,15 @@ base_tree=api(f'repos/{REPO}/git/commits/{head}')['tree']['sha']
 newtree=api(f'repos/{REPO}/git/trees',{'base_tree':base_tree,'tree':tree})['sha']
 commit=api(f'repos/{REPO}/git/commits',{'message':f'Release {META["version"]} sources','tree':newtree,'parents':[head]})['sha']
 old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==META['tag']]
-assert not old,'Release tag already exists; refusing to overwrite'
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')
-rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
-    'name':f'{META["name"]} {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
-run('gh','release','upload',META['tag'],'-R',REPO,*user_assets,sourcezip,checksums)
+if old:
+    assert len(old)==1 and old[0]['draft'] and {a['name'] for a in old[0]['assets']}=={LOCK['native_and_ui_resources']['name']},'Existing release is not the prepared build-input draft'
+    rel=api(f'repos/{REPO}/releases/{old[0]["id"]}',{'target_commitish':commit,'name':f'{META["name"]} {META["version"]}','body':notes},'PATCH')
+else:
+    rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
+        'name':f'{META["name"]} {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
+uploads=[p for p in user_assets if p.name!=LOCK['native_and_ui_resources']['name']] if old else user_assets
+run('gh','release','upload',META['tag'],'-R',REPO,*uploads,sourcezip,checksums)
 uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
 for p in user_assets+[sourcezip,checksums]:
     a=next(x for x in uploaded['assets'] if x['name']==p.name)

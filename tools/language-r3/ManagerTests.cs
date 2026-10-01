@@ -61,29 +61,31 @@ var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.
 Check(w.Title==(zh?"NekoAnimeVE 管理器":"NekoAnimeVE Manager"),"product window title "+selected);
 Check(raw.SequenceEqual(vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName)),"custom profile names preserved");
 var tabs=w.GetLogicalDescendants().OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
-Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components"),"constructed tab headers "+selected);
+Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components")&&tabs.Last()==(zh?"关于":"About"),"constructed tab headers "+selected);
 var selector=w.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name=="InterfaceLanguageSelector");
 Check(selector.SelectedIndex==Array.IndexOf(InterfaceLanguage.Choices,selected),"selector reflects persisted setting "+selected);
-foreach(string page in new[]{"global","profile","components"})
+foreach(string page in new[]{"global","profile","components","about"})
 {
-    vm.SelectedTabIndex=page=="components"?1:0;
+    vm.SelectedTabIndex=page=="about"?2:page=="components"?1:0;
     if(page=="global")vm.HandleShowGlobalSettings();
     if(page=="profile")vm.HandleShowCustomProfile(vm.AnimeJaNaiConf.UpscaleSlots.First().SlotNumber);
     Dispatcher.UIThread.RunJobs();
     using(var bitmap=new RenderTargetBitmap(new PixelSize(1100,800))){bitmap.Render(w);bitmap.Save(Path.Combine(evidence,"manager-"+selected+"-"+page+".png"));}
     string text=string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null));
     File.WriteAllText(Path.Combine(evidence,"manager-"+selected+"-"+page+".txt"),text);
+    if(page=="about")
+        Check(text.Contains("mpv-NekoAnimeVE 1.2.0") && text.Contains("sunuuc/mpv-NekoAnimeVE") &&
+              text.Contains("the-database/mpv-AnimeJaNai") && text.Contains("CC BY-NC-SA 4.0"),
+              "About displays version, both source repositories and license scope "+selected);
     Check(!w.GetLogicalDescendants().OfType<ItemsControl>().Any(c=>c.ItemsSource?.GetType().Name=="DefaultUpscaleSlots"),"manager uses only custom profiles");
 }
 selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
 Check(InterfaceLanguage.Read()==(zh?"en":"zh-CN"),"selector saves correct stable language ID "+selected);
 Check(InterfaceLanguage.IsChinese==zh,"selection does not partially relocalize current window "+selected);
 w.Close();Dispatcher.UIThread.RunJobs();
-File.WriteAllText(Path.Combine(fixture,"inference","gpu-target.json"),"{}");
 var targetVm=new MainWindowViewModel();targetVm.RefreshComponentAwareness();
-Check(!targetVm.DirectMlAvailable && targetVm.AnimeJaNaiConf.TensorRtSelected &&
-      !targetVm.AnimeJaNaiConf.BackendAutoFallback,"target package never falls back to missing DirectML");
+Check(targetVm.DirectMlAvailable && targetVm.AnimeJaNaiConf.DirectMlSelected,
+      "core offers DirectML without downloading TensorRT");
 targetVm.AnimeJaNaiConf.UserSelectDirectMl();
-Check(targetVm.AnimeJaNaiConf.TensorRtSelected && !targetVm.AnimeJaNaiConf.DirectMlSelected,
-      "unavailable backend cannot be selected");
+Check(targetVm.AnimeJaNaiConf.DirectMlSelected, "DirectML remains selectable");
 Console.WriteLine("PASS Manager language process "+selected);

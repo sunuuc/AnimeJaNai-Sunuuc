@@ -35,6 +35,27 @@ namespace AnimeJaNaiConfEditor.Views
             Opened += MainWindow_Opened;
         }
 
+        private async void OpenAboutLink(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Button { Tag: string url } && Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                await Launcher.LaunchUriAsync(uri);
+        }
+
+        private async void OpenAboutFile(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string name }) return;
+            var path = Path.Combine(MainWindowViewModel.RootDir, name);
+            if (Directory.Exists(path))
+            {
+                await Launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(path));
+            }
+            else if (File.Exists(path))
+            {
+                var file = await StorageProvider.TryGetFileFromPathAsync(path);
+                if (file != null) await Launcher.LaunchFileAsync(file);
+            }
+        }
+
         private void MainWindow_Opened(object? sender, EventArgs e)
         {
             if (DataContext is MainWindowViewModel vm)

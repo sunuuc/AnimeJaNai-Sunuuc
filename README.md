@@ -4,15 +4,13 @@ Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管
 
 ## 下载与使用
 
-**正式版暂缓提供下载。** 2026-10-01，360 对发布包中的 `DanmakuFactory.exe` 报告 `Trojan.Generic` / `Win64/Heur.Generic.H8oAbrkA`。1.1.9 已撤回为草稿，等待安全复核。独立扫描未检出不能确认误报。请勿为运行本程序恢复隔离文件、关闭杀毒或添加信任。
+正式版：[GitHub Releases](https://github.com/sunuuc/mpv-NekoAnimeVE/releases)。旧版 1.1.9 中被报告的转换器保持阻断；1.2.0 使用重新构建、用户确认并经过最终包扫描的转换器。检查范围和记录见 [安全发布说明](docs/security-release.md)。
 
-复核进展和重新发布条件见 [安全发布说明](docs/security-release.md)。[GitHub 发布状态](https://github.com/sunuuc/mpv-NekoAnimeVE/releases)。
+Windows x64，默认普通播放；模型和 TensorRT 显卡组件改为按需下载。NVIDIA 用户可选择匹配本机的 TensorRT 内核，AMD / Intel 用户可使用内置 DirectML 后端。
 
-Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
+解压程序包，运行 `NekoAnimeVE.exe`。管理器 `NekoAnimeVEManager.exe` 的“组件”页可选择推荐项、手动下载和移除，下载时显示进度并校验 SHA-256。各超分模型可单独下载，RIFE 为可选组件；安装后再启用 AI 处理。无需另装 .NET、Python 或 VapourSynth。
 
-解压完整包，运行 `NekoAnimeVE.exe`。调整 AI 配置时打开 `NekoAnimeVEManager.exe`。
-
-包内包含播放器、模型和运行库，无需另装 .NET、Python 或 VapourSynth。首次使用某个模型或分辨率时，TensorRT 需要生成引擎缓存；之后可以复用。显卡驱动由系统安装。
+“组件”右侧的“关于”页展示上游与本项目源码链接、修改说明、许可证与第三方声明。详情见 [来源与许可](docs/open-source-notices.md)。
 
 ## 播放界面
 

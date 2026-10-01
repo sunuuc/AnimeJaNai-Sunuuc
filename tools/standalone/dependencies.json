@@ -1,23 +1,5 @@
 {
-  "description": "One-time bootstrap pins. After the first full release, runtime_seed points to our own complete release and src/ holds the tested UI sources.",
-  "runtime_seed": {
-    "assets": [
-      {
-        "repo": "sunuuc/mpv-NekoAnimeVE",
-        "tag": "standalone-v1.1.9",
-        "name": "mpv-NekoAnimeVE-1.1.9-rtx5080-laptop-win-x64-full.7z",
-        "sha256": "86d064efaab66c6790729beecd0344777718c5532219c0dbb2339a78079a77da",
-        "bytes": 1097816462
-      }
-    ],
-    "version": "1.1.9"
-  },
-  "ui_source": {
-    "repo": "sunuuc/AnimeJaNai-zh-CN",
-    "tag": "zh-CN-3.6.0-r4",
-    "name": "r4-sources.zip",
-    "sha256": "3fe10b0bf2ec2e6675b38004c3f8b4c08af0d0bb24f56910d54121392ea59077"
-  },
+  "description": "Pinned upstream core and native resources. Optional GPU components use component-catalog.json; models are emitted as separate release assets.",
   "bootstrap_core": {
     "repo": "the-database/mpv-AnimeJaNai",
     "tag": "3.6.0",
@@ -25,35 +7,13 @@
     "sha256": "172521816f07ecd3a9b6f04a804da8d6abf46c68dd8cd8f60b08ac7953a20040"
   },
   "native_and_ui_resources": {
-    "repo": "sunuuc/AnimeJaNai-zh-CN",
-    "tag": "zh-CN-3.6.0-r4",
-    "name": "AnimeJaNai-3.6.0-zh-CN-r4-update.zip",
-    "sha256": "fb38e54c411d35e2573229a0b85e33ee361554d5661342755665a2dc9f6d4aed"
+    "repo": "sunuuc/mpv-NekoAnimeVE",
+    "tag": "standalone-v1.2.0",
+    "name": "native-build-inputs.7z",
+    "sha256": "c56b070d848a19f609e6400a2fd757d1b332d58553e6be0243b2e97bd56444ab",
+    "bytes": 80515638,
+    "origin": "Native runtime and localization files from the SHA-256-verified standalone-v1.1.8 distribution; binary origins and build configuration are included in build-info/native."
   },
-  "components": [
-    {
-      "id": "trt-runtime",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-runtime.7z",
-      "sha256": "5742aad5b5feaa9cc4989b09cccb721445d82cf5178be1d26b2e78cc69f92391"
-    },
-    {
-      "id": "trt-sm120",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-trt-sm120.7z",
-      "sha256": "204533a5e1ab1bbe4557902e8b58f83a33ee1c2d0a925a42e00cd9cf42468dec"
-    },
-    {
-      "id": "rife",
-      "repo": "the-database/mpv-AnimeJaNai",
-      "tag": "3.6.0",
-      "name": "component-rife.7z",
-      "sha256": "bb002ecc92cb628c1627ba687d5e709d4d201e432e06a94ba0028aff5f631f0f"
-    }
-  ],
-  "gpu_target": "rtx5080-laptop",
   "danmaku_factory": {
     "repo": "hihkm/DanmakuFactory",
     "source_commit": "1c575c6cda49d32457fd3d7436c722c8999c0633",

@@ -9,8 +9,14 @@
       "status": "review-pending"
     }
   ],
-  "required_reviews": [
-    {"path": "animejanai/danmaku/DanmakuFactory.exe", "vendor": "360"}
-  ],
-  "reviews": []
+  "required_reviews": [],
+  "reviews": [],
+  "release_assessment": {
+    "component": "DanmakuFactory",
+    "rebuilt_sha256": "f6d3f9d5cd99fda0784ef35525f077387ad479f97b8ed4538d870810bb30fca1",
+    "source_commit": "1c575c6cda49d32457fd3d7436c722c8999c0633",
+    "basis": "Source-audited rebuild, successful conversion regressions and user acceptance of the rebuilt desktop file. Final release still requires a complete fresh antivirus scan.",
+    "official_360_review": "not-obtained",
+    "old_reported_file": "remains-blocked"
+  }
 }

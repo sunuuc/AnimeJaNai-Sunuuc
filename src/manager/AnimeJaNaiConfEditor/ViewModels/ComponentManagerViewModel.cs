@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AnimeJaNaiConfEditor.ViewModels
@@ -18,9 +17,10 @@ namespace AnimeJaNaiConfEditor.ViewModels
     {
         public string Name { get; init; } = "";
         public long Bytes { get; init; }
+        public string? CatalogTitle { get; init; }
+        public string? CatalogDescription { get; init; }
         public bool Installed { get; init; }
         public bool Recommended { get; init; }
-        public bool Preselect { get; init; }
 
         private bool _selected;
         public bool Selected
@@ -37,23 +37,23 @@ namespace AnimeJaNaiConfEditor.ViewModels
         // be visible, not pre-decided
         public bool HighlightRecommended => Recommended && !Installed;
 
-        public string Title => Name switch
+        public string Title => CatalogTitle is not null ? AnimeJaNai.Localization.UiText.T(CatalogTitle) : (Name switch
         {
             "trt-runtime" => AnimeJaNai.Localization.UiText.T("TensorRT 运行库"),
             "rife" => AnimeJaNai.Localization.UiText.T("RIFE 补帧模型"),
             "trt-ptx" => AnimeJaNai.Localization.UiText.T("TensorRT 内核：其他 NVIDIA GPU"),
             _ when Name.StartsWith("trt-sm") => AnimeJaNai.Localization.UiText.F($"TensorRT 内核：{SmFamily(Name[6..])}"),
             _ => Name,
-        };
+        });
 
-        public string Description => Name switch
+        public string Description => CatalogDescription is not null ? AnimeJaNai.Localization.UiText.T(CatalogDescription) : (Name switch
         {
-            "trt-runtime" => MainWindowViewModel.TensorRtOnly ? "TensorRT" : AnimeJaNai.Localization.UiText.T("NVIDIA GPU 上最快的超分后端。未安装时，NVIDIA 用户将回退到速度更慢的 DirectML 后端。"),
+            "trt-runtime" => AnimeJaNai.Localization.UiText.T("NVIDIA GPU 上最快的超分后端。未安装时，NVIDIA 用户将回退到速度更慢的 DirectML 后端。"),
             "rife" => AnimeJaNai.Localization.UiText.T("视频补帧（例如 24 → 48 fps）。如果只使用超分则不需要。"),
             "trt-ptx" => AnimeJaNai.Localization.UiText.T("用于没有专用内核包的 NVIDIA GPU 的后备内核。首次构建引擎会更慢。"),
             _ when Name.StartsWith("trt-sm") => AnimeJaNai.Localization.UiText.T("与该代 GPU 匹配的引擎构建内核，仅对应 GPU 需要安装。"),
             _ => "",
-        };
+        });
 
         private static string SmFamily(string sm) => sm switch
         {
@@ -120,6 +120,24 @@ namespace AnimeJaNaiConfEditor.ViewModels
         }
 
         public bool NotBusy => !IsBusy;
+        private Process? _activeProcess;
+        public void Cancel()
+        {
+            try
+            {
+                if (_activeProcess is { HasExited: false }) _activeProcess.StandardInput.WriteLine("cancel");
+            }
+            catch (IOException) { } // The child may finish between checking and writing.
+            catch (InvalidOperationException) { }
+        }
+        public void SelectRecommended()
+        {
+            foreach (var item in Packs) item.Selected = item.Installed || item.Recommended;
+        }
+        public void ClearSelection()
+        {
+            foreach (var item in Packs) item.Selected = item.Installed;
+        }
 
         private bool _loadFailed;
         public bool LoadFailed
@@ -128,8 +146,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             set => this.RaiseAndSetIfChanged(ref _loadFailed, value);
         }
 
-        // Populates the pack list. Recommended-but-missing packs come back pre-checked, so
-        // first-time setup is "uncheck what you don't want, click Apply".
+        // Installed items are checked; hardware recommendations remain explicit choices.
         public async Task RefreshAsync()
         {
             if (!UpdaterFound)
@@ -139,6 +156,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 return;
             }
 
+            if (IsBusy) return;
             IsBusy = true;
             StatusLine = AnimeJaNai.Localization.UiText.T("正在检查已安装组件……");
             try
@@ -155,7 +173,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 bool nvidia = gpu.GetProperty("nvidia").GetBoolean();
                 GpuText = nvidia
                     ? AnimeJaNai.Localization.UiText.F($"GPU：{gpu.GetProperty("name").GetString()}")
-                    : MainWindowViewModel.TensorRtOnly ? AnimeJaNai.Localization.UiText.T("TensorRT requires an NVIDIA GPU.") : AnimeJaNai.Localization.UiText.T("GPU：未检测到 NVIDIA 设备；内置 DirectML 后端可用于 AMD 和 Intel GPU");
+                    : AnimeJaNai.Localization.UiText.T("GPU：未检测到 NVIDIA 设备；内置 DirectML 后端可用于 AMD 和 Intel GPU");
                 GpuNvidia = nvidia;
 
                 Packs.Clear();
@@ -167,20 +185,11 @@ namespace AnimeJaNaiConfEditor.ViewModels
                     {
                         Name = e.GetProperty("name").GetString() ?? "",
                         Bytes = e.GetProperty("bytes").GetInt64(),
+                        CatalogTitle = e.TryGetProperty("title", out var title) ? title.GetString() : null,
+                        CatalogDescription = e.TryGetProperty("description", out var description) ? description.GetString() : null,
                         Installed = installed,
                         Recommended = recommended,
-                        Preselect = e.TryGetProperty("preselect", out var pre)
-                            ? pre.GetBoolean() : installed || recommended,
                     };
-                    // Only what this machine uses (recommended), has (installed, so a
-                    // full install can be slimmed), or can choose (rife). Kernel packs
-                    // for other GPU generations and the TensorRT stack on non-NVIDIA
-                    // boxes are irrelevant here; the updater CLI still lists everything.
-                    if (!item.Installed && !item.Recommended && !item.Preselect &&
-                        item.Name != "rife")
-                    {
-                        continue;
-                    }
                     // checked = currently installed (the checkbox is desired state);
                     // recommended items are highlighted, never pre-checked
                     item.Selected = item.Installed;
@@ -189,11 +198,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
                 TrtPackAvailable = Packs.Any(p => p.Name == "trt-runtime");
                 SetupNeeded = Packs.Any(p => p.Recommended && !p.Installed);
-                string? mismatch = root.TryGetProperty("version_mismatch", out var mm)
-                    ? mm.GetString() : null;
-                StatusLine = mismatch is not null
-                    ? TranslateVersionMismatch(mismatch) + AnimeJaNai.Localization.UiText.T(" 请先更新，再管理组件。")
-                    : "";
+                StatusLine = "";
                 LoadFailed = false;
             }
             catch (Exception ex)
@@ -216,16 +221,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
             var toInstall = Packs.Where(p => p.Selected && !p.Installed).Select(p => p.Name).ToList();
             var toRemove = Packs.Where(p => !p.Selected && p.Installed).Select(p => p.Name).ToList();
             await RunChangesAsync(toInstall, toRemove);
-        }
-
-        // What the first-run dialog offers: the engine's preselect set (hardware
-        // recommendations, plus RIFE on installs that never managed components).
-        public List<ComponentItem> MissingPreselected =>
-            Packs.Where(p => p.Preselect && !p.Installed).ToList();
-
-        public async Task InstallMissingPreselectedAsync()
-        {
-            await RunChangesAsync(MissingPreselected.Select(p => p.Name).ToList(), []);
         }
 
         private async Task RunChangesAsync(List<string> toInstall, List<string> toRemove)
@@ -253,7 +248,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                         return;
                     }
                 }
-                foreach (var name in toRemove)
+                foreach (var name in toRemove.OrderBy(n => n == "trt-runtime" ? 1 : 0))
                 {
                     StatusLine = AnimeJaNai.Localization.UiText.F($"正在移除 {name}……");
                     var (exitCode, output) = await RunUpdaterAsync($"--remove {name}", null);
@@ -265,10 +260,16 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 }
                 StatusLine = AnimeJaNai.Localization.UiText.T("完成。");
             }
+            catch (Exception ex)
+            {
+                StatusLine = TranslateUpdaterText(ex.Message);
+            }
             finally
             {
+                var result = StatusLine;
                 IsBusy = false;
                 await RefreshAsync();
+                StatusLine = result;
             }
         }
 
@@ -280,17 +281,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
         private static string LastLine(string s) =>
             s.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
              .LastOrDefault() ?? AnimeJaNai.Localization.UiText.T("未知错误");
-
-        private static string TranslateVersionMismatch(string message)
-        {
-            var match = Regex.Match(message,
-                @"^Installed package is (.+?) but the published packs are for (.+?)\.?$");
-            if (match.Success)
-            {
-                return AnimeJaNai.Localization.UiText.F($"当前安装包版本为 {match.Groups[1].Value}，但已发布的组件包对应 {match.Groups[2].Value}。");
-            }
-            return TranslateUpdaterText(message);
-        }
 
         private static string TranslateUpdaterText(string message)
         {
@@ -311,7 +301,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         // Runs the updater hidden; onLine (marshalled to the UI thread) sees each output
         // line live, the full output is returned for error reporting.
-        private static async Task<(int ExitCode, string Output)> RunUpdaterAsync(
+        private async Task<(int ExitCode, string Output)> RunUpdaterAsync(
             string arguments, Action<string>? onLine)
         {
             var psi = new ProcessStartInfo
@@ -320,6 +310,9 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 Arguments = arguments,
                 WorkingDirectory = MainWindowViewModel.RootDir,
                 UseShellExecute = false,
+                RedirectStandardInput = true,
+                StandardOutputEncoding = System.Text.Encoding.UTF8,
+                StandardErrorEncoding = System.Text.Encoding.UTF8,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
@@ -332,7 +325,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 {
                     return;
                 }
-                output.AppendLine(e.Data);
+                lock (output) output.AppendLine(e.Data);
                 if (onLine is not null && e.Data.Trim() is { Length: > 0 } line)
                 {
                     Dispatcher.UIThread.Post(() => onLine(line));
@@ -342,13 +335,16 @@ namespace AnimeJaNaiConfEditor.ViewModels
             {
                 if (e.Data is not null)
                 {
-                    output.AppendLine(e.Data);
+                    lock (output) output.AppendLine(e.Data);
                 }
             };
             process.Start();
+            _activeProcess = process;
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             await process.WaitForExitAsync();
+            process.WaitForExit(); // drain asynchronous output handlers
+            _activeProcess = null;
             return (process.ExitCode, output.ToString());
         }
     }

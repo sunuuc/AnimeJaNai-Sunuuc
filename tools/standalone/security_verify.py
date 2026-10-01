@@ -81,7 +81,7 @@ def preflight(policy_path=POLICY):
                     and row['sha256'] not in reported]
         if not approved:
             raise RuntimeError('Release on security hold: official review pending for ' + required['path'])
-    print('PASS official antivirus review preflight')
+    print('PASS release-security policy preflight')
 
 
 def require_result(app, evidence, policy_path=POLICY):
@@ -163,7 +163,7 @@ def scan(app, out, cache, policy_path=POLICY):
     result['checked_at'] = datetime.now(timezone.utc).isoformat()
     dump(out / 'results.json', result)
     require_result(app, out / 'results.json', policy_path)
-    print('PASS antivirus release check:', len(files), 'files; official reviews verified')
+    print('PASS antivirus release check:', len(files), 'files; release policy verified')
 
 
 if __name__ == '__main__':

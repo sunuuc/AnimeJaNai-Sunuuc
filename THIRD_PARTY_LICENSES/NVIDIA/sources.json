@@ -1,0 +1,36 @@
+{
+  "original_runtime": "TensorRT 11.1.0.106 / CUDA 13.3",
+  "downloads": [
+    {
+      "url": "https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/11.1.0/zip/TensorRT-Enterprise-11.1.0.106-Windows-amd64-cuda-13.3-Release-external.zip",
+      "final_url": "https://developer.download.nvidia.com/compute/machine-learning/tensorrt/11.1.0/zip/TensorRT-Enterprise-11.1.0.106-Windows-amd64-cuda-13.3-Release-external.zip",
+      "sha256": "3fa5add88aec4227bcb8fa391fa3e2ccdfc9da6c51bc988908b11497294233d5",
+      "bytes": 1952632514
+    },
+    {
+      "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/windows-x86_64/cuda_cudart-windows-x86_64-13.3.29-archive.zip",
+      "final_url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/windows-x86_64/cuda_cudart-windows-x86_64-13.3.29-archive.zip",
+      "sha256": "1feb7dd266813ffe8dbc24e115183a5ac35a4795c8d34aca0df85ab616b64d9c",
+      "bytes": 2589792
+    },
+    {
+      "url": "https://docs.nvidia.com/deeplearning/tensorrt/latest/reference/sla.html",
+      "final_url": "https://docs.nvidia.com/deeplearning/tensorrt/latest/reference/sla.html",
+      "sha256": "eea91074c3bb4db31015e9c4bece1a1ff7db3ca59bdc3ad0d5b3c344aeb5cba4",
+      "bytes": 60634
+    }
+  ],
+  "notice_files": {
+    "TensorRT_LICENSE_bee83db7cc_Acknowledgements.txt": "175f0eff1102f77a9c84973e5e0cd2b5284b63abd4db379108b4d303189e9844",
+    "CUDA_LICENSE_9215a6ea5a_LICENSE": "088381bc2d891e719a2a9398645b00bb45f3b24231473a8283ac7e3e66b8a028",
+    "TensorRT_LICENSE.html": "eea91074c3bb4db31015e9c4bece1a1ff7db3ca59bdc3ad0d5b3c344aeb5cba4"
+  },
+  "TensorRT_runtime_sha256": "6f4a7f52c1c43d98a352c45c520d7f61cd4a596ce3699ea2e9c7d2e2e1ed8900",
+  "TensorRT_notice_entries": [
+    "TensorRT-11.1.0.106/doc/Acknowledgements.txt"
+  ],
+  "CUDA_runtime_sha256": "b00ca6f53699120da815bf3e06e2e4285fae2f201235b883dcbb50eec51e2a2a",
+  "CUDA_notice_entries": [
+    "cuda_cudart-windows-x86_64-13.3.29-archive/LICENSE"
+  ]
+}
