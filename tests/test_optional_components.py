@@ -50,7 +50,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
         # Updater publish directory contains runtime files, but no GUI is launched.
         shutil.copytree(updater.parent,app,dirs_exist_ok=True)
         shutil.copy2(seven,app/'7za.exe')
-        target=app/'build-info/standalone/components.json';target.parent.mkdir(parents=True)
+        target=app/'build-info/standalone/components.json';target.parent.mkdir(parents=True,exist_ok=True)
         def write(packs):target.write_text(json.dumps({'package_version':'3.6.0','packs':packs}),encoding='utf-8')
         def call(*args,ok=0):
             p=subprocess.run([str(app/updater.name),*args],capture_output=True,timeout=180)
