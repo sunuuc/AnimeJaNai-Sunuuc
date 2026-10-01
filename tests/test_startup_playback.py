@@ -43,8 +43,11 @@ local o={url='',tag=''}
 options.read_options(o,'handoff')
 mp.set_property_native('user-data/startup-test/options',{tag=o.tag,has_url=o.url~=''})
 mp.register_event('file-loaded',function()
-    local f=assert(io.open('handoff-result.json','w'))
+    -- Publish the fixture result only after the complete JSON has been closed.
+    local f=assert(io.open('handoff-result.json.tmp','w'))
     f:write(require('mp.utils').format_json({loaded=true,tag=o.tag,path=mp.get_property('path')}));f:close()
+    os.remove('handoff-result.json')
+    assert(os.rename('handoff-result.json.tmp','handoff-result.json'))
 end)
 if o.url~='' then mp.commandv('loadfile',o.url,'replace') end
 """,encoding='utf-8')
