@@ -7,7 +7,7 @@ import configparser, hashlib, json, os, re, shutil, subprocess, sys, time, urlli
 R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete-evidence'
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
-REPO='sunuuc/NekoAnimeVE'
+REPO='sunuuc/mpv-NekoAnimeVE'
 from gpu_target import TARGET, prune, validate as validate_gpu_target
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
 SEVEN=shutil.which('7z') or r'C:\Program Files\7-Zip\7z.exe'
@@ -270,7 +270,7 @@ def package():
       'run_id':os.environ['GITHUB_RUN_ID'],'dependencies':LOCK,'self_contained_dotnet':True,
       'gpu_inference_tested':False,'player_ui_server_tested':False})
     dump(info/'SHA256.json',{p.relative_to(ST).as_posix():sha(p) for p in ST.rglob('*') if p.is_file() and p!=info/'SHA256.json'})
-    archive=DIST/f'NekoAnimeVE-{META["version"]}-rtx5080-laptop-win-x64-full.7z'
+    archive=DIST/f'{META["name"]}-{META["version"]}-rtx5080-laptop-win-x64-full.7z'
     run(SEVEN,'a','-t7z','-mx=3','-mmt=2','-bd',archive,'.',cwd=ST,stdout=subprocess.DEVNULL)
     run(SEVEN,'t',archive,stdout=subprocess.DEVNULL)
     archives=[archive]
@@ -298,7 +298,7 @@ def package():
     run(sys.executable,R/'tests/test_player_ui_empty_scope.py',R/'clean-install',E/'fresh-install/player_ui-handoff')
     run(sys.executable,H/'test_danmaku_package.py',R/'clean-install',E/'fresh-install/danmaku')
     cp(E/'fresh-install',DIST/'fresh-install-evidence')
-    sourcezip=DIST/f'NekoAnimeVE-{META["version"]}-sources.zip'
+    sourcezip=DIST/f'{META["name"]}-{META["version"]}-sources.zip'
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
         for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
             if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())

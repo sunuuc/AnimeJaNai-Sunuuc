@@ -1,6 +1,6 @@
 # NekoAnimeVE Manager 简体中文版
 
-这是 [NekoAnimeVE](https://github.com/sunuuc/NekoAnimeVE) 内置的简体中文管理器，基于上游 `the-database/AnimeJaNaiManager`。
+这是 [mpv-NekoAnimeVE](https://github.com/sunuuc/mpv-NekoAnimeVE) 内置的简体中文管理器，基于上游 `the-database/AnimeJaNaiManager`。
 
 ## 目标
 

@@ -1,6 +1,6 @@
 # NekoAnimeVE Player
 
-Windows frontend for [NekoAnimeVE](https://github.com/sunuuc/NekoAnimeVE), based on mpv.net.
+Windows frontend for [mpv-NekoAnimeVE](https://github.com/sunuuc/mpv-NekoAnimeVE), based on mpv.net.
 
 
 ![](docs/img/mpvnet.png)

@@ -33,7 +33,7 @@ assets=json.loads((DIST/'artifacts.json').read_text())
 assert assets and all(x['repo']==REPO for x in assets)
 LOCK['runtime_seed']={'assets':assets,'version':META['version']}
 dump(H/'dependencies.json',LOCK)
-sourcezip=DIST/f'NekoAnimeVE-{META["version"]}-sources.zip'
+sourcezip=DIST/f'{META["name"]}-{META["version"]}-sources.zip'
 
 # Record the exact runtime input for rebuilding this release.
 temp=sourcezip.with_suffix('.pending.zip')
@@ -82,7 +82,7 @@ old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==MET
 assert not old,'Release tag already exists; refusing to overwrite'
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')
 rel=api(f'repos/{REPO}/releases',{'tag_name':META['tag'],'target_commitish':commit,
-    'name':f'NekoAnimeVE {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
+    'name':f'{META["name"]} {META["version"]}','body':notes,'draft':True,'prerelease':META['prerelease']})
 run('gh','release','upload',META['tag'],'-R',REPO,*user_assets,sourcezip,checksums)
 uploaded=api(f'repos/{REPO}/releases/{rel["id"]}')
 for p in user_assets+[sourcezip,checksums]:
@@ -100,7 +100,7 @@ public_assets=[]
 for file in user_assets+[sourcezip,checksums]:
     asset=next(a for a in published['assets'] if a['name']==file.name)
     digest=hashlib.sha256();count=0
-    request=urllib.request.Request(asset['browser_download_url'],headers={'User-Agent':'AnimeJaNai-release-verification'})
+    request=urllib.request.Request(asset['browser_download_url'],headers={'User-Agent':'mpv-NekoAnimeVE-release-verification'})
     with urllib.request.urlopen(request,timeout=120) as response:
         while chunk:=response.read(1024*1024):
             digest.update(chunk);count+=len(chunk)

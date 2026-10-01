@@ -10,21 +10,39 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 META = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
 NAME = 'NekoAnimeVE'
+PROJECT_NAME = 'mpv-NekoAnimeVE'
 ENTRY_POINTS = (NAME + '.exe', NAME + 'Manager.exe', NAME + 'Updater.exe')
 
 
 class BrandingTests(unittest.TestCase):
     def test_release_identity_and_documented_entry_points(self):
-        self.assertEqual(META['name'], NAME)
+        self.assertEqual(META['name'], PROJECT_NAME)
         self.assertEqual(META['tag'], 'standalone-v' + META['version'])
         for filename in ('README.md', 'docs/standalone.md'):
             text = (ROOT / filename).read_text(encoding='utf-8')
-            self.assertTrue(text.startswith('# ' + NAME))
+            self.assertTrue(text.startswith('# ' + PROJECT_NAME))
             self.assertIn(ENTRY_POINTS[0], text)
             self.assertIn(ENTRY_POINTS[1], text)
             self.assertNotIn('AnimeJaNai-zh-CN-', text)
-        self.assertIn('https://github.com/sunuuc/NekoAnimeVE/releases/latest',
+        self.assertIn('https://github.com/sunuuc/mpv-NekoAnimeVE/releases/latest',
                       (ROOT / 'README.md').read_text(encoding='utf-8'))
+
+    def test_distribution_names_follow_project_identity(self):
+        for filename in ('tools/standalone/build.py', 'tools/standalone/publish.py'):
+            text = (ROOT / filename).read_text(encoding='utf-8')
+            self.assertIn('f\'{META["name"]}-{META["version"]}', text)
+            self.assertNotIn('f\'NekoAnimeVE-{META["version"]}', text)
+        publisher = (ROOT / 'tools/standalone/publish.py').read_text(encoding='utf-8')
+        self.assertIn('f\'{META["name"]} {META["version"]}', publisher)
+        documentation = (ROOT / 'docs/standalone.md').read_text(encoding='utf-8')
+        self.assertIn(PROJECT_NAME + '-' + META['version'] + '-rtx5080-laptop-win-x64-full.7z', documentation)
+        self.assertIn(PROJECT_NAME + '-' + META['version'] + '-sources.zip', documentation)
+        for filename in ('src/player/src/MpvNet.Windows/MpvNet.Windows.csproj',
+                         'src/manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj',
+                         'tools/standalone/Updater.csproj'):
+            project = ET.parse(ROOT / filename)
+            version = project.findtext('.//Version') or project.findtext('.//InformationalVersion')
+            self.assertEqual(version, META['version'])
 
     def test_compiled_names_and_component_launcher_agree(self):
         projects = ('src/player/src/MpvNet.Windows/MpvNet.Windows.csproj',

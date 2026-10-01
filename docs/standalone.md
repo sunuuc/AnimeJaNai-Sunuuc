@@ -1,18 +1,20 @@
-# NekoAnimeVE 1.1.8
+# mpv-NekoAnimeVE 1.1.9
 
-播放器、管理器和完整程序包统一使用 NekoAnimeVE 名称。播放器为 `NekoAnimeVE.exe`，管理器为 `NekoAnimeVEManager.exe`。
+项目和发行包名称为 mpv-NekoAnimeVE；播放器与管理器界面使用 NekoAnimeVE。播放器为 `NekoAnimeVE.exe`，管理器为 `NekoAnimeVEManager.exe`。
 
 Windows x64 视频播放器，面向 NVIDIA GeForce RTX 5080 Laptop GPU，支持动漫 AI 超分和 RIFE 补帧。
 
 ## 使用
 
-解压 `NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
+解压 `mpv-NekoAnimeVE-1.1.9-rtx5080-laptop-win-x64-full.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
 
 包内包含 TensorRT 运行库、SM120 内核、超分与补帧模型。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
 支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。兼容 Player UI 把媒体参数放在空 `--{ ... --}` 参数组中的调用方式。
 
 ## 本版更新
+
+- 项目和发行包统一命名为 mpv-NekoAnimeVE，程序界面和启动文件继续使用 NekoAnimeVE。
 
 - 弹幕使用 DanmakuFactory 转换和 mpv/libass 原生渲染，移除逐帧脚本轮询。
 - 弹幕使用整个窗口区域，包括上下黑边。窗口、全屏切换时直接按当前尺寸渲染，不再延迟重新生成字幕轨道。
@@ -64,8 +66,8 @@ GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服�
 
 ## 文件
 
-- `NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z`：完整程序
-- `NekoAnimeVE-1.1.8-sources.zip`：源码
+- `mpv-NekoAnimeVE-1.1.9-rtx5080-laptop-win-x64-full.7z`：完整程序
+- `mpv-NekoAnimeVE-1.1.9-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
 
 ## 许可证

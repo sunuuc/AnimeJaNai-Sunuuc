@@ -24,7 +24,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: nekoanimeve-standalone
+  group: mpv-nekoanimeve-standalone
   cancel-in-progress: true
 jobs:
   full:

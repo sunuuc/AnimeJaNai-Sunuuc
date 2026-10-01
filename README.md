@@ -1,10 +1,10 @@
-# NekoAnimeVE
+# mpv-NekoAnimeVE
 
 Windows 视频播放器，支持动漫 AI 超分、RIFE 补帧和中文配置管理。
 
 ## 下载与使用
 
-[下载正式版](https://github.com/sunuuc/NekoAnimeVE/releases/latest)
+[下载正式版](https://github.com/sunuuc/mpv-NekoAnimeVE/releases/latest)
 
 Windows x64，面向 **NVIDIA GeForce RTX 50 系列 GPU**。安装包使用 TensorRT 和 SM120 内核，不包含其他代际显卡的内核、PTX 后备内核或 DirectML 后端。
 

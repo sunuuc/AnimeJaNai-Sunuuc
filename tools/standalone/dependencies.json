@@ -3,7 +3,7 @@
   "runtime_seed": {
     "assets": [
       {
-        "repo": "sunuuc/NekoAnimeVE",
+        "repo": "sunuuc/mpv-NekoAnimeVE",
         "tag": "standalone-v1.1.8",
         "name": "NekoAnimeVE-1.1.8-rtx5080-laptop-win-x64-full.7z",
         "sha256": "5d4c99f7964df91951b30dde542bb18d9743e6ee56b155ed29feb1da13cf7b49",
