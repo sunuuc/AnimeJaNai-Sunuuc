@@ -890,7 +890,7 @@ publish=function()
         render_pending=renderer and renderer.busy or false,track=renderer and renderer.track,
         servers=server_view,source=source,status=status,results=results,episodes=episodes,autoload_state=autoload_state,
         search_view=search_view,search_keyword=search_keyword,search_season=search_season,
-        search_source=search_source,search_pending=search_health.pending,
+        search_source=search_source,search_pending=search_batch and search_health.pending or 0,
         search_failed=search_health.failed,search_responded=search_health.responded,search_total=search_health.total,
         selected_show=selected_show,episode_load_generation=episode_load_generation,
         config_path=renderer and renderer.config_path})

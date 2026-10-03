@@ -422,6 +422,48 @@ mp.add_timeout(15,function()finish('timeout',1)end)
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=2)
 
+    def test_cancelled_search_clears_loading_state(self):
+        ScopedSearchHandler.seen = []
+        server = ThreadingHTTPServer(('127.0.0.1', 0), ScopedSearchHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory(prefix='danmaku-cancel-search-') as directory:
+                folder = Path(directory)
+                (folder / 'AnimeVE-danmaku.conf').write_text(
+                    f'api_servers=http://127.0.0.1:{server.server_port}/slow|slow\n', encoding='utf-8')
+                result_path = folder / 'state.json'
+                driver = folder / 'driver.lua'
+                driver.write_text('''
+local utils=require('mp.utils')
+local phase=0
+local function finish(reason,code)
+    local file=assert(io.open(%s,'wb'))
+    file:write(utils.format_json({phase=phase,reason=reason}));file:close()
+    mp.commandv('quit',code)
+end
+mp.add_timeout(.5,function()
+    mp.commandv('script-message','player_ui-danmaku-search-query','取消测试','0','')
+end)
+mp.add_periodic_timer(.05,function()
+    local data=mp.get_property_native('user-data/player_ui/danmaku') or {}
+    if phase==0 and data.search_pending==1 then
+        phase=1;mp.commandv('script-message','player_ui-danmaku-clear')
+    elseif phase==1 and data.status=='' then
+        finish(data.search_pending==0 and 'ok' or 'cancelled search stayed loading',data.search_pending==0 and 0 or 1)
+    end
+end)
+mp.add_timeout(10,function()finish('timeout',1)end)
+''' % lua_string(str(result_path)), encoding='utf-8')
+                proc = subprocess.run([str(MPV), f'--config-dir={self.config}', '--load-scripts=no',
+                    '--idle=yes', '--vo=null', f'--script={SCRIPT}', f'--script={driver}'],
+                    env={**os.environ, 'LOCALAPPDATA': directory}, capture_output=True, timeout=15)
+                outcome = json.loads(result_path.read_text(encoding='utf-8')) if result_path.exists() else {}
+                self.assertEqual(proc.returncode, 0, (outcome, proc.stderr.decode('utf-8', 'replace')[-1200:]))
+                self.assertEqual(outcome, {'phase': 1, 'reason': 'ok'})
+        finally:
+            server.shutdown(); server.server_close(); thread.join(timeout=2)
+
     def test_movie_titles_without_episode_markers_search_automatically(self):
         Handler.seen = []
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
@@ -1106,8 +1148,11 @@ class ScopedSearchHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(payload)))
         self.send_header('Connection', 'close')
-        self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
 
 class CacheHandler(BaseHTTPRequestHandler):
