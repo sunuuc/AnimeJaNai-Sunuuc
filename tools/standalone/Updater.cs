@@ -72,8 +72,14 @@ try
 catch (OperationCanceledException) { Console.WriteLine("Download cancelled."); return 3; }
 catch (Exception e) { Console.Error.WriteLine("Component operation failed: " + e.Message); return 1; }
 
-bool PackContentMatches(Pack pack) => pack.files.Count > 0 && pack.files.All(f => File.Exists(Inside(installDir, f))) &&
-    pack.files.Sum(f => new FileInfo(Inside(installDir, f)).Length) == pack.installed_bytes;
+bool PackContentMatches(Pack pack)
+{
+    var payload = pack.files.Where(f => !IsLicenseFile(f)).ToArray();
+    return payload.Length > 0 && payload.All(f => File.Exists(Inside(installDir, f))) &&
+        payload.Sum(f => new FileInfo(Inside(installDir, f)).Length) == pack.installed_bytes;
+}
+
+static bool IsLicenseFile(string path) => Path.GetFileName(path).Contains("LICENSE", StringComparison.OrdinalIgnoreCase);
 
 static string Hash(string path)
 {
@@ -105,7 +111,7 @@ void ValidateIndex(PackIndex index)
     foreach (var p in index.packs)
     {
         if (!Regex.IsMatch(p.name, "^[a-z0-9-]+$") || p.bytes <= 0 || p.installed_bytes <= 0 ||
-            !Regex.IsMatch(p.sha256, "^[a-f0-9]{64}$") || p.files.Count == 0 ||
+            !Regex.IsMatch(p.sha256, "^[a-f0-9]{64}$") || !p.files.Any(f => !IsLicenseFile(f)) ||
             p.files.Distinct(StringComparer.OrdinalIgnoreCase).Count() != p.files.Count)
             throw new InvalidDataException("Invalid component: " + p.name);
         if (!Uri.TryCreate(p.url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "github.com" ||
@@ -154,7 +160,8 @@ async Task InstallComponentAsync(Pack pack, CancellationToken token)
         await SevenZip(["x", "-y", "-bd", "-o" + extracted, archive]);
         var actual = Directory.GetFiles(extracted, "*", SearchOption.AllDirectories)
             .Select(f => Path.GetRelativePath(extracted, f).Replace('\\', '/')).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!actual.SetEquals(pack.files) || actual.Sum(f => new FileInfo(Inside(extracted, f)).Length) != pack.installed_bytes)
+        if (!actual.SetEquals(pack.files) || actual.Where(f => !IsLicenseFile(f))
+                .Sum(f => new FileInfo(Inside(extracted, f)).Length) != pack.installed_bytes)
             throw new InvalidDataException("Extracted content does not match component catalog.");
         token.ThrowIfCancellationRequested();
         Console.WriteLine("Installing " + pack.name + "...");
@@ -166,6 +173,8 @@ async Task InstallComponentAsync(Pack pack, CancellationToken token)
             {
                 var target = Inside(installDir, f); var backup = Inside(Path.Combine(work, "backup"), f);
                 var existed = File.Exists(target);
+                // The core owns shared license notices. Component installation must not replace them.
+                if (IsLicenseFile(f) && existed) continue;
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 if (existed) { Directory.CreateDirectory(Path.GetDirectoryName(backup)!); File.Copy(target, backup, true); }
                 committed.Add((target, backup, existed));
@@ -225,7 +234,7 @@ void RemoveComponent(Pack pack, PackIndex index)
     foreach (var f in pack.files)
     {
         // Shared notices and files owned by another installed component must survive.
-        if (f.Contains("LICENSE", StringComparison.OrdinalIgnoreCase)) continue;
+        if (IsLicenseFile(f)) continue;
         if (index.packs.Any(p => p.name != pack.name && p.files.Contains(f) && PackContentMatches(p))) continue;
         File.Delete(Inside(installDir, f));
     }
@@ -282,5 +291,6 @@ static class Nvml
     [DllImport("nvml.dll")] public static extern int nvmlDeviceGetName(IntPtr device, byte[] name, uint length);
 }
 record PackIndex(string package_version, List<Pack> packs);
+// installed_bytes counts binary/model payload only; shared license notices belong to the core.
 record Pack(string name, string asset, string url, string sha256, long bytes, long installed_bytes, List<string> files,
     List<string> requires, bool recommended, string? title = null, string? description = null);

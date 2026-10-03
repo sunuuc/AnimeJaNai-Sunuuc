@@ -59,6 +59,12 @@ class ComponentContracts(unittest.TestCase):
         for p in packs.values():
             self.assertIn(p['title'],translations)
             self.assertIn(p['description'],translations)
+    def test_runtime_size_counts_binary_payload_without_shared_notice(self):
+        catalog=json.loads((ROOT/'tools/standalone/component-catalog.json').read_text())
+        runtime=next(p for p in catalog['packs'] if p['name']=='trt-runtime')
+        self.assertIn('animejanai/inference/DirectML_LICENSE.txt',runtime['files'])
+        # Sizes from the pinned upstream archive; its notice is also shipped by the core.
+        self.assertEqual(runtime['installed_bytes'],551024+388010096+45488240+2251888+918528)
     def test_ui_uses_component_owner_and_about_tab(self):
         text=(ROOT/'src/manager/AnimeJaNaiConfEditor/Views/MainWindow.axaml').read_text(encoding='utf-8')
         self.assertIn('ComponentManager.Apply',text)
@@ -92,13 +98,17 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             p=subprocess.run([str(runtime_dir/updater.name),*args],capture_output=True,timeout=180)
             if p.returncode!=ok:raise AssertionError((args,p.returncode,p.stdout.decode('utf-8',errors='replace'),p.stderr.decode('utf-8',errors='replace')))
             return p
-        def pack(name,content,requires=[]):
+        def pack(name,content,requires=[],notices=None):
             relative=f'animejanai/onnx/{name}.onnx';path=root/'source'/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(content)
+            files=[relative]
+            for notice,data in (notices or {}).items():
+                target=root/'source'/notice;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+                files.append(notice)
             archive=root/(name+'.7z')
-            subprocess.run([str(seven),'a','-t7z','-bd',str(archive),relative],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
+            subprocess.run([str(seven),'a','-t7z','-bd',str(archive),*files],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
             cache=app/'app/.component-downloads'/name;cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
             return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-AnimeVE/releases/download/test/'+archive.name,
-                    'sha256':digest(archive),'bytes':archive.stat().st_size,'installed_bytes':len(content),'files':[relative],
+                    'sha256':digest(archive),'bytes':archive.stat().st_size,'installed_bytes':len(content),'files':files,
                     'requires':requires,'recommended':False}
         runtime=pack('fixture-runtime',b'test runtime')
         model=pack('fixture-model',b'test model',['fixture-runtime'])
@@ -114,6 +124,28 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
         call('--remove','fixture-model');call('--remove','fixture-runtime')
         assert custom.read_bytes()==b'user content'
         print('PASS dependency install, verification, protected dependency removal and custom-model preservation')
+        notice='animejanai/inference/DirectML_LICENSE.txt'
+        shared=app/notice;shared.parent.mkdir(parents=True,exist_ok=True)
+        core_notice=b'core license\n';shared.write_bytes(core_notice)
+        noticed=pack('notice-runtime',b'payload',notices={notice:b'core license\r\n'})
+        write([noticed]);call('--install','notice-runtime')
+        assert shared.read_bytes()==core_notice
+        assert json.loads(call('--components','--json').stdout)['packs'][0]['installed']
+        repeated=call('--install','notice-runtime')
+        assert b'already installed' in repeated.stdout and b'Downloading' not in repeated.stdout
+        assert not (app/'app/.component-downloads/notice-runtime').exists()
+        # Simulate replacing the core package with a new copy of its mandatory notice.
+        shared.write_bytes(b'updated core notice with a different size\n')
+        assert json.loads(call('--components','--json').stdout)['packs'][0]['installed']
+        payload=app/noticed['files'][0];payload.unlink()
+        assert not json.loads(call('--components','--json').stdout)['packs'][0]['installed']
+        # A truncated payload still fails installation detection.
+        payload.write_bytes(b'part')
+        assert not json.loads(call('--components','--json').stdout)['packs'][0]['installed']
+        payload.write_bytes(b'payload');call('--remove','notice-runtime')
+        assert shared.exists() and not payload.exists()
+        print('PASS shared-license changes preserve installation state, repeated installs stay offline, missing payloads remain uninstalled')
+        write([{**noticed,'files':[notice]}]);call('--components','--json',ok=1)
         bad={**model,'files':['../escape.onnx']};write([runtime,bad]);call('--components','--json',ok=1)
         bad={**model,'url':'https://example.com/untrusted.7z'};write([runtime,bad]);call('--install','fixture-model',ok=1)
         print('PASS traversal and untrusted source rejection')

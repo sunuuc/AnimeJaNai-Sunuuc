@@ -4,8 +4,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `mpv-AnimeVE-1.2.3-win-x64.7z` | 播放器便携包 |
-| `mpv-AnimeVE-1.2.3-sources.zip` | 对应版本源码 |
+| `mpv-AnimeVE-1.2.4-win-x64.7z` | 播放器便携包 |
+| `mpv-AnimeVE-1.2.4-sources.zip` | 对应版本源码 |
 | `SHA256SUMS.txt` | 下载校验值 |
 | `AnimeVE.exe` | 播放器 |
 | `AnimeVEManager.exe` | 配置与组件管理器 |

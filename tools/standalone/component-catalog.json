@@ -6,7 +6,7 @@
       "dep": "inference_runtime",
       "asset": "component-trt-runtime.7z",
       "bytes": 184539468,
-      "installed_bytes": 437230215,
+      "installed_bytes": 437219776,
       "files": [
         "animejanai/inference/cudart64_13.dll",
         "animejanai/inference/DirectML_LICENSE.txt",
