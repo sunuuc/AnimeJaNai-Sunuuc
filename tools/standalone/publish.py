@@ -75,7 +75,7 @@ tracked=set(subprocess.check_output(['git','ls-files'],text=True).splitlines())
 for name in ('portable_config/scripts/modernx.lua','portable_config/script-opts/modernx.conf'):
     if name in tracked:tree.append({'path':name,'mode':'100644','type':'blob','sha':None})
 base_tree=api(f'repos/{REPO}/git/commits/{head}')['tree']['sha']
-newtree=api(f'repos/{REPO}/git/trees',{'base_tree':base_tree,'tree':tree})['sha']
+newtree=api(f'repos/{REPO}/git/trees',{'base_tree':base_tree,'tree':tree})['sha'] if tree else base_tree
 commit=api(f'repos/{REPO}/git/commits',{'message':f'Release {META["version"]} sources','tree':newtree,'parents':[head]})['sha']
 old=[r for r in api(f'repos/{REPO}/releases?per_page=100') if r['tag_name']==META['tag']]
 notes=(DIST/'RELEASE.md').read_text(encoding='utf-8')

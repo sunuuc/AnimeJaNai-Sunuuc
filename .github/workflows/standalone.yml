@@ -47,6 +47,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/test_branding.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/test_publish_tree.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify release-page shortcut is absent
         run: python tests/test_no_release_shortcut.py
       - name: Verify security release checks
