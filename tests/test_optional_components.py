@@ -12,9 +12,15 @@ import argparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools/standalone'))
 from components import prepare, validate
-from build import copy_validation_reports
+from build import copy_validation_reports, release_notes
 
 class ComponentContracts(unittest.TestCase):
+    def test_release_page_contains_only_the_four_feature_items(self):
+        notes=release_notes()
+        self.assertEqual(notes.count('- **'),4)
+        self.assertNotIn('Hills Lite',notes)
+        self.assertNotIn('首次',notes)
+        self.assertTrue(all(label in notes for label in ('AI 超分与补帧','按需下载','弹幕','播放与字幕')))
     def test_converter_targets_generic_windows_x64(self):
         source=(ROOT/'tools/standalone/build_danmaku_factory.py').read_text(encoding='utf-8')
         self.assertIn("'-target', 'x86_64-windows-gnu'",source)
@@ -38,6 +44,21 @@ class ComponentContracts(unittest.TestCase):
             self.assertEqual(len(p['sha256']),64)
             self.assertTrue(p['url'].startswith('https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/'))
             self.assertGreater(p['bytes'],0)
+    def test_component_labels_identify_distinct_gpu_architectures(self):
+        catalog=json.loads((ROOT/'tools/standalone/component-catalog.json').read_text())
+        packs={p['name']:p for p in catalog['packs']}
+        titles=[p['title'] for p in packs.values()]
+        self.assertEqual(len(titles),len(set(titles)))
+        for name,devices in {'trt-sm80':('A100','A30'), 'trt-sm86':('RTX 30',),
+                             'trt-sm100':('B200','GB200'), 'trt-sm120':('RTX 50',)}.items():
+            for device in devices:self.assertIn(device,packs[name]['title'])
+            self.assertIn('SM'+name[6:],packs[name]['title'])
+        self.assertNotIn('RTX 50',packs['trt-sm100']['title'])
+        self.assertNotIn('RTX 30',packs['trt-sm80']['title'])
+        translations=json.loads((ROOT/'src/manager/AnimeJaNaiConfEditor/LanguageStrings.json').read_text(encoding='utf-8'))['translations']
+        for p in packs.values():
+            self.assertIn(p['title'],translations)
+            self.assertIn(p['description'],translations)
     def test_ui_uses_component_owner_and_about_tab(self):
         text=(ROOT/'src/manager/AnimeJaNaiConfEditor/Views/MainWindow.axaml').read_text(encoding='utf-8')
         self.assertIn('ComponentManager.Apply',text)

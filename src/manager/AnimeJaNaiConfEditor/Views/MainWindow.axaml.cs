@@ -13,7 +13,6 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using ReactiveUI.Avalonia;
 using FluentAvalonia.UI.Controls;
-using FluentAvalonia.UI.Windowing;
 using Material.Icons.Avalonia;
 using ReactiveUI;
 using System;
@@ -25,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace AnimeJaNaiConfEditor.Views
 {
-    public partial class MainWindow : FAAppWindow
+    public partial class MainWindow : Window
     {
         public MainWindow()
         {

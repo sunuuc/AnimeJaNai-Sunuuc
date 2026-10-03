@@ -252,11 +252,10 @@ def inspect_payload():
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
 
 def release_notes():
-    text=(R/'CHANGELOG.md').read_text(encoding='utf-8')
-    pattern=rf'(?ms)^## \[{re.escape(META["version"])}\] - \d{{4}}-\d{{2}}-\d{{2}}\n(.*?)(?=^## \[|\Z)'
-    match=re.search(pattern,text)
+    text=(R/'README.md').read_text(encoding='utf-8')
+    match=re.search(r'(?ms)^## 功能\n(.*?)(?=^## |\Z)',text)
     if not match or not match.group(1).strip():
-        raise RuntimeError('Missing release notes for version '+META['version'])
+        raise RuntimeError('Missing release features in README.md')
     return match.group(1).strip()+'\n'
 
 def package():

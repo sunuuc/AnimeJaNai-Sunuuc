@@ -37,33 +37,9 @@ namespace AnimeJaNaiConfEditor.ViewModels
         // be visible, not pre-decided
         public bool HighlightRecommended => Recommended && !Installed;
 
-        public string Title => CatalogTitle is not null ? AnimeJaNai.Localization.UiText.T(CatalogTitle) : (Name switch
-        {
-            "trt-runtime" => AnimeJaNai.Localization.UiText.T("TensorRT 运行库"),
-            "rife" => AnimeJaNai.Localization.UiText.T("RIFE 补帧模型"),
-            "trt-ptx" => AnimeJaNai.Localization.UiText.T("TensorRT 内核：其他 NVIDIA GPU"),
-            _ when Name.StartsWith("trt-sm") => AnimeJaNai.Localization.UiText.F($"TensorRT 内核：{SmFamily(Name[6..])}"),
-            _ => Name,
-        });
+        public string Title => AnimeJaNai.Localization.UiText.T(CatalogTitle ?? Name);
 
-        public string Description => CatalogDescription is not null ? AnimeJaNai.Localization.UiText.T(CatalogDescription) : (Name switch
-        {
-            "trt-runtime" => AnimeJaNai.Localization.UiText.T("NVIDIA GPU 上最快的超分后端。未安装时，NVIDIA 用户将回退到速度更慢的 DirectML 后端。"),
-            "rife" => AnimeJaNai.Localization.UiText.T("视频补帧（例如 24 → 48 fps）。如果只使用超分则不需要。"),
-            "trt-ptx" => AnimeJaNai.Localization.UiText.T("用于没有专用内核包的 NVIDIA GPU 的后备内核。首次构建引擎会更慢。"),
-            _ when Name.StartsWith("trt-sm") => AnimeJaNai.Localization.UiText.T("与该代 GPU 匹配的引擎构建内核，仅对应 GPU 需要安装。"),
-            _ => "",
-        });
-
-        private static string SmFamily(string sm) => sm switch
-        {
-            "75" => AnimeJaNai.Localization.UiText.T("GeForce RTX 20 系列（Turing）"),
-            "80" or "86" => AnimeJaNai.Localization.UiText.T("GeForce RTX 30 系列（Ampere）"),
-            "89" => AnimeJaNai.Localization.UiText.T("GeForce RTX 40 系列（Ada）"),
-            "90" => "Hopper",
-            "100" or "120" => AnimeJaNai.Localization.UiText.T("GeForce RTX 50 系列（Blackwell）"),
-            _ => $"sm{sm}",
-        };
+        public string Description => AnimeJaNai.Localization.UiText.T(CatalogDescription);
     }
 
     // Detects, installs, and removes component packs by shelling out to the updater, which

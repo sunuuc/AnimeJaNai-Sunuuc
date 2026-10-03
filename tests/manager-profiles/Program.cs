@@ -5,6 +5,8 @@ using Avalonia.Headless;
 using Avalonia.LogicalTree;
 using Avalonia.Controls;
 using ReactiveUI.Avalonia;
+using System.Text.Json;
+using AnimeJaNai.Localization;
 if(args.Length!=1){Console.Error.WriteLine("Usage: ManagerProfiles <empty fixture directory>");Environment.ExitCode=2;return;}
 var fixture=Path.GetFullPath(args[0]);Directory.CreateDirectory(fixture);
 Directory.CreateDirectory(Path.Combine(fixture,"onnx"));Directory.CreateDirectory(Path.Combine(fixture,"rife"));
@@ -23,7 +25,25 @@ Check(vm.AnimeJaNaiConf.UpscaleSlots.Count==9 && vm.CommonResolutions.Length>0,"
 var names=vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName).ToArray();
 var window=new MainWindow {DataContext=vm};
 window.Measure(new Size(1100,800));window.Arrange(new Rect(0,0,1100,800));
+Check(typeof(MainWindow).BaseType==typeof(Window) && !window.ExtendClientAreaToDecorationsHint && window.WindowDecorations==WindowDecorations.Full,"manager uses the native movable and resizable window frame");
 Check(window.GetLogicalDescendants().OfType<TabItem>().Count()==3,"About is the third manager tab");
+using(var catalog=JsonDocument.Parse(File.ReadAllText("tools/standalone/component-catalog.json")))
+{
+    InterfaceLanguage.SettingsPath=Path.Combine(fixture,"interface-language.json");
+    foreach(var language in new[]{"zh-CN","en"})
+    {
+        InterfaceLanguage.Save(language);InterfaceLanguage.Reload();
+        var items=catalog.RootElement.GetProperty("packs").EnumerateArray().Select(p=>new ComponentItem
+        {
+            Name=p.GetProperty("name").GetString()!,
+            CatalogTitle=p.GetProperty("title").GetString(),
+            CatalogDescription=p.GetProperty("description").GetString()
+        }).ToArray();
+        Check(items.Select(i=>i.Title).Distinct().Count()==items.Length && items.All(i=>i.Description.Length>0),"component titles are distinct and descriptions present: "+language);
+        Check(items.Single(i=>i.Name=="trt-sm100").Title.Contains("B200") && items.Single(i=>i.Name=="trt-sm120").Title.Contains("RTX 50"),"Blackwell data-center and consumer kernels remain distinct: "+language);
+    }
+    InterfaceLanguage.Save("zh-CN");InterfaceLanguage.Reload();
+}
 var picker=vm.ComponentManager;
 picker.Packs.Add(new ComponentItem{Name="optional",Recommended=true});
 picker.Packs.Add(new ComponentItem{Name="installed",Installed=true,Selected=true});

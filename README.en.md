@@ -12,7 +12,6 @@ A Windows anime player with AI upscaling, RIFE frame interpolation and online/lo
 - **Optional downloads**: GPU detection, component recommendations and manual selection of models and GPU components. Models download separately.
 - **Danmaku**: parallel route search and automatic fallback when an episode has no comments; local XML, speed, font size, opacity, display area, type filters and blocked words.
 - **Playback and subtitles**: local files, network streams, playlists, resume positions, chapters, audio tracks and dual subtitles.
-- **External playback**: integration with apps such as Hills Lite, including video URLs, playlists and episode selection.
 
 ## Installation
 
@@ -37,10 +36,6 @@ Under **Profiles**, choose upscaling models, interpolation settings and activati
 Add and sort routes under **Settings → Danmaku settings → Danmaku routes**. Matching runs automatically during playback; the bottom-bar danmaku menu also provides manual search and episode selection. Adjust speed, size, display area and filters under **Danmaku settings**.
 
 Use **Import local danmaku** for local comments; an XML file with the same name as the video can load automatically. Use **Import local subtitles** in the subtitle menu for subtitles.
-
-### External playback
-
-Select `AnimeVE.exe` in Hills Lite's external player settings.
 
 ### Keyboard shortcuts
 

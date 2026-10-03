@@ -18,7 +18,9 @@
       "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-trt-runtime.7z",
       "sha256": "5742aad5b5feaa9cc4989b09cccb721445d82cf5178be1d26b2e78cc69f92391",
       "requires": [],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT runtime",
+      "description": "Required for TensorRT upscaling and RIFE interpolation on NVIDIA GPUs."
     },
     {
       "name": "rife",
@@ -78,7 +80,9 @@
       "url": "https://github.com/the-database/mpv-AnimeJaNai/releases/download/3.6.0/component-rife.7z",
       "sha256": "bb002ecc92cb628c1627ba687d5e709d4d201e432e06a94ba0028aff5f631f0f",
       "requires": [],
-      "recommended": false
+      "recommended": false,
+      "title": "RIFE interpolation models",
+      "description": "Interpolation models, including Lite and ensemble variants."
     },
     {
       "name": "trt-ptx",
@@ -94,7 +98,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: PTX",
+      "description": "For NVIDIA GPUs without a matching SM kernel pack; requires the TensorRT runtime."
     },
     {
       "name": "trt-sm100",
@@ -110,7 +116,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: B200 / GB200 (SM100)",
+      "description": "Blackwell data-center GPUs, compute capability 10.0. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm120",
@@ -126,7 +134,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: RTX 50 / RTX PRO Blackwell (SM120)",
+      "description": "Blackwell, compute capability 12.0. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm75",
@@ -142,7 +152,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: RTX 20 / Quadro RTX / T4 (SM75)",
+      "description": "Turing, compute capability 7.5. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm80",
@@ -158,7 +170,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: A100 / A30 (SM80)",
+      "description": "Ampere data-center GPUs, compute capability 8.0. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm86",
@@ -174,7 +188,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: RTX 30 / RTX A / A40 (SM86)",
+      "description": "Ampere, compute capability 8.6. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm89",
@@ -190,7 +206,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: RTX 40 / RTX Ada / L4 / L40 (SM89)",
+      "description": "Ada, compute capability 8.9. Requires the TensorRT runtime."
     },
     {
       "name": "trt-sm90",
@@ -206,7 +224,9 @@
       "requires": [
         "trt-runtime"
       ],
-      "recommended": false
+      "recommended": false,
+      "title": "TensorRT kernels: H100 / H200 / GH200 (SM90)",
+      "description": "Hopper data-center GPUs, compute capability 9.0. Requires the TensorRT runtime."
     }
   ]
 }
