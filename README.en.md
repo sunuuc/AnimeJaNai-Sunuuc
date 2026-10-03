@@ -40,7 +40,7 @@ Use **Import local danmaku** for local comments; an XML file with the same name 
 
 ### External playback
 
-Select `AnimeVE.exe` in Hills Lite's external player settings. Update the configured path when upgrading from the previous application name.
+Select `AnimeVE.exe` in Hills Lite's external player settings.
 
 ### Keyboard shortcuts
 
@@ -59,6 +59,6 @@ Select `AnimeVE.exe` in Hills Lite's external player settings. Update the config
 
 ## Documentation and credits
 
-[Configuration and upgrades](docs/standalone.md) · [Build guide](docs/build.md) · [Danmaku rendering](docs/danmaku-renderer.md) · [Sources and third-party licenses](docs/open-source-notices.md)
+[Configuration](docs/standalone.md) · [Build guide](docs/build.md) · [Danmaku rendering](docs/danmaku-renderer.md) · [Sources and third-party licenses](docs/open-source-notices.md)
 
 Based on [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai), [mpv.net](https://github.com/mpvnet-player/mpv.net) and [mpv](https://github.com/mpv-player/mpv). Maintained by [sunuuc](https://github.com/sunuuc).

@@ -8,7 +8,7 @@
   },
   "native_and_ui_resources": {
     "repo": "sunuuc/mpv-AnimeVE",
-    "tag": "standalone-v1.2.0",
+    "tag": "standalone-v1.2.1",
     "name": "native-build-inputs.7z",
     "sha256": "c56b070d848a19f609e6400a2fd757d1b332d58553e6be0243b2e97bd56444ab",
     "bytes": 80515638,

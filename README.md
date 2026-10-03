@@ -40,7 +40,7 @@ Windows 动漫播放器，支持 AI 超分、RIFE 补帧和在线／本地弹幕
 
 ### 外部播放
 
-在 Hills Lite 的外部播放器设置中选择 `AnimeVE.exe`。从旧名称升级时，更新原来的播放器路径。
+在 Hills Lite 的外部播放器设置中选择 `AnimeVE.exe`。
 
 ### 常用快捷键
 
@@ -59,6 +59,6 @@ Windows 动漫播放器，支持 AI 超分、RIFE 补帧和在线／本地弹幕
 
 ## 文档与来源
 
-[配置与升级](docs/standalone.md) · [构建](docs/build.md) · [弹幕渲染](docs/danmaku-renderer.md) · [来源与第三方许可](docs/open-source-notices.md)
+[配置说明](docs/standalone.md) · [构建](docs/build.md) · [弹幕渲染](docs/danmaku-renderer.md) · [来源与第三方许可](docs/open-source-notices.md)
 
 基于 [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai)、[mpv.net](https://github.com/mpvnet-player/mpv.net) 和 [mpv](https://github.com/mpv-player/mpv)。由 [sunuuc](https://github.com/sunuuc) 维护。

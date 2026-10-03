@@ -40,25 +40,6 @@
 
 在 Hills Lite 的外部播放器设置中选择当前安装目录下的 `AnimeVE.exe`。支持视频地址、播放列表、选集和续播位置。
 
-## 从旧版升级
-
-1. 关闭播放器和管理器，备份 `portable_config`、`animejanai/animejanai.conf` 及已下载的模型。
-2. 更新程序文件，保留自己的配置和模型；外部播放器及快捷方式改为指向 `AnimeVE.exe`、`AnimeVEManager.exe`。
-3. 如果旧文件存在且新文件尚不存在，按下表更名，保留文件内容。
-
-| 原文件 | 新文件 |
-| --- | --- |
-| `portable_config/NekoAnimeVE.conf` | `portable_config/AnimeVE.conf` |
-| `%LOCALAPPDATA%\NekoAnimeVE-danmaku.conf` | `%LOCALAPPDATA%\AnimeVE-danmaku.conf` |
-| `%LOCALAPPDATA%\NekoAnimeVE-DanmakuFactory.json` | `%LOCALAPPDATA%\AnimeVE-DanmakuFactory.json` |
-| `%LOCALAPPDATA%\NekoAnimeVE-danmaku-blocklist.txt` | `%LOCALAPPDATA%\AnimeVE-danmaku-blocklist.txt` |
-
-已有自定义快捷键中，将旧管理器路径改为 `AnimeVEManager.exe`；Tab 的绑定为：
-
-```conf
-TAB script-binding stats/display-stats-toggle
-```
-
 ## 问题反馈
 
 提交 [Issue](https://github.com/sunuuc/mpv-AnimeVE/issues) 时附上版本、显卡型号、启用的处理方案和复现步骤。
