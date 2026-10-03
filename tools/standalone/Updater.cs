@@ -50,7 +50,7 @@ try
     var pack = index.packs.SingleOrDefault(p => p.name == args.ElementAtOrDefault(1))
         ?? throw new InvalidDataException("Unknown component.");
     // One writer protects both download staging and uninstall. Inspection never acquires it.
-    using var lease = new FileStream(Path.Combine(installDir, ".components.lock"), FileMode.OpenOrCreate,
+    using var lease = new FileStream(Path.Combine(installDir, "app", ".components.lock"), FileMode.OpenOrCreate,
         FileAccess.ReadWrite, FileShare.None, 1, FileOptions.DeleteOnClose);
     if (mode == "--install")
     {
@@ -133,7 +133,7 @@ async Task InstallComponentAsync(Pack pack, CancellationToken token)
 {
     token.ThrowIfCancellationRequested();
     if (PackContentMatches(pack)) { Console.WriteLine(pack.name + " already installed."); return; }
-    var work = Path.Combine(installDir, ".component-downloads", pack.name);
+    var work = Path.Combine(installDir, "app", ".component-downloads", pack.name);
     Directory.CreateDirectory(work);
     var archive = Path.Combine(work, "package.7z");
     try

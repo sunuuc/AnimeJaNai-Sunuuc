@@ -75,7 +75,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             relative=f'animejanai/onnx/{name}.onnx';path=root/'source'/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(content)
             archive=root/(name+'.7z')
             subprocess.run([str(seven),'a','-t7z','-bd',str(archive),relative],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
-            cache=app/'.component-downloads'/name;cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
+            cache=app/'app/.component-downloads'/name;cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
             return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-AnimeVE/releases/download/test/'+archive.name,
                     'sha256':digest(archive),'bytes':archive.stat().st_size,'installed_bytes':len(content),'files':[relative],
                     'requires':requires,'recommended':False}
@@ -103,7 +103,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
         subprocess.run([str(seven),'a','-t7z','-bd',str(archive),first,second],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
         rollback={**model,'name':'rollback','requires':[], 'files':[first,second], 'installed_bytes':14,
                   'bytes':archive.stat().st_size,'sha256':digest(archive)}
-        cache=app/'.component-downloads/rollback';cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
+        cache=app/'app/.component-downloads/rollback';cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
         (app/first).write_bytes(b'original one');(app/second).write_bytes(b'original two')
         write([rollback])
         import ctypes as C
@@ -137,7 +137,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             write(catalog['packs'])
             for p in models:
                 archive=model_assets/p['asset'];assert digest(archive)==p['sha256']
-                cache=app/'.component-downloads'/p['name'];cache.mkdir(parents=True)
+                cache=app/'app/.component-downloads'/p['name'];cache.mkdir(parents=True)
                 shutil.copy2(archive,cache/'package.7z')
                 call('--install',p['name'])
                 assert (app/p['files'][0]).stat().st_size==p['installed_bytes']
