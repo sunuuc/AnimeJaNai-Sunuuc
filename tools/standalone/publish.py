@@ -39,10 +39,10 @@ sourcezip=DIST/f'{META["name"]}-{META["version"]}-sources.zip'
 temp=sourcezip.with_suffix('.pending.zip')
 with zipfile.ZipFile(sourcezip) as src,zipfile.ZipFile(temp,'w',zipfile.ZIP_DEFLATED) as dst:
     for item in src.infolist():
-        if item.filename not in ('tools/standalone/dependencies.json','README.md','README.zh-CN.md'):dst.writestr(item,src.read(item.filename))
+        if item.filename not in ('tools/standalone/dependencies.json','README.md','README.en.md'):dst.writestr(item,src.read(item.filename))
     dst.write(H/'dependencies.json','tools/standalone/dependencies.json')
     dst.write(R/'README.md','README.md')
-    dst.write(R/'README.zh-CN.md','README.zh-CN.md')
+    dst.write(R/'README.en.md','README.en.md')
     dst.write(R/'.github/workflows/standalone.yml','.github/workflows/standalone.yml')
 temp.replace(sourcezip)
 

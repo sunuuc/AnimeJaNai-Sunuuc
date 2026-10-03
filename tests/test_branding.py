@@ -82,10 +82,10 @@ class BrandingTests(unittest.TestCase):
         self.assertIn('the-database/AnimeJaNaiManager', (ROOT / 'docs/open-source-notices.md').read_text(encoding='utf-8'))
 
     def test_bilingual_readme_about_and_statistics_shortcut(self):
-        english = (ROOT / 'README.md').read_text(encoding='utf-8')
-        chinese = (ROOT / 'README.zh-CN.md').read_text(encoding='utf-8')
-        self.assertIn('(README.zh-CN.md)', english)
-        self.assertIn('(README.md)', chinese)
+        english = (ROOT / 'README.en.md').read_text(encoding='utf-8')
+        chinese = (ROOT / 'README.md').read_text(encoding='utf-8')
+        self.assertIn('(README.md)', english)
+        self.assertIn('(README.en.md)', chinese)
         for text in (english, chinese):
             self.assertTrue(text.startswith('# ' + PROJECT_NAME))
             self.assertIn('| Tab |', text)

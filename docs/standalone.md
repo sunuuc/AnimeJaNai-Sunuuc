@@ -1,79 +1,66 @@
-# mpv-AnimeVE 1.2.1
+# mpv-AnimeVE 使用说明
 
-项目和发行包名称为 mpv-AnimeVE；播放器与管理器界面使用 AnimeVE。播放器为 `AnimeVE.exe`，管理器为 `AnimeVEManager.exe`。
+## 程序与文件
 
-Windows x64 视频播放器，支持选择下载 AI 超分与 RIFE 补帧组件。NVIDIA 可使用 TensorRT，AMD / Intel 可使用内置 DirectML；普通播放无需安装模型。
+| 文件 | 用途 |
+| --- | --- |
+| `mpv-AnimeVE-1.2.1-win-x64.7z` | 播放器便携包 |
+| `mpv-AnimeVE-1.2.1-sources.zip` | 对应版本源码 |
+| `SHA256SUMS.txt` | 下载校验值 |
+| `AnimeVE.exe` | 播放器 |
+| `AnimeVEManager.exe` | 配置与组件管理器 |
+| `AnimeVEUpdater.exe` | 组件管理命令行工具 |
 
-## 使用
+解压播放器包后运行 `AnimeVE.exe`。模型和显卡组件在管理器“组件”页下载。
 
-解压 `mpv-AnimeVE-1.2.1-win-x64.7z`，运行 `AnimeVE.exe`。配置管理器为 `AnimeVEManager.exe`。
+## 配置
 
-发行包不内置模型与 TensorRT 显卡组件。打开管理器“组件”页，可选择推荐项或手动勾选；点击“应用”才下载，显示进度并验证 SHA-256。各超分模型单独下载，RIFE 为可选组件。默认关闭 AI 处理，安装后再在配置方案中选择模型与启用处理链。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
+| 位置 | 内容 |
+| --- | --- |
+| `portable_config/mpv.conf` | mpv 播放选项 |
+| `portable_config/AnimeVE.conf` | 播放器前端选项 |
+| `portable_config/input.conf` | 快捷键 |
+| `portable_config/script-opts/player_ui.conf` | 底栏、时钟及界面设置 |
+| `portable_config/script-opts/player_ui_danmaku.conf` | 弹幕脚本选项 |
+| `animejanai/animejanai.conf` | AI 后端和处理方案 |
 
-支持通过视频地址、播放列表、启动脚本或 IPC 接收外部播放请求。兼容 Player UI 把媒体参数放在空 `--{ ... --}` 参数组中的调用方式。
+界面语言在管理器全局设置中选择，重启播放器和管理器后生效。自定义方案可设置为默认，也可使用 Ctrl+1–9 切换；Ctrl+0 关闭 AI 处理。
 
-## 本版更新
+## 弹幕线路与匹配
 
-- 项目和发行包统一命名为 mpv-AnimeVE，程序界面和启动文件继续使用 AnimeVE。
+在“设置 → 弹幕设置 → 弹幕线路”中添加地址，使用上移／下移调整优先级。
 
-- 弹幕使用 DanmakuFactory 转换和 mpv/libass 原生渲染，移除逐帧脚本轮询。
-- 弹幕使用整个窗口区域，包括上下黑边。窗口、全屏切换时直接按当前尺寸渲染，不再延迟重新生成字幕轨道。
-- 弹幕移动速度独立于视频倍速；提供速度、显示区域、不透明度、字号、类型屏蔽及屏蔽词。
-- 多线路并行自动搜索，首先使用成功返回的匹配；该集没有数据时按线路顺序尝试其他线路与平台。每轮自动搜索只请求每条线路一次。
-- 搜索及线路编辑使用原生 WPF 输入框，修复英文输入、光标移动与焦点；统一暗色主题，过滤空平台，简化请求失败提示。
-- 恢复底栏音量条，网速显示在音量条旁；音量提示为中下方紧凑提示框，移除额外的原生进度提示。
-- 保留官方窗口标题栏，默认小窗启动；左上角时钟可关闭。弹幕图标仅在悬停或菜单打开时高亮。
-- 修复外部播放列表选集及续播初始化，加载或缓冲时显示中央动画。
+自动匹配会并行请求各线路，先使用成功匹配的结果；该集没有弹幕时，再按线路顺序尝试其他来源与平台。每轮自动搜索每条线路只请求一次。手动搜索中可按线路、季度和平台筛选，再选择集数。
 
-Player UI 控制栏运行模块已并入脚本，完整包解压到含中文字符的目录时也不需要再通过 Lua `dofile` 打开模块文件。
+线路保存在 `%LOCALAPPDATA%\AnimeVE-danmaku.conf`；字号、速度、显示区域及屏蔽设置保存在 `%LOCALAPPDATA%\AnimeVE-DanmakuFactory.json`。发布包不包含个人弹幕线路，首次使用需自行添加。
 
-## 播放界面
+弹幕菜单提供“导入本地弹幕”，字幕菜单提供“导入本地字幕”。与视频同名的 XML 弹幕可自动加载。
 
-底栏提供播放、进度、音量、倍速、音轨、字幕、弹幕、设置和全屏。设置中可选择超分与补帧预设，查看统计信息及性能。主字幕与第二字幕可以分别选择。界面按窗口 1:1 像素绘制、不经过缩放，文字始终是原生光栅而不是被拉伸过的；控件尺寸与文字描边由 `portable_config/script-opts/player_ui.conf` 的 `ui_scale`（默认 1.00）与 `text_outline`（默认 1，0 为无描边）控制，界面文字全程无阴影。
+## 外部播放器
 
-正在打开或缓冲时，画面中央显示加载动画。
+在 Hills Lite 的外部播放器设置中选择当前安装目录下的 `AnimeVE.exe`。支持视频地址、播放列表、选集和续播位置。
 
-网络视频显示当前读取速度，不生成进度缩略图、不预读下一项。外部播放列表在初始化完成后用 `loadlist` 载入，再以 `playlist-play-index` 选中目标项目，不会先打开列表首项。
+## 从旧版升级
 
-诊断文件位于 `portable_config`：`startup-diagnostic.json` 记录调用方式、播放列表选择方式和加载阶段，`playback-diagnostic.json` 记录播放状态；均不记录媒体地址、标题、认证头或令牌。
+1. 关闭播放器和管理器，备份 `portable_config`、`animejanai/animejanai.conf` 及已下载的模型。
+2. 更新程序文件，保留自己的配置和模型；外部播放器及快捷方式改为指向 `AnimeVE.exe`、`AnimeVEManager.exe`。
+3. 如果旧文件存在且新文件尚不存在，按下表更名，保留文件内容。
 
-## 弹幕线路
+| 原文件 | 新文件 |
+| --- | --- |
+| `portable_config/NekoAnimeVE.conf` | `portable_config/AnimeVE.conf` |
+| `%LOCALAPPDATA%\NekoAnimeVE-danmaku.conf` | `%LOCALAPPDATA%\AnimeVE-danmaku.conf` |
+| `%LOCALAPPDATA%\NekoAnimeVE-DanmakuFactory.json` | `%LOCALAPPDATA%\AnimeVE-DanmakuFactory.json` |
+| `%LOCALAPPDATA%\NekoAnimeVE-danmaku-blocklist.txt` | `%LOCALAPPDATA%\AnimeVE-danmaku-blocklist.txt` |
 
-在「设置 → 弹幕设置」中管理线路。发布包不包含个人线路地址、密钥、播放历史或媒体认证信息；首次使用请配置自己的线路，未配置时不会自动联网搜索。
+已有自定义快捷键中，将旧管理器路径改为 `AnimeVEManager.exe`；Tab 的绑定为：
 
-底栏字幕与弹幕菜单分别提供「导入本地字幕」「导入本地弹幕」。视频旁的同名 XML 可自动加载。
+```conf
+TAB script-binding stats/display-stats-toggle
+```
 
-## 验收范围
+## 问题反馈
 
-构建流程检查自包含程序、基础后端、可选下载目录、不含模型的核心包、许可证和校验值，并对压缩包解压后的完整程序再次运行回归测试。
+提交 [Issue](https://github.com/sunuuc/mpv-AnimeVE/issues) 时附上版本、显卡型号、启用的处理方案和复现步骤。
 
-播放测试使用本地生成视频和回环 HTTP 服务；弹幕测试覆盖原生渲染、黑边、首次缩放帧、轨道生命周期、速度、屏蔽与多线路搜索回退。构建验证不访问个人视频服务器。
-
-GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服务器响应不属于云端验收结果。原生 ASS 动画随 mpv 实际呈现帧率显示，不能保证超过视频呈现帧率。
-
-## 快捷键
-
-| 按键 | 功能 |
-|---|---|
-| 上 / 下 | 音量 +5 / −5 |
-| 左 / 右 | 后退 / 前进 5 秒 |
-| 空格 | 播放 / 暂停 |
-| Esc | 返回上级菜单、关闭菜单或退出全屏 |
-| Ctrl+1～Ctrl+9 | 切换 AI 预设 |
-| Ctrl+0 | 关闭 AI |
-| Ctrl+J | AnimeJaNai 状态与实际 FPS |
-| Ctrl+E | 配置管理器 |
-
-## 文件
-
-- `mpv-AnimeVE-1.2.1-win-x64.7z`：完整程序
-- `mpv-AnimeVE-1.2.1-sources.zip`：源码
-- `SHA256SUMS.txt`：校验值
-
-## 关于
-
-管理器“组件”右侧的“关于”页提供项目与上游链接、版本、修改说明和许可证入口。详细来源见 `OPEN_SOURCE_NOTICES.md`。
-
-## 许可证
-
-AnimeJaNai、mpv、mpv.net、AnimeJaNaiManager、DanmakuFactory、libass、thumbfast、TensorRT 及其他组件按各自许可证分发。第三方声明随程序包提供。
+启动与播放诊断位于 `portable_config/startup-diagnostic.json`、`portable_config/playback-diagnostic.json`，可用于排查播放列表、加载和缓冲问题。

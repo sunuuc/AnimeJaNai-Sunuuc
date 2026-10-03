@@ -1,56 +1,64 @@
 # mpv-AnimeVE
 
-English | [简体中文](README.zh-CN.md)
+简体中文 | [English](README.en.md)
 
-A Windows video player for anime, with danmaku, optional AI upscaling and frame interpolation. Based on [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai), [mpv.net](https://github.com/mpvnet-player/mpv.net) and [mpv](https://github.com/mpv-player/mpv).
+Windows 动漫播放器，支持 AI 超分、RIFE 补帧和在线／本地弹幕。
 
-[Download](https://github.com/sunuuc/mpv-AnimeVE/releases/latest) · [Report an issue](https://github.com/sunuuc/mpv-AnimeVE/issues)
+[下载](https://github.com/sunuuc/mpv-AnimeVE/releases/latest) · [更新日志](CHANGELOG.md) · [使用说明](docs/standalone.md) · [问题反馈](https://github.com/sunuuc/mpv-AnimeVE/issues)
 
-## Features
+## 功能
 
-- Local files, network streams and external playlists.
-- Playback controls, chapter markers, audio tracks and two subtitle tracks.
-- Online and local danmaku, parallel route search, type filters and blocked words.
-- Optional AI upscaling and RIFE frame interpolation; models and GPU components download separately.
-- A configuration manager with Chinese and English interfaces, hardware recommendations and downloads verified with SHA-256.
+- **AI 超分与补帧**：多模型处理链、RIFE 补帧、可调倍率，以及按分辨率和帧率启用的自定义方案。
+- **按需下载**：管理器检测显卡并推荐组件，也可自行选择模型和显卡组件。播放器包不内置模型。
+- **弹幕**：多线路并行搜索、无数据时自动切换来源；支持本地 XML、速度、字号、不透明度、显示区域、类型屏蔽和屏蔽词。
+- **播放与字幕**：本地文件、网络视频、播放列表、续播、章节、音轨切换及双字幕。
+- **外部播放器**：可用于 Hills Lite 等应用，接收播放地址、播放列表和选集位置。
 
-## Get started
+## 安装
 
-1. Download the `mpv-AnimeVE-*-win-x64.7z` archive from Releases and extract it.
-2. Run `AnimeVE.exe` and open a video.
-3. For AI processing, open `AnimeVEManager.exe`, select the required models and GPU components in **Components**, then configure a processing profile.
+需要 Windows 64 位系统。
 
-Windows x64 is required. The portable package includes the application runtime; no separate .NET, Python or VapourSynth installation is needed. Normal playback is enabled by default. AI performance depends on the selected model and GPU.
+1. 在 [Releases](https://github.com/sunuuc/mpv-AnimeVE/releases/latest) 下载 `mpv-AnimeVE-*-win-x64.7z` 并解压。
+2. 运行 `AnimeVE.exe`，打开或拖入视频。
+3. 需要超分／补帧时，打开 `AnimeVEManager.exe`，在“组件”页选择下载，再到“配置方案”中启用。
 
-NVIDIA GPUs use TensorRT components matched to the GPU generation. AMD and Intel GPUs can use the included DirectML backend. Install the graphics driver separately.
+包内包含程序运行库，无需另装 .NET、Python 或 VapourSynth。
 
-For online danmaku, add your routes under **Settings → Danmaku settings**. The release includes no personal routes or credentials. Local XML files can also be imported from the danmaku menu.
+## 使用
 
-## Keyboard shortcuts
+### 超分与补帧
 
-| Key | Action |
+在管理器“组件”页选择推荐项或手动勾选，点击“应用”下载。NVIDIA 显卡可选择 TensorRT，AMD / Intel 显卡可使用 DirectML；后端和处理方案在管理器中设置。
+
+在“配置方案”中选择超分模型、补帧倍率和启用条件，然后设为默认方案。首次使用 TensorRT 模型需要生成引擎缓存。
+
+### 弹幕
+
+在播放器“设置 → 弹幕设置 → 弹幕线路”中添加线路并排序；播放时自动匹配，也可在底栏弹幕菜单中搜索和选集。字号、速度、显示区域及屏蔽选项在“弹幕设置”中调整。
+
+本地弹幕使用“导入本地弹幕”；与视频同名的 XML 文件可自动加载。本地字幕使用字幕菜单中的“导入本地字幕”。
+
+### 外部播放
+
+在 Hills Lite 的外部播放器设置中选择 `AnimeVE.exe`。从旧名称升级时，更新原来的播放器路径。
+
+### 常用快捷键
+
+| 按键 | 功能 |
 | --- | --- |
-| Space | Play / pause |
-| Left / Right | Seek backward / forward 5 seconds |
-| Up / Down | Adjust volume |
-| Double-click | Toggle fullscreen |
-| Esc | Back / close menu / leave fullscreen |
-| Tab | Toggle full mpv statistics |
-| Ctrl+J | Show AI status and actual FPS |
-| Ctrl+E | Open the configuration manager |
-| Ctrl+1–9 | Select a configured AI profile |
-| Ctrl+0 | Disable AI processing |
+| 空格 | 播放／暂停 |
+| 左／右 | 后退／前进 5 秒 |
+| 上／下 | 调整音量 |
+| 双击 | 切换全屏 |
+| Esc | 返回菜单或退出全屏 |
+| Tab | 显示／隐藏 mpv 完整统计 |
+| Ctrl+E | 打开配置管理器 |
+| Ctrl+J | AI 状态与实际 FPS |
+| Ctrl+1–9 | 切换自定义方案 |
+| Ctrl+0 | 关闭 AI 处理 |
 
-## Configuration
+## 文档与来源
 
-Player settings are in `portable_config`; AI profiles are in `animejanai/animejanai.conf`. Change the interface language in the manager's global settings, then restart the player and manager.
+[配置与升级](docs/standalone.md) · [构建](docs/build.md) · [弹幕渲染](docs/danmaku-renderer.md) · [来源与第三方许可](docs/open-source-notices.md)
 
-[Detailed usage](docs/standalone.md) · [Danmaku renderer](docs/danmaku-renderer.md)
-
-## Build
-
-Player and manager sources are in `src/player` and `src/manager`. Portable build tools are in `tools/standalone`. The [Windows build workflow](.github/workflows/standalone.yml) compiles, tests, scans and packages the release with pinned dependencies.
-
-## Credits and licenses
-
-Maintained by [sunuuc](https://github.com/sunuuc). Upstream authors and component licenses are listed in [source and third-party notices](docs/open-source-notices.md). Full license texts are included in [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES).
+基于 [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai)、[mpv.net](https://github.com/mpvnet-player/mpv.net) 和 [mpv](https://github.com/mpv-player/mpv)。由 [sunuuc](https://github.com/sunuuc) 维护。

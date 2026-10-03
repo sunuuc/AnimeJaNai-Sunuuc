@@ -184,7 +184,8 @@ def stage():
     dump(E/'components.json',validate_components(ST))
     dump(ST/'manifest.json',{'name':META['name'],'version':META['version'],'distribution':'portable','repository':REPO,'component_version':'3.6.0','platform':'win-x64'})
     cp(R/'docs/standalone.md',ST/'使用说明.md')
-    for name in ('README.md','README.zh-CN.md'):cp(R/name,ST/name)
+    for name in ('README.md','README.en.md','CHANGELOG.md'):cp(R/name,ST/name)
+    for name in ('standalone.md','build.md','danmaku-renderer.md','open-source-notices.md'):cp(R/'docs'/name,ST/'docs'/name)
     for name in ('准备使用.txt','README-full.txt'):
         (ST/name).write_text('直接运行 AnimeVE.exe；管理器的组件页可选择下载模型和显卡组件。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n不内置模型，默认普通播放；显卡驱动由系统提供。\n',encoding='utf-8')
     inspect_payload()
@@ -217,6 +218,14 @@ def inspect_payload():
     if any(p.suffix.lower() in FONTS for p in files):raise RuntimeError('Unexpected standalone font file')
     dump(E/'payload.json',{'required_files':required,**component_report,
        'files':len(files),'unpacked_bytes':sum(p.stat().st_size for p in files),'gpu_inference_tested':False})
+
+def release_notes():
+    text=(R/'CHANGELOG.md').read_text(encoding='utf-8')
+    pattern=rf'(?ms)^## \[{re.escape(META["version"])}\] - \d{{4}}-\d{{2}}-\d{{2}}\n(.*?)(?=^## \[|\Z)'
+    match=re.search(pattern,text)
+    if not match or not match.group(1).strip():
+        raise RuntimeError('Missing release notes for version '+META['version'])
+    return match.group(1).strip()+'\n'
 
 def package():
     require_security_result(ST,E/'security/results.json')
@@ -278,9 +287,10 @@ def package():
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
         for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
             if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
-        for n in ('LICENSE','release.json','README.md','README.zh-CN.md'):z.write(R/n,n)
+        for n in ('LICENSE','release.json','README.md','README.en.md','CHANGELOG.md'):z.write(R/n,n)
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[DIST/native['name']]+[DIST/a['name'] for a in json.loads((E/'component-assets.json').read_text())]+[sourcezip]),encoding='utf-8')
-    cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')
+    (DIST/'RELEASE.md').write_text(release_notes(),encoding='utf-8')
+    cp(E/'payload.json',DIST/'payload-verification.json')
     print('FULL PACKAGE VERIFIED',[(p.name,p.stat().st_size) for p in archives],flush=True)
 
 def api(endpoint,payload=None,method=None):
