@@ -74,9 +74,13 @@ foreach(string page in new[]{"global","profile","components","about"})
     string text=string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null));
     File.WriteAllText(Path.Combine(evidence,"manager-"+selected+"-"+page+".txt"),text);
     if(page=="about")
-        Check(text.Contains("mpv-AnimeVE 1.2.0") && text.Contains("sunuuc/mpv-AnimeVE") &&
-              text.Contains("the-database/mpv-AnimeJaNai") && text.Contains("CC BY-NC-SA 4.0"),
-              "About displays version, both source repositories and license scope "+selected);
+        Check(text.Contains(vm.ProductVersion) && text.Contains("sunuuc/mpv-AnimeVE") &&
+              text.Contains("the-database/mpv-AnimeJaNai") &&
+              w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("LICENSE") &&
+              w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("OPEN_SOURCE_NOTICES.md") &&
+              w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("THIRD_PARTY_LICENSES") &&
+              !text.Contains("CC BY-NC-SA 4.0"),
+              "About displays version, source repositories and license links without the removed summary "+selected);
     Check(!w.GetLogicalDescendants().OfType<ItemsControl>().Any(c=>c.ItemsSource?.GetType().Name=="DefaultUpscaleSlots"),"manager uses only custom profiles");
 }
 selector.SelectedIndex=zh?1:0;Dispatcher.UIThread.RunJobs();
