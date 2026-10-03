@@ -1,6 +1,7 @@
 """Product identity contracts for source and extracted portable releases."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -90,7 +91,12 @@ class BrandingTests(unittest.TestCase):
             self.assertTrue(text.startswith('# ' + PROJECT_NAME))
             self.assertIn('| Tab |', text)
         manager = (ROOT / 'src/manager/AnimeJaNaiConfEditor/Views/MainWindow.axaml').read_text(encoding='utf-8')
+        data = json.loads((ROOT / 'src/manager/AnimeJaNaiConfEditor/LanguageStrings.json').read_text(encoding='utf-8'))
+        for key in re.findall(r'local:Text Key=([^}]+)', manager):
+            self.assertIn(key, data['keys'])
         self.assertNotIn('aboutLicenseScope', manager)
+        for key in ('aboutChanges', 'aboutDownloads', 'aboutUpstream'):
+            self.assertNotIn(key, manager)
         player = (ROOT / 'src/player/src/MpvNet/App.cs').read_text(encoding='utf-8')
         self.assertIn('https://github.com/sunuuc/mpv-AnimeVE', player)
         self.assertIn('OPEN_SOURCE_NOTICES.md', player)
