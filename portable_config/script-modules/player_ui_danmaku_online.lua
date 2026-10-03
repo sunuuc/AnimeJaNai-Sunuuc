@@ -234,14 +234,38 @@ function M.query_name(path, media_title, clean)
 end
 
 local CHINESE_SEASONS={'一','二','三','四','五','六','七','八','九','十','十一','十二'}
-function M.season_number(title)
-    title=tostring(title or '')
-    local number=title:match('[Ss](%d+)[Ee]%d+') or title:match('第%s*(%d+)%s*季')
-    if number then return tonumber(number) end
+local ROMAN_SEASONS={'Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ','Ⅺ','Ⅻ'}
+local ASCII_SEASONS={'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'}
+local function season_marker(title)
+    for _,pattern in ipairs({'[Ss](%d+)[Ee]%d+','第%s*(%d+)%s*季',
+        '%f[%a][Ss][Ee][Aa][Ss][Oo][Nn]%s+(%d+)%f[%W]','%f[%w][Ss](%d+)%f[%W]'}) do
+        local first,last,number=title:find(pattern)
+        if number and tonumber(number)>0 then return tonumber(number),first,last end
+    end
     for n,word in ipairs(CHINESE_SEASONS) do
-        if title:find('第'..word..'季',1,true) then return n end
+        local first,last=title:find('第'..word..'季',1,true)
+        if first then return n,first,last end
+    end
+    for n,word in ipairs(ROMAN_SEASONS) do
+        local first,last=title:find(word,1,true)
+        if first then return n,first,last end
+    end
+    for n=2,#ASCII_SEASONS do
+        local word=ASCII_SEASONS[n]
+        if #word>1 then
+            local first,last=title:find('%f[%a]'..word..'%f[%A]')
+            if first then return n,first,last end
+        end
     end
     return nil
+end
+function M.season_number(title)
+    local number=season_marker(tostring(title or ''))
+    return number
+end
+local function strip_season(title)
+    local _,first,last=season_marker(title)
+    return first and title:sub(1,first-1):gsub('%s+$','')..title:sub(last+1) or title
 end
 
 local function strip_year(title)
@@ -254,23 +278,6 @@ function M.episode_query(title)
     local start,finish=title:find('[Ss]%d+[Ee]%d+')
     local episode=start and tonumber(title:sub(start,finish):match('[Ee](%d+)'))
     local anime=start and strip_year(title:sub(1,start-1)) or nil
-    if not anime or anime=='' then
-        local marker,tail=title:find('第%s*%d+%s*季')
-        if marker then
-            anime=strip_year(title:sub(1,marker-1))
-            episode=tonumber(title:sub(tail+1):match('第%s*(%d+)%s*[集话話]'))
-        end
-    end
-    if not anime or anime=='' then
-        for _,word in ipairs(CHINESE_SEASONS) do
-            local marker=title:find('第'..word..'季',1,true)
-            if marker then
-                anime=strip_year(title:sub(1,marker-1))
-                episode=tonumber(title:sub(marker):match('第%s*(%d+)%s*[集话話]'))
-                break
-            end
-        end
-    end
     if not episode then
         local prefix,n=title:match('^(.-)%s*第%s*(%d+)%s*[集话話]')
         if not prefix then prefix,n=title:match('^(.-)%s*[Ee][Pp]?%s*(%d+)') end
@@ -279,7 +286,7 @@ function M.episode_query(title)
         if prefix then anime=strip_year(prefix);episode=tonumber(n) end
     end
     if not anime or anime=='' or not episode then return nil,nil,season end
-    return anime,episode,season
+    return strip_season(anime):gsub('%s+$',''),episode,season
 end
 
 function M.search_keyword(title)
@@ -341,7 +348,7 @@ function M.show_info(value,clean)
     local kind=(title:find('电影',1,true) or title:find('剧场版',1,true)) and '电影' or '剧集'
     local label=title:gsub('%s*[Ff][Rr][Oo][Mm]%s+.*$',''):gsub('【.-】','')
     label=label:gsub('%s+$','')
-    local series=label:gsub('%s*[（(]%d%d%d%d[)）]','')
+    local series=strip_season(label):gsub('%s*[（(]%d%d%d%d[)）]','')
     series=series:gsub('%s*第%s*%d+%s*季',''):gsub('%s*[Pp]art%s*%d+','')
     for _,word in ipairs(CHINESE_SEASONS) do series=series:gsub('第'..word..'季','') end
     series=series:gsub('%s*第%s*%d+%s*部分',''):gsub('%s+$','')

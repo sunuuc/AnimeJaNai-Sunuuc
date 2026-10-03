@@ -53,6 +53,38 @@ static class Program
         Call(search, "UpdateEmptyState");
         Check(((TextBlock)search.FindName("EmptyHeading")).Text == "请求失败", "Failure heading should be concise");
         Check(((TextBlock)search.FindName("EmptyDescription")).Text == "服务器返回：配额不足", "Server detail must be retained");
+        using var oldState = JsonDocument.Parse("""
+        {"servers":[{"index":1,"note":"ME"},{"index":2,"note":"logvar"}],
+         "search_source":1,"search_keyword":"间谍过家家","search_failed":1,"search_responded":0,
+         "status":"服务器返回：配额不足","results":[]}
+        """);
+        input.Text = "间谍过家家";
+        Call(search, "ApplyState", oldState.RootElement);
+        var choices = ((IEnumerable)Field(search, "_sources")).Cast<object>().ToArray();
+        Call(search, "SourceChip_Click", new Button { DataContext = choices[2] }, new RoutedEventArgs());
+        Check(((TextBlock)search.FindName("EmptyHeading")).Text == "正在搜索作品", "A route switch must not display stale failure");
+        Call(search, "ApplyState", oldState.RootElement);
+        Check((int)Field(search, "_selectedSearchSource") == 2, "An old route snapshot must not undo a pending switch");
+        using var newState = JsonDocument.Parse("""
+        {"servers":[{"index":1,"note":"ME"},{"index":2,"note":"logvar"}],
+         "search_source":2,"search_keyword":"间谍过家家","search_failed":0,"search_responded":1,
+         "results":[{"label":"间谍过家家","season":3,"server_index":2,
+         "platforms":[{"id":"3","name":"爱奇艺","episode_count":13}]}]}
+        """);
+        Call(search, "ApplyState", newState.RootElement);
+        Check(((FrameworkElement)search.FindName("EmptyState")).Visibility == Visibility.Collapsed, "The acknowledged route must display its results");
+        ((IList)Field(search, "_shows")).Clear();
+        Set(search, "_failedSearches", 1);
+        Set(search, "_respondedSearches", 1);
+        Call(search, "UpdateEmptyState");
+        Check(((TextBlock)search.FindName("EmptyHeading")).Text == "没有找到相关作品", "A successful empty response must not be called a request failure");
+        var seasonal = new DanmakuSearchWindow("无职转生", 3);
+        Set(seasonal, "_pendingSearches", 1);
+        using var partial = JsonDocument.Parse("""{"results":[{"label":"无职转生 第一季","season":1,"server_index":1,"platforms":[{"id":"1","name":"弹弹play"}]}]}""");
+        Call(seasonal, "ReadShows", partial.RootElement);
+        Check(!(bool)Field(seasonal, "_initialSeasonApplied"), "Partial results must not consume the requested season");
+        Call(seasonal, "ReadShows", data.RootElement);
+        Check((string)Field(seasonal, "_selectedSeason") == "第 3 季", "The requested season must be selected when available");
         var routes = new DanmakuSourcesWindow(new[] { "A", "https://a.invalid", "B", "https://b.invalid", "C", "https://c.invalid" });
         var grid = (DataGrid)routes.FindName("SourceGrid");
         var frame = new DispatcherFrame();

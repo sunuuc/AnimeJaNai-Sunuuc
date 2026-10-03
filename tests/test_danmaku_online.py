@@ -197,6 +197,28 @@ assert(result[2].id=='202' and #result[2].platforms==2,'platform children were f
 assert(result[2].platforms[1].name=='腾讯视频' and result[2].platforms[2].name=='爱奇艺')
 """)
 
+    def test_roman_and_explicit_season_markers(self):
+        online_path = lua_long(str(ONLINE).replace(chr(92), "/"))
+        lua_eval(f"""
+local online=dofile({online_path})
+local base='无职转生 ～到了异世界就拿出真本事～'
+for _,marker in ipairs({{'Ⅲ','III',' 第三季',' Season 3',' S03'}}) do
+    local info=online.show_info('无职转生'..marker..' ～到了异世界就拿出真本事～(2026)from dandan')
+    assert(info.season==3,marker..' season was not recognized')
+    assert(info.series==base,marker..' season was not removed from the series identity: '..info.series)
+    local title='无职转生'..marker..' ～到了异世界就拿出真本事～ 第5集'
+    local candidates=online.auto_candidates({{{{series=info.series,season=info.season,kind='TV动画',
+        platforms={{{{id='33'}}}}}}}},title)
+    assert(#candidates==1 and candidates[1].id=='33',marker..' did not match the current season')
+end
+assert(online.season_number('无职转生Ⅱ')==2)
+assert(online.season_number('Overlord IV')==4)
+for _,title in ipairs({{'无职转生 OVA(2022)','间谍过家家 代号：白(2023)',
+    'Violet Evergarden','SPY x FAMILY','S3Drive','Final Fantasy XIV'}}) do
+    assert(online.season_number(title)==nil,'Non-season title was misclassified: '..title)
+end
+""")
+
     def test_match_requires_same_season_and_local_episode_number(self):
         online_path = lua_long(str(ONLINE).replace(chr(92), "/"))
         lua_eval(f"""

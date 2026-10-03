@@ -292,6 +292,7 @@ class ParallelAutoloadHandler(BaseHTTPRequestHandler):
     max_active = 0
     lock = threading.Lock()
     search_delays = (0, 2)
+    search_barrier = threading.Barrier(2)
 
     def log_message(self, *_args):
         pass
@@ -310,8 +311,11 @@ class ParallelAutoloadHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(payload)))
         self.send_header('Connection', 'close')
-        self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
 
     def route_path(self):
         return self.path[len('/second'):] if self.path.startswith('/second/') else self.path
@@ -327,6 +331,8 @@ class ParallelAutoloadHandler(BaseHTTPRequestHandler):
         self.begin()
         path = self.route_path()
         second = self.path.startswith('/second/')
+        if path.startswith('/api/v2/search/anime?'):
+            ParallelAutoloadHandler.search_barrier.wait(timeout=10)
         if path.startswith('/api/v2/search/anime?'): time.sleep(ParallelAutoloadHandler.search_delays[1 if second else 0])
         if path.startswith('/api/v2/search/anime?'):
             body = {'animes': [{'animeId': 202 if second else 101,
@@ -357,6 +363,64 @@ class DanmakuFlowTest(unittest.TestCase):
         converter=root/'animejanai/danmaku';converter.mkdir(parents=True)
         factory=Path(os.environ.get('DANMAKU_FACTORY',MPV.parent/'animejanai/danmaku/DanmakuFactory.exe'))
         shutil.copy2(factory,converter/'DanmakuFactory.exe')
+
+    def test_selected_route_progress_and_errors_are_scoped(self):
+        ScopedSearchHandler.seen = []
+        server = ThreadingHTTPServer(('127.0.0.1', 0), ScopedSearchHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory(prefix='danmaku-scoped-search-') as directory:
+                folder = Path(directory)
+                (folder / 'AnimeVE-danmaku.conf').write_text('api_servers=' + ','.join(
+                    f'http://127.0.0.1:{server.server_port}/{route}|{route}'
+                    for route in ('failed', 'empty', 'slow')) + '\n', encoding='utf-8')
+                result_path = folder / 'state.json'
+                driver = folder / 'driver.lua'
+                driver.write_text('''
+local utils=require('mp.utils')
+local phase=0
+local function finish(reason,code)
+    local file=assert(io.open(%s,'wb'))
+    file:write(utils.format_json({phase=phase,reason=reason}));file:close()
+    mp.commandv('quit',code)
+end
+mp.add_timeout(.5,function()
+    mp.commandv('script-message','player_ui-danmaku-search-query','状态测试','0','')
+end)
+mp.add_periodic_timer(.05,function()
+    local data=mp.get_property_native('user-data/player_ui/danmaku') or {}
+    if phase==0 and data.search_failed==1 and data.search_responded==1 and data.search_pending==1 then
+        phase=1;mp.commandv('script-message','player_ui-danmaku-search-filter','2')
+    elseif phase==1 and data.search_source==2 then
+        if data.search_pending~=0 or data.search_failed~=0 or data.search_responded~=1
+            or data.search_total~=1 or #data.results~=0 then finish('empty route inherited another route state',1);return end
+        phase=2;mp.commandv('script-message','player_ui-danmaku-search-filter','1')
+    elseif phase==2 and data.search_source==1 then
+        if data.search_failed~=1 or data.search_pending~=0 or data.search_responded~=0
+            or not data.status:find('服务器维护中',1,true) then finish('failed route lost server error',1);return end
+        phase=3;mp.commandv('script-message','player_ui-danmaku-search-filter','3')
+    elseif phase==3 and data.search_source==3 then
+        if data.search_pending~=1 or data.search_failed~=0 then finish('loading route inherited stale failure',1);return end
+        phase=4
+    elseif phase==4 and data.search_pending==0 and #data.results==1 then
+        if data.search_failed~=0 or data.search_responded~=1 or data.results[1].season~=3 then
+            finish('loaded route has inconsistent result state',1);return end
+        finish('ok',0)
+    end
+end)
+mp.add_timeout(15,function()finish('timeout',1)end)
+''' % lua_string(str(result_path)), encoding='utf-8')
+                env = {**os.environ, 'LOCALAPPDATA': directory}
+                proc = subprocess.run([str(MPV), f'--config-dir={self.config}', '--load-scripts=no',
+                    '--idle=yes', '--vo=null', f'--script={SCRIPT}', f'--script={driver}'],
+                    env=env, capture_output=True, timeout=20)
+                outcome = json.loads(result_path.read_text(encoding='utf-8')) if result_path.exists() else {}
+                self.assertEqual(proc.returncode, 0, (outcome, proc.stderr.decode('utf-8', 'replace')[-1200:]))
+                self.assertEqual(outcome, {'phase': 4, 'reason': 'ok'})
+                self.assertEqual(len(ScopedSearchHandler.seen), 3, 'Changing filters must not issue more requests')
+        finally:
+            server.shutdown(); server.server_close(); thread.join(timeout=2)
 
     def test_movie_titles_without_episode_markers_search_automatically(self):
         Handler.seen = []
@@ -445,6 +509,7 @@ mp.add_timeout(20,function()finish(1)end)
         ParallelAutoloadHandler.seen = []
         ParallelAutoloadHandler.active = 0
         ParallelAutoloadHandler.max_active = 0
+        ParallelAutoloadHandler.search_barrier = threading.Barrier(2)
         server = ThreadingHTTPServer(('127.0.0.1', 0), ParallelAutoloadHandler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -853,7 +918,8 @@ mp.add_periodic_timer(.05,function()
             saw_loading=saw_loading,saw_not_found=saw_not_found},0)
     end
 end)
-mp.add_timeout(15,function()finish({error='automatic matching did not load comments',phase=phase,
+mp.add_timeout(30,function()finish({error='automatic matching did not load comments',phase=phase,
+    state=mp.get_property_native('user-data/player_ui/danmaku'),
     saw_loading=saw_loading,saw_not_found=saw_not_found},1)end)
 """ % (lua_string(str(result_path)), lua_string(str(sample))), encoding="utf-8")
                 env = os.environ.copy()
@@ -864,8 +930,10 @@ mp.add_timeout(15,function()finish({error='automatic matching did not load comme
                     "--demuxer-rawvideo-w=16", "--demuxer-rawvideo-h=16",
                     "--demuxer-rawvideo-format=I420", "--demuxer-rawvideo-fps=1",
                     f"--script={SCRIPT}", f"--script={driver}",
-                ], env=env, capture_output=True, timeout=18)
+                ], env=env, capture_output=True, timeout=35)
                 outcome = json.loads(result_path.read_text(encoding="utf-8")) if result_path.exists() else {}
+                if proc.returncode:
+                    outcome['requests'] = list(AutoloadHandler.seen)
                 self.assertEqual(proc.returncode, 0, (outcome, proc.stderr.decode("utf-8", "replace")[-1200:]))
                 self.assertEqual(outcome, {"loaded": True, "count": 1, "autoload_state": "loaded",
                     "saw_loading": True, "saw_not_found": True})
@@ -1016,6 +1084,30 @@ mp.add_timeout(12,function()fail('timed out in cache phase '..phase)end)
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+
+class ScopedSearchHandler(BaseHTTPRequestHandler):
+    seen: list[str] = []
+
+    def log_message(self, *_args):
+        pass
+
+    def do_GET(self):
+        ScopedSearchHandler.seen.append(self.path)
+        failed = self.path.startswith('/failed/')
+        slow = self.path.startswith('/slow/')
+        if slow:
+            time.sleep(3)
+        body = {'errorMessage': '服务器维护中'} if failed else {'animes': [
+            {'animeId': 33, 'animeTitle': '无职转生Ⅲ ～到了异世界就拿出真本事～(2026)',
+             'source': 'dandan', 'episodeCount': 16}] if slow else []}
+        payload = json.dumps(body, ensure_ascii=False).encode('utf-8')
+        self.send_response(503 if failed else 200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(payload)))
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.wfile.write(payload)
 
 
 class CacheHandler(BaseHTTPRequestHandler):

@@ -36,6 +36,8 @@ public partial class DanmakuSearchWindow : Window
     int _failedSearches;
     int _respondedSearches;
     int _totalSearches;
+    int? _pendingSearchSource;
+    string? _pendingKeyword;
     bool _initialSeasonApplied;
     bool _initialSearchDispatched;
     bool _ready;
@@ -119,79 +121,84 @@ public partial class DanmakuSearchWindow : Window
         JsonDocument document;
         try { document = JsonDocument.Parse(state); }
         catch (JsonException) { return; }
-        using (document)
-        {
-            JsonElement root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return;
-            ReadSources(root);
-            _pendingSearches = Number(root, "search_pending");
-            _failedSearches = Number(root, "search_failed");
-            _respondedSearches = Number(root, "search_responded");
-            _totalSearches = Number(root, "search_total");
-            _episodeLoadGeneration = Number(root, "episode_load_generation");
-            _displayedKeyword = Text(root, "search_keyword");
-            string status = Text(root, "status");
-            Status.Text = status == "无法取得片名"
-                ? "没识别到片名，可直接输入作品名搜索。"
-                : status;
-            if (_pendingEpisodeId is not null && _episodeLoadGeneration > _pendingEpisodeGeneration)
-            {
-                bool loaded = root.TryGetProperty("loaded", out var loadedValue)
-                    && loadedValue.ValueKind == System.Text.Json.JsonValueKind.True;
-                int count = Number(root, "count");
-                if (loaded && count > 0)
-                {
-                    Close();
-                    return;
-                }
+        using (document) ApplyState(document.RootElement);
+    }
 
-                if (status.Contains("获取弹幕中", StringComparison.Ordinal))
-                {
-                    Status.Visibility = Visibility.Visible;
-                }
-                else if (status.Contains("失败", StringComparison.Ordinal)
-                    || status.Contains("无效", StringComparison.Ordinal)
-                    || status.Contains("没有弹幕", StringComparison.Ordinal))
-                {
-                    _pendingEpisodeId = null;
-                    _pendingEpisodeGeneration = -1;
-                    Status.Visibility = Visibility.Visible;
-                }
-            }
-            bool showEpisodes = Text(root, "search_view") == "episodes";
-            if (showEpisodes && root.TryGetProperty("selected_show", out var selectedShow)
-                && selectedShow.ValueKind == JsonValueKind.Object)
+    void ApplyState(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object) return;
+        if (_pendingSearchSource is int pendingSource && Number(root, "search_source") != pendingSource) return;
+        if (_pendingKeyword is string pendingKeyword && Text(root, "search_keyword") != pendingKeyword) return;
+        _pendingSearchSource = null;
+        _pendingKeyword = null;
+        ReadSources(root);
+        _pendingSearches = Number(root, "search_pending");
+        _failedSearches = Number(root, "search_failed");
+        _respondedSearches = Number(root, "search_responded");
+        _totalSearches = Number(root, "search_total");
+        _episodeLoadGeneration = Number(root, "episode_load_generation");
+        _displayedKeyword = Text(root, "search_keyword");
+        string status = Text(root, "status");
+        Status.Text = status == "无法取得片名"
+            ? "没识别到片名，可直接输入作品名搜索。"
+            : status;
+        if (_pendingEpisodeId is not null && _episodeLoadGeneration > _pendingEpisodeGeneration)
+        {
+            bool loaded = root.TryGetProperty("loaded", out var loadedValue)
+                && loadedValue.ValueKind == System.Text.Json.JsonValueKind.True;
+            int count = Number(root, "count");
+            if (loaded && count > 0)
             {
-                string title = Text(selectedShow, "label");
-                string platform = Text(selectedShow, "platform");
-                if (!string.IsNullOrWhiteSpace(title))
-                    _selectedTitle = string.IsNullOrWhiteSpace(platform) ? title : $"{title} · {platform}";
-                int selectedServer = Number(selectedShow, "server_index");
-                if (selectedServer > 0) _selectedServer = selectedServer;
+                Close();
+                return;
             }
-            ShowList.Visibility = showEpisodes ? Visibility.Collapsed : Visibility.Visible;
-            EpisodeList.Visibility = showEpisodes ? Visibility.Visible : Visibility.Collapsed;
-            FiltersVisibility(showEpisodes);
-            if (showEpisodes)
+
+            if (status.Contains("获取弹幕中", StringComparison.Ordinal))
             {
-                Heading.Text = "搜索弹幕";
-                Subheading.Text = _selectedTitle;
-                Subheading.Visibility = string.IsNullOrEmpty(_selectedTitle) ? Visibility.Collapsed : Visibility.Visible;
-                BackButton.Visibility = Visibility.Visible;
-                CloseButton.Visibility = Visibility.Collapsed;
-                ReadEpisodes(root);
+                Status.Visibility = Visibility.Visible;
             }
-            else
+            else if (status.Contains("失败", StringComparison.Ordinal)
+                || status.Contains("无效", StringComparison.Ordinal)
+                || status.Contains("没有弹幕", StringComparison.Ordinal))
             {
-                Heading.Text = "搜索弹幕";
-                Subheading.Visibility = Visibility.Collapsed;
-                BackButton.Visibility = Visibility.Collapsed;
-                CloseButton.Visibility = Visibility.Visible;
-                ReadShows(root);
+                _pendingEpisodeId = null;
+                _pendingEpisodeGeneration = -1;
+                Status.Visibility = Visibility.Visible;
             }
-            UpdateEmptyState();
-            SearchInitialIfReady();
         }
+        bool showEpisodes = Text(root, "search_view") == "episodes";
+        if (showEpisodes && root.TryGetProperty("selected_show", out var selectedShow)
+            && selectedShow.ValueKind == JsonValueKind.Object)
+        {
+            string title = Text(selectedShow, "label");
+            string platform = Text(selectedShow, "platform");
+            if (!string.IsNullOrWhiteSpace(title))
+                _selectedTitle = string.IsNullOrWhiteSpace(platform) ? title : $"{title} · {platform}";
+            int selectedServer = Number(selectedShow, "server_index");
+            if (selectedServer > 0) _selectedServer = selectedServer;
+        }
+        ShowList.Visibility = showEpisodes ? Visibility.Collapsed : Visibility.Visible;
+        EpisodeList.Visibility = showEpisodes ? Visibility.Visible : Visibility.Collapsed;
+        FiltersVisibility(showEpisodes);
+        if (showEpisodes)
+        {
+            Heading.Text = "搜索弹幕";
+            Subheading.Text = _selectedTitle;
+            Subheading.Visibility = string.IsNullOrEmpty(_selectedTitle) ? Visibility.Collapsed : Visibility.Visible;
+            BackButton.Visibility = Visibility.Visible;
+            CloseButton.Visibility = Visibility.Collapsed;
+            ReadEpisodes(root);
+        }
+        else
+        {
+            Heading.Text = "搜索弹幕";
+            Subheading.Visibility = Visibility.Collapsed;
+            BackButton.Visibility = Visibility.Collapsed;
+            CloseButton.Visibility = Visibility.Visible;
+            ReadShows(root);
+        }
+        UpdateEmptyState();
+        SearchInitialIfReady();
     }
 
     void FiltersVisibility(bool episodes)
@@ -256,7 +263,7 @@ public partial class DanmakuSearchWindow : Window
             EmptyHeading.Text = "正在搜索作品";
             EmptyDescription.Text = "正在并行查询已配置的弹幕线路。";
         }
-        else if (_failedSearches > 0)
+        else if (_failedSearches > 0 && _respondedSearches == 0)
         {
             EmptyHeading.Text = "请求失败";
             EmptyDescription.Text = Status.Text;
@@ -313,7 +320,6 @@ public partial class DanmakuSearchWindow : Window
             _sources.Add(choice with { IsSelected = choice.Index == selected });
         if (!root.TryGetProperty("search_view", out var view) || view.GetString() != "episodes")
             _selectedServer = Number(root, "source");
-        UpdateEmptyState();
     }
 
     void ReadShows(JsonElement root)
@@ -383,7 +389,7 @@ public partial class DanmakuSearchWindow : Window
             .ToList();
         if (!_initialSeasonApplied && seasons.Contains(requested)) _selectedSeason = requested;
         else if (_selectedSeason != "全部" && !seasons.Contains(_selectedSeason)) _selectedSeason = "全部";
-        if (_shows.Count > 0) _initialSeasonApplied = true;
+        if (_selectedSeason == requested || _shows.Count > 0 && _pendingSearches == 0) _initialSeasonApplied = true;
         var platforms = routeShows.Where(x => _selectedSeason == "全部" || x.Group == _selectedSeason).Select(x => x.Platform).Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct().OrderBy(x => x, StringComparer.CurrentCulture).ToList();
 
@@ -441,6 +447,14 @@ public partial class DanmakuSearchWindow : Window
             int index = _sources.IndexOf(item);
             _sources[index] = item with { IsSelected = item.Index == _selectedSearchSource };
         }
+        if (!string.IsNullOrWhiteSpace(_displayedKeyword))
+        {
+            _pendingSearchSource = _selectedSearchSource;
+            _pendingSearches = 1;
+            _failedSearches = 0;
+            _respondedSearches = 0;
+            Status.Text = "";
+        }
         RefreshFilters();
         if (_ready && !string.IsNullOrWhiteSpace(_displayedKeyword))
             Player.CommandV("script-message", "player_ui-danmaku-search-filter", _selectedSearchSource.ToString());
@@ -468,6 +482,11 @@ public partial class DanmakuSearchWindow : Window
         _pendingEpisodeId = null;
         _pendingEpisodeGeneration = -1;
         Status.Visibility = Visibility.Collapsed;
+        _pendingSearchSource = _selectedSearchSource;
+        _pendingKeyword = keyword;
+        _pendingSearches = 1;
+        _failedSearches = 0;
+        _respondedSearches = 0;
         if (!string.Equals(keyword, _displayedKeyword, StringComparison.Ordinal))
         {
             _shows.Clear();
