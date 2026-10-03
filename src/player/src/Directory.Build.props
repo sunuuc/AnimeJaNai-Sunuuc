@@ -1,6 +1,6 @@
 ﻿<Project>
 	<PropertyGroup>
-		<Product>NekoAnimeVE</Product>
+		<Product>AnimeVE</Product>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 </Project>

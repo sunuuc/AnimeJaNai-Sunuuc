@@ -27,7 +27,7 @@ def stop(proc):
         except subprocess.TimeoutExpired:proc.kill();proc.wait(5)
 
 def components():
-    cp=subprocess.run([str(APP/'NekoAnimeVEUpdater.exe'),'--components','--json'],env=ENV,cwd=OUT,capture_output=True,timeout=40)
+    cp=subprocess.run([str(APP/'AnimeVEUpdater.exe'),'--components','--json'],env=ENV,cwd=OUT,capture_output=True,timeout=40)
     (OUT/'components.log').write_bytes(cp.stdout+cp.stderr)
     assert cp.returncode==0,cp.stderr
     data=json.loads(cp.stdout)
@@ -45,7 +45,7 @@ def no_release_update_logic():
         assert 'ctrl+u' not in text,rel
     checks={}
     for arg in ('--check','--open-releases'):
-        cp=subprocess.run([str(APP/'NekoAnimeVEUpdater.exe'),arg],env=ENV,cwd=OUT,capture_output=True,timeout=30)
+        cp=subprocess.run([str(APP/'AnimeVEUpdater.exe'),arg],env=ENV,cwd=OUT,capture_output=True,timeout=30)
         log=cp.stdout+cp.stderr
         (OUT/('unsupported-'+arg[2:]+'.log')).write_bytes(log)
         assert cp.returncode==2,(arg,cp.returncode,log)
@@ -97,7 +97,7 @@ class JsonPipe:
 
 def frontend():
     pipe=r'\\.\pipe\ajn-full-'+uuid.uuid4().hex
-    args=[str(APP/'NekoAnimeVE.exe'),'--config-dir='+str(APP/'portable_config'),'--vo=null','--ao=null',
+    args=[str(APP/'AnimeVE.exe'),'--config-dir='+str(APP/'portable_config'),'--vo=null','--ao=null',
         '--hwdec=no','--vf=','--idle=yes','--input-ipc-server='+pipe,'--log-file='+str(OUT/'frontend.mpv.log'),str(sample)]
     with (OUT/'frontend.console.log').open('wb') as console:
         proc=subprocess.Popen(args,env=ENV,cwd=OUT,stdout=console,stderr=subprocess.STDOUT)
@@ -133,7 +133,7 @@ def frontend():
                     advanced=True;break
                 time.sleep(.1)
             assert advanced,'Video stopped advancing'
-            detail=verify_process(proc.pid,APP/'NekoAnimeVE.exe',APP,OUT/'bundles',OUT/'self-contained-player-modules.json')
+            detail=verify_process(proc.pid,APP/'AnimeVE.exe',APP,OUT/'bundles',OUT/'self-contained-player-modules.json')
             return {**detail,'started_outside_install_directory':True,'video_frames_advancing':True}
         finally:
             if f:f.close()
@@ -159,16 +159,16 @@ def windows_for(pid):
 
 def manager():
     with (OUT/'manager.console.log').open('wb') as console:
-        proc=subprocess.Popen([str(APP/'NekoAnimeVEManager.exe')],env=ENV,cwd=OUT,stdout=console,stderr=subprocess.STDOUT)
+        proc=subprocess.Popen([str(APP/'AnimeVEManager.exe')],env=ENV,cwd=OUT,stdout=console,stderr=subprocess.STDOUT)
         try:
             end=time.monotonic()+20;windows=[]
             while time.monotonic()<end:
                 assert proc.poll() is None,('Manager exited',proc.returncode)
                 windows=windows_for(proc.pid)
-                if any(title in ('NekoAnimeVE Manager', 'NekoAnimeVE 管理器') for title in windows):break
+                if any(title in ('AnimeVE Manager', 'AnimeVE 管理器') for title in windows):break
                 time.sleep(.2)
             else:raise RuntimeError('Manager did not create its visible main window: '+repr(windows))
-            detail=verify_process(proc.pid,APP/'NekoAnimeVEManager.exe',APP,OUT/'bundles',OUT/'self-contained-manager-modules.json')
+            detail=verify_process(proc.pid,APP/'AnimeVEManager.exe',APP,OUT/'bundles',OUT/'self-contained-manager-modules.json')
             return {**detail,'launched':True,'visible_windows':windows,'external_dotnet_disabled':True}
         finally:stop(proc)
 

@@ -76,7 +76,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             archive=root/(name+'.7z')
             subprocess.run([str(seven),'a','-t7z','-bd',str(archive),relative],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
             cache=app/'.component-downloads'/name;cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
-            return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-NekoAnimeVE/releases/download/test/'+archive.name,
+            return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-AnimeVE/releases/download/test/'+archive.name,
                     'sha256':digest(archive),'bytes':archive.stat().st_size,'installed_bytes':len(content),'files':[relative],
                     'requires':requires,'recommended':False}
         runtime=pack('fixture-runtime',b'test runtime')

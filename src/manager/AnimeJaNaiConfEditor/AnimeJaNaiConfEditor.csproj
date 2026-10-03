@@ -6,10 +6,10 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>1.2.0</Version>
-    <Title>NekoAnimeVE Manager</Title>
-    <Product>NekoAnimeVE</Product>
-    <AssemblyName>NekoAnimeVEManager</AssemblyName>
+    <Version>1.2.1</Version>
+    <Title>AnimeVE Manager</Title>
+    <Product>AnimeVE</Product>
+    <AssemblyName>AnimeVEManager</AssemblyName>
     <PackageIcon>logo.png</PackageIcon>
     <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
     <PublishSingleFile>false</PublishSingleFile>

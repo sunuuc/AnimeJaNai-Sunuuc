@@ -1,12 +1,12 @@
-# mpv-NekoAnimeVE 1.2.0
+# mpv-AnimeVE 1.2.1
 
-项目和发行包名称为 mpv-NekoAnimeVE；播放器与管理器界面使用 NekoAnimeVE。播放器为 `NekoAnimeVE.exe`，管理器为 `NekoAnimeVEManager.exe`。
+项目和发行包名称为 mpv-AnimeVE；播放器与管理器界面使用 AnimeVE。播放器为 `AnimeVE.exe`，管理器为 `AnimeVEManager.exe`。
 
 Windows x64 视频播放器，支持选择下载 AI 超分与 RIFE 补帧组件。NVIDIA 可使用 TensorRT，AMD / Intel 可使用内置 DirectML；普通播放无需安装模型。
 
 ## 使用
 
-解压 `mpv-NekoAnimeVE-1.2.0-win-x64.7z`，运行 `NekoAnimeVE.exe`。配置管理器为 `NekoAnimeVEManager.exe`。
+解压 `mpv-AnimeVE-1.2.1-win-x64.7z`，运行 `AnimeVE.exe`。配置管理器为 `AnimeVEManager.exe`。
 
 发行包不内置模型与 TensorRT 显卡组件。打开管理器“组件”页，可选择推荐项或手动勾选；点击“应用”才下载，显示进度并验证 SHA-256。各超分模型单独下载，RIFE 为可选组件。默认关闭 AI 处理，安装后再在配置方案中选择模型与启用处理链。显卡驱动由系统安装，首次使用模型时在本机生成引擎缓存。
 
@@ -14,7 +14,7 @@ Windows x64 视频播放器，支持选择下载 AI 超分与 RIFE 补帧组件�
 
 ## 本版更新
 
-- 项目和发行包统一命名为 mpv-NekoAnimeVE，程序界面和启动文件继续使用 NekoAnimeVE。
+- 项目和发行包统一命名为 mpv-AnimeVE，程序界面和启动文件继续使用 AnimeVE。
 
 - 弹幕使用 DanmakuFactory 转换和 mpv/libass 原生渲染，移除逐帧脚本轮询。
 - 弹幕使用整个窗口区域，包括上下黑边。窗口、全屏切换时直接按当前尺寸渲染，不再延迟重新生成字幕轨道。
@@ -66,8 +66,8 @@ GitHub 云端没有 RTX 5080 Laptop，实际 AI 推理性能和公益弹幕服�
 
 ## 文件
 
-- `mpv-NekoAnimeVE-1.2.0-win-x64.7z`：完整程序
-- `mpv-NekoAnimeVE-1.2.0-sources.zip`：源码
+- `mpv-AnimeVE-1.2.1-win-x64.7z`：完整程序
+- `mpv-AnimeVE-1.2.1-sources.zip`：源码
 - `SHA256SUMS.txt`：校验值
 
 ## 关于

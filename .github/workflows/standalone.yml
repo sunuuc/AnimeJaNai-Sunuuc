@@ -24,7 +24,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: mpv-nekoanimeve-standalone
+  group: mpv-animeve-standalone
   cancel-in-progress: true
 jobs:
   full:
@@ -97,7 +97,7 @@ jobs:
           path: downloads
           key: standalone-dependencies-${{ hashFiles('tools/standalone/dependencies.json', 'tools/standalone/libass-build-packages.json', 'tools/standalone/build_danmaku_factory.py') }}
       - name: Verify optional components and model-free core
-        run: python tests/test_optional_components.py stage --updater stage/NekoAnimeVEUpdater.exe --seven stage/7za.exe --model-assets dist
+        run: python tests/test_optional_components.py stage --updater stage/AnimeVEUpdater.exe --seven stage/7za.exe --model-assets dist
       - name: FPS, external playlist and controller tests
         run: |
           Start-Service AudioEndpointBuilder

@@ -134,7 +134,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         }
 
         public ComponentManagerViewModel ComponentManager { get; } = new();
-        public string ProductVersion => "mpv-NekoAnimeVE " +
+        public string ProductVersion => "mpv-AnimeVE " +
             (typeof(MainWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "");
 
         private int _selectedTabIndex;
@@ -202,7 +202,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        // Two layouts: at the install root the exe sits next to NekoAnimeVE.exe with the data in
+        // Two layouts: at the install root the exe sits next to AnimeVE.exe with the data in
         // animejanai/ (3.4.0+); in the legacy layout (and `dotnet run` from the project
         // output, which copies animejanai.conf + onnx/ beside the binary) the exe lives
         // inside the data directory itself.
@@ -219,7 +219,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             : AtInstallRoot ? Path.Combine(AppContext.BaseDirectory, "animejanai")
             : AppContext.BaseDirectory);
 
-        // install root: player, NekoAnimeVEUpdater, portable_config/
+        // install root: player, AnimeVEUpdater, portable_config/
         public static string RootDir { get; } = Path.GetFullPath(
             Environment.GetEnvironmentVariable("ANIMEJANAI_ROOT") is { Length: > 0 } rd ? rd
             : AtInstallRoot ? AppContext.BaseDirectory

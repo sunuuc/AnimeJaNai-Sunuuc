@@ -11,7 +11,7 @@ public class AppClass
 {
     public List<string> TempFiles { get; } = new ();
 
-    public string ConfPath { get => Player.ConfigFolder + "NekoAnimeVE.conf"; }
+    public string ConfPath { get => Player.ConfigFolder + "AnimeVE.conf"; }
     public string ProcessInstance { get; set; } = "single";
     public string DarkMode { get; set; } = "always";
     public string DarkTheme { get; set; } = "dark";
@@ -79,14 +79,14 @@ public class AppClass
         Player.Initialized += Player_Initialized;
     }
 
-    public static string About => "Copyright (C) 2000-2024 mpv.net/mpv/mplayer\n" +
-        $"{AppInfo.Product} v{AppInfo.Version}" + GetLastWriteTime(Environment.ProcessPath!) + "\n" +
-        $"{Player.GetPropertyString("mpv-version")}" + GetLastWriteTime(Folder.Startup + "libmpv-2.dll") + "\n" +
+    public static string About => $"mpv-AnimeVE v{AppInfo.Version}\n" +
+        "sunuuc · https://github.com/sunuuc/mpv-AnimeVE\n\n" +
+        $"{Player.GetPropertyString("mpv-version")}\n" +
         $"ffmpeg {Player.GetPropertyString("ffmpeg-version")}\n" +
         $"MediaInfo v{FileVersionInfo.GetVersionInfo(Folder.Startup + "MediaInfo.dll").FileVersion}" +
-        $"{GetLastWriteTime(Folder.Startup + "MediaInfo.dll")}" + "\n" + "GPL v2 License";
-
-    static string GetLastWriteTime(string path) => $" ({File.GetLastWriteTime(path).ToShortDateString()})";
+        "\n\nBased on mpv-AnimeJaNai, mpv.net and mpv.\n" +
+        "Copyright (C) 2000-2024 mpv.net/mpv/mplayer contributors.\n" +
+        "Full credits and component licenses: OPEN_SOURCE_NOTICES.md";
 
     void Player_Initialized()
     {

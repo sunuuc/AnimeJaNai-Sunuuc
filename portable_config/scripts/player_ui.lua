@@ -358,8 +358,8 @@ local function info_data(kind)
         row('像素格式  '..tostring(v.pixelformat or '—')..' · '..tostring(v.colormatrix or '—'))
         row('音频  '..mp.get_property('audio-codec-name','—')..' · '..tostring(a.samplerate or '—')..' Hz')
         row('时长  '..core.time(num('duration'))..'    章节 '..tostring(#(prop('chapter-list',{}) or {})))
-        row('NekoAnimeVE 状态（Ctrl+J）',function()state.visible=false;cmd('script-binding','animejanaistats/show_animejanai_stats')end)
-        row('mpv 完整统计',function()state.visible=false;cmd('script-binding','stats/display-stats-toggle')end)
+        row('AnimeVE 状态（Ctrl+J）',function()state.visible=false;cmd('script-binding','animejanaistats/show_animejanai_stats')end)
+        row('mpv 完整统计（Tab）',function()state.visible=false;cmd('script-binding','stats/display-stats-toggle')end)
     elseif kind=='chapters' then
         title='章节'
         for i,c in ipairs(prop('chapter-list',{}) or {}) do local t=c.time
@@ -805,7 +805,7 @@ end)()({
     end,
     open_file=open_file,info=info_data,after=mp.add_timeout,on_close=function()if show then show()end end,
     open=function(kind,parent)open_menu(kind,parent)end,
-    manager=function()cmd('run',mp.command_native({'expand-path','~~/../NekoAnimeVEManager.exe'}))end
+    manager=function()cmd('run',mp.command_native({'expand-path','~~/../AnimeVEManager.exe'}))end
 })
 open_menu=function(kind,parent)
     if not playback_ready then return end

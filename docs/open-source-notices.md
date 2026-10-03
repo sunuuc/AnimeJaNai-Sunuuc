@@ -1,8 +1,8 @@
-# mpv-NekoAnimeVE：来源、修改与第三方许可
+# mpv-AnimeVE：来源、修改与第三方许可
 
 ## 当前项目
 
-源码、完整修改历史和问题反馈：<https://github.com/sunuuc/mpv-NekoAnimeVE>，维护者 sunuuc。
+源码、完整修改历史和问题反馈：<https://github.com/sunuuc/mpv-AnimeVE>，维护者 sunuuc。
 本项目是修改版发行，并非下列上游项目的官方发行。
 修改范围包括品牌与中文界面、播放控制、弹幕搜索与渲染、原生弹幕转换器与 libass 扩展，以及按需组件管理。
 源码发行包包含本项目修改过的管理器、播放器、DanmakuFactory 和 libass 源码，以及构建脚本与固定依赖记录。

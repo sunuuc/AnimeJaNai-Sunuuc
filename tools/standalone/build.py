@@ -7,7 +7,7 @@ import configparser, hashlib, json, os, re, shutil, subprocess, sys, time, urlli
 R=Path.cwd(); H=R/'tools/standalone'; ST=R/'stage'; DIST=R/'dist'; E=R/'complete-evidence'
 META=json.loads((R/'release.json').read_text(encoding='utf-8'))
 LOCK=json.loads((H/'dependencies.json').read_text(encoding='utf-8'))
-REPO='sunuuc/mpv-NekoAnimeVE'
+REPO='sunuuc/mpv-AnimeVE'
 from components import prepare as prepare_components, validate as validate_components
 from security_verify import require_result as require_security_result
 FONTS={'.ttf','.otf','.ttc','.woff','.woff2','.fon','.fnt'}
@@ -69,7 +69,7 @@ def download(item):
     url=f'https://github.com/{item["repo"]}/releases/download/{item["tag"]}/{item["name"]}'
     for attempt in range(3):
         try:
-            req=urllib.request.Request(url,headers={'User-Agent':'NekoAnimeVE-full-build'})
+            req=urllib.request.Request(url,headers={'User-Agent':'AnimeVE-full-build'})
             with urllib.request.urlopen(req,timeout=90) as src, dest.open('wb') as out:shutil.copyfileobj(src,out,1024*1024)
             if sha(dest)!=item['sha256']:raise RuntimeError('Download hash mismatch: '+item['name'])
             print('VERIFIED INPUT',item['name'],dest.stat().st_size,flush=True);return dest
@@ -184,8 +184,9 @@ def stage():
     dump(E/'components.json',validate_components(ST))
     dump(ST/'manifest.json',{'name':META['name'],'version':META['version'],'distribution':'portable','repository':REPO,'component_version':'3.6.0','platform':'win-x64'})
     cp(R/'docs/standalone.md',ST/'使用说明.md')
+    for name in ('README.md','README.zh-CN.md'):cp(R/name,ST/name)
     for name in ('准备使用.txt','README-full.txt'):
-        (ST/name).write_text('直接运行 NekoAnimeVE.exe；管理器的组件页可选择下载模型和显卡组件。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n不内置模型，默认普通播放；显卡驱动由系统提供。\n',encoding='utf-8')
+        (ST/name).write_text('直接运行 AnimeVE.exe；管理器的组件页可选择下载模型和显卡组件。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n不内置模型，默认普通播放；显卡驱动由系统提供。\n',encoding='utf-8')
     inspect_payload()
 
 def clean_session_files(app):
@@ -199,7 +200,7 @@ def inspect_payload():
     run(sys.executable,R/'tests/test_branding.py',ST)
     files=[p for p in ST.rglob('*') if p.is_file()]
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
-    required=['NekoAnimeVE.exe','mpv.exe','libmpv-2.dll','NekoAnimeVEManager.exe','NekoAnimeVEUpdater.exe',
+    required=['AnimeVE.exe','mpv.exe','libmpv-2.dll','AnimeVEManager.exe','AnimeVEUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
        'portable_config/script-opts/player_ui.conf','portable_config/script-opts/player_ui_danmaku.conf',
        'portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
@@ -277,7 +278,7 @@ def package():
     with zipfile.ZipFile(sourcezip,'w',zipfile.ZIP_DEFLATED) as z:
         for p in source_release_files(('src','tools','tests','portable_config','animejanai','THIRD_PARTY_LICENSES','third_party','docs')):
             if p.suffix.lower() not in FONTS:z.write(p,p.relative_to(R).as_posix())
-        for n in ('LICENSE','release.json'):z.write(R/n,n)
+        for n in ('LICENSE','release.json','README.md','README.zh-CN.md'):z.write(R/n,n)
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in archives+[DIST/native['name']]+[DIST/a['name'] for a in json.loads((E/'component-assets.json').read_text())]+[sourcezip]),encoding='utf-8')
     cp(R/'docs/standalone.md',DIST/'RELEASE.md');cp(E/'payload.json',DIST/'payload-verification.json')
     print('FULL PACKAGE VERIFIED',[(p.name,p.stat().st_size) for p in archives],flush=True)

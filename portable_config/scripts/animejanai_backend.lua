@@ -82,7 +82,7 @@ local function check_components(backend, rife_configured)
             and 'nvinfer_11.dll' or 'libnvinfer.so.11'
         if not exists('animejanai/inference/' .. nvinfer) then
             hints[#hints + 1] =
-                '尚未安装 TensorRT 运行库 - 按 Ctrl+E 打开 NekoAnimeVE 管理器进行安装'
+                '尚未安装 TensorRT 运行库 - 按 Ctrl+E 打开 AnimeVE 管理器进行安装'
         else
             local inf = mp.command_native({
                 'expand-path', '~~/../animejanai/inference'})
@@ -96,7 +96,7 @@ local function check_components(backend, rife_configured)
             end
             if not has_builder then
                 hints[#hints + 1] =
-                    '没有适用于此 GPU 的 TensorRT 内核包 - 新引擎将无法构建；按 Ctrl+E 打开 NekoAnimeVE 管理器'
+                    '没有适用于此 GPU 的 TensorRT 内核包 - 新引擎将无法构建；按 Ctrl+E 打开 AnimeVE 管理器'
             end
         end
     end
@@ -112,7 +112,7 @@ local function check_components(backend, rife_configured)
         end
         if not has_model then
             hints[#hints + 1] =
-                '已启用 RIFE，但尚未安装模型 - 按 Ctrl+E 打开 NekoAnimeVE 管理器进行安装'
+                '已启用 RIFE，但尚未安装模型 - 按 Ctrl+E 打开 AnimeVE 管理器进行安装'
         end
     end
     if #hints == 0 then
@@ -129,7 +129,7 @@ local function check_components(backend, rife_configured)
         shown = true
         local after = mp.get_property_number('osd-duration', 1000) / 1000 + 0.5
         mp.add_timeout(after, function()
-            mp.osd_message('NekoAnimeVE：' .. table.concat(hints, '\n'), 10)
+            mp.osd_message('AnimeVE：' .. table.concat(hints, '\n'), 10)
         end)
     end)
 end

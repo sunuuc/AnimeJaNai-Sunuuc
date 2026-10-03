@@ -39,7 +39,7 @@ local function ai_status(now)
     local file = path and io.open(path, 'r')
     status = file and file:read(65536) or nil
     if file then file:close() end
-    if not status or status == '' then status = 'NekoAnimeVE 状态暂不可用' end
+    if not status or status == '' then status = 'AnimeVE 状态暂不可用' end
     return status
 end
 

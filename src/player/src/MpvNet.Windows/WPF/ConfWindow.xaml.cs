@@ -469,7 +469,7 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
         Theme.UpdateWpfColors();
 
         if (_themeConf != GetThemeConf())
-            MessageBox.Show("Changed theme settings require NekoAnimeVE being restarted.", "Info");
+            MessageBox.Show("Changed theme settings require AnimeVE being restarted.", "Info");
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -536,7 +536,7 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
             UnselectNode(it);
     }
 
-    [RelayCommand] void ShowMpvNetSpecificSettings() => SearchText = "NekoAnimeVE";
+    [RelayCommand] void ShowMpvNetSpecificSettings() => SearchText = "AnimeVE";
 
     [RelayCommand] void PreviewMpvConfFile() => Msg.ShowInfo(GetContent("mpv"));
     

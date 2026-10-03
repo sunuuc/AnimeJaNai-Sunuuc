@@ -38,7 +38,7 @@ Environment.SetEnvironmentVariable("ANIMEJANAI_DATA_DIR",fixture);
 Environment.SetEnvironmentVariable("ANIMEJANAI_ROOT",fixture);
 InterfaceLanguage.SettingsPath=Path.Combine(dir,"interface-language.json");
 void Check(bool ok,string what){if(!ok)throw new Exception(what);Console.WriteLine("PASS "+what);}
-Check(!File.Exists(Path.Combine(fixture,"NekoAnimeVEUpdater.exe")),"test fixture cannot launch updater or network installer");
+Check(!File.Exists(Path.Combine(fixture,"AnimeVEUpdater.exe")),"test fixture cannot launch updater or network installer");
 Check(InterfaceLanguage.Read()=="zh-CN","Chinese default without setting");
 Check(InterfaceLanguage.Resolve("system","zh-TW")=="zh-CN"&&InterfaceLanguage.Resolve("system","en-US")=="en","system language resolution");
 File.WriteAllText(InterfaceLanguage.SettingsPath,"{broken");
@@ -58,7 +58,7 @@ string[] raw=vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName).ToArray();
 Check(typeof(MainWindowViewModel).GetProperty("DefaultUpscaleSlots")==null,
       "builtin default presets removed from the manager model");
 var w=new MainWindow {Width=1100,Height=800,DataContext=vm};w.Show();Dispatcher.UIThread.RunJobs();
-Check(w.Title==(zh?"NekoAnimeVE 管理器":"NekoAnimeVE Manager"),"product window title "+selected);
+Check(w.Title==(zh?"AnimeVE 管理器":"AnimeVE Manager"),"product window title "+selected);
 Check(raw.SequenceEqual(vm.AnimeJaNaiConf.UpscaleSlots.Select(s=>s.ProfileName)),"custom profile names preserved");
 var tabs=w.GetLogicalDescendants().OfType<TabItem>().Select(t=>t.Header?.ToString()).ToArray();
 Check(tabs.Contains(zh?"配置方案":"Profiles")&&tabs.Contains(zh?"组件":"Components")&&tabs.Last()==(zh?"关于":"About"),"constructed tab headers "+selected);
@@ -74,7 +74,7 @@ foreach(string page in new[]{"global","profile","components","about"})
     string text=string.Join("\n",w.GetVisualDescendants().OfType<Control>().Select(c=>c switch{TextBlock t=>t.Text??t.Inlines?.Text,ContentControl t=>t.Content is string s?s:null,_=>null}).Where(s=>s!=null));
     File.WriteAllText(Path.Combine(evidence,"manager-"+selected+"-"+page+".txt"),text);
     if(page=="about")
-        Check(text.Contains("mpv-NekoAnimeVE 1.2.0") && text.Contains("sunuuc/mpv-NekoAnimeVE") &&
+        Check(text.Contains("mpv-AnimeVE 1.2.0") && text.Contains("sunuuc/mpv-AnimeVE") &&
               text.Contains("the-database/mpv-AnimeJaNai") && text.Contains("CC BY-NC-SA 4.0"),
               "About displays version, both source repositories and license scope "+selected);
     Check(!w.GetLogicalDescendants().OfType<ItemsControl>().Any(c=>c.ItemsSource?.GetType().Name=="DefaultUpscaleSlots"),"manager uses only custom profiles");

@@ -476,7 +476,7 @@ public class GuiCommand
 
         if (path.Contains(Folder.Startup.TrimEnd(Path.DirectorySeparatorChar), StringComparison.CurrentCultureIgnoreCase))
         {
-            Msg.ShowWarning(_("NekoAnimeVE is already in the Path environment variable."));
+            Msg.ShowWarning(_("AnimeVE is already in the Path environment variable."));
             return;
         }
 
@@ -484,7 +484,7 @@ public class GuiCommand
             Folder.Startup.TrimEnd(Path.DirectorySeparatorChar) + ";" + path,
             EnvironmentVariableTarget.User);
 
-        Msg.ShowInfo(_("NekoAnimeVE was successfully added to the Path environment variable."));
+        Msg.ShowInfo(_("AnimeVE was successfully added to the Path environment variable."));
     }
 
     void RemoveFromPath()
@@ -493,7 +493,7 @@ public class GuiCommand
 
         if (!path.Contains(Folder.Startup.TrimEnd(Path.DirectorySeparatorChar)))
         {
-            Msg.ShowWarning(_("NekoAnimeVE was not found in the Path environment variable."));
+            Msg.ShowWarning(_("AnimeVE was not found in the Path environment variable."));
             return;
         }
 
@@ -502,7 +502,7 @@ public class GuiCommand
 
         Environment.SetEnvironmentVariable("Path", path, EnvironmentVariableTarget.User);
 
-        Msg.ShowInfo(_("NekoAnimeVE was successfully removed from the Path environment variable."));
+        Msg.ShowInfo(_("AnimeVE was successfully removed from the Path environment variable."));
     }
 
     // deprecated

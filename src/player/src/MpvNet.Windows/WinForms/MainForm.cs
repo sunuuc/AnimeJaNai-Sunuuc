@@ -931,7 +931,7 @@ public partial class MainForm : Form
         string text = Player.Expand(title);
 
         if (text == "(unavailable)" || Player.PlaylistPos == -1)
-            text = "NekoAnimeVE";
+            text = "AnimeVE";
 
         Text = text;
     }
@@ -979,7 +979,7 @@ public partial class MainForm : Form
                 return;
 
             if (value.EndsWith("} - mpv"))
-                value = value.Replace("} - mpv", "} - NekoAnimeVE");
+                value = value.Replace("} - mpv", "} - AnimeVE");
 
             _title = value;
         }

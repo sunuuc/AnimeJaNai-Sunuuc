@@ -110,7 +110,7 @@ void ValidateIndex(PackIndex index)
             throw new InvalidDataException("Invalid component: " + p.name);
         if (!Uri.TryCreate(p.url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "github.com" ||
             !uri.AbsolutePath.StartsWith("/the-database/mpv-AnimeJaNai/releases/download/3.6.0/", StringComparison.Ordinal) &&
-            !uri.AbsolutePath.StartsWith("/sunuuc/mpv-NekoAnimeVE/releases/download/", StringComparison.Ordinal))
+            !uri.AbsolutePath.StartsWith("/sunuuc/mpv-AnimeVE/releases/download/", StringComparison.Ordinal))
             throw new InvalidDataException("Untrusted component source.");
         foreach (var f in p.files)
         {
@@ -188,7 +188,7 @@ async Task InstallComponentAsync(Pack pack, CancellationToken token)
 static async Task DownloadFileAsync(Pack pack, string destination, CancellationToken token)
 {
     using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("NekoAnimeVEUpdater");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AnimeVEUpdater");
     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
     timeout.CancelAfter(TimeSpan.FromMinutes(30));
     using var response = await client.GetAsync(pack.url, HttpCompletionOption.ResponseHeadersRead, timeout.Token);

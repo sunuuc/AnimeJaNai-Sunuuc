@@ -73,11 +73,11 @@ jobs:
           New-Item -ItemType Directory -Path staging | Out-Null
           Copy-Item publish\*.exe staging\
           Copy-Item publish\*.dll staging\
-          Compress-Archive -Path staging\* -DestinationPath NekoAnimeVEManager-zh-CN-win-x64.zip -Force
+          Compress-Archive -Path staging\* -DestinationPath AnimeVEManager-zh-CN-win-x64.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NekoAnimeVEManager-zh-CN-win-x64
-          path: NekoAnimeVEManager-zh-CN-win-x64.zip
+          name: AnimeVEManager-zh-CN-win-x64
+          path: AnimeVEManager-zh-CN-win-x64.zip
           if-no-files-found: error

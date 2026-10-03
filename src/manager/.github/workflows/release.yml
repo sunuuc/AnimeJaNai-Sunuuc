@@ -49,7 +49,7 @@ jobs:
 
     - name: Create zip archive
       shell: pwsh
-      run: Compress-Archive -Path staging\* -DestinationPath NekoAnimeVEManager-portable-x64.zip -Force
+      run: Compress-Archive -Path staging\* -DestinationPath AnimeVEManager-portable-x64.zip -Force
 
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
@@ -61,7 +61,7 @@ jobs:
         draft: false
         prerelease: false
         allowUpdates: true
-        artifacts: NekoAnimeVEManager-portable-x64.zip
+        artifacts: AnimeVEManager-portable-x64.zip
         token: ${{ secrets.GITHUB_TOKEN }}
 
   release-linux:
@@ -87,12 +87,12 @@ jobs:
       # as a sibling.
       run: |
         mkdir -p staging
-        cp publish/NekoAnimeVEManager staging/
+        cp publish/AnimeVEManager staging/
         cp publish/*.so staging/ 2>/dev/null || true
-        chmod +x staging/NekoAnimeVEManager
+        chmod +x staging/AnimeVEManager
 
     - name: Create tarball
-      run: tar --zstd -C staging -cf NekoAnimeVEManager-portable-linux-x64.tar.zst .
+      run: tar --zstd -C staging -cf AnimeVEManager-portable-linux-x64.tar.zst .
 
     - name: Create / update GitHub Release
       uses: ncipollo/release-action@v1
@@ -102,5 +102,5 @@ jobs:
         draft: false
         prerelease: false
         allowUpdates: true
-        artifacts: NekoAnimeVEManager-portable-linux-x64.tar.zst
+        artifacts: AnimeVEManager-portable-linux-x64.tar.zst
         token: ${{ secrets.GITHUB_TOKEN }}

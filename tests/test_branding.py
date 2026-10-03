@@ -9,8 +9,8 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 META = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
-NAME = 'NekoAnimeVE'
-PROJECT_NAME = 'mpv-NekoAnimeVE'
+NAME = 'AnimeVE'
+PROJECT_NAME = 'mpv-AnimeVE'
 ENTRY_POINTS = (NAME + '.exe', NAME + 'Manager.exe', NAME + 'Updater.exe')
 
 
@@ -24,14 +24,14 @@ class BrandingTests(unittest.TestCase):
             self.assertIn(ENTRY_POINTS[0], text)
             self.assertIn(ENTRY_POINTS[1], text)
             self.assertNotIn('AnimeJaNai-zh-CN-', text)
-        self.assertIn('https://github.com/sunuuc/mpv-NekoAnimeVE/releases',
+        self.assertIn('https://github.com/sunuuc/mpv-AnimeVE/releases',
                       (ROOT / 'README.md').read_text(encoding='utf-8'))
 
     def test_distribution_names_follow_project_identity(self):
         for filename in ('tools/standalone/build.py', 'tools/standalone/publish.py'):
             text = (ROOT / filename).read_text(encoding='utf-8')
             self.assertIn('f\'{META["name"]}-{META["version"]}', text)
-            self.assertNotIn('f\'NekoAnimeVE-{META["version"]}', text)
+            self.assertNotIn('f\'AnimeVE-{META["version"]}', text)
         publisher = (ROOT / 'tools/standalone/publish.py').read_text(encoding='utf-8')
         self.assertIn('f\'{META["name"]} {META["version"]}', publisher)
         documentation = (ROOT / 'docs/standalone.md').read_text(encoding='utf-8')
@@ -67,19 +67,38 @@ class BrandingTests(unittest.TestCase):
             self.assertEqual(data['translations'][NAME + ' Manager'], NAME + ' 管理器')
             self.assertEqual(data['keys']['s5926043be98ac75f'], 'About ' + NAME)
         title = (ROOT / 'src/player/src/MpvNet.Windows/WinForms/MainForm.cs').read_text(encoding='utf-8')
-        self.assertIn('text = "NekoAnimeVE"', title)
-        self.assertIn('"} - NekoAnimeVE"', title)
+        self.assertIn('text = "AnimeVE"', title)
+        self.assertIn('"} - AnimeVE"', title)
         about = (ROOT / 'src/player/src/MpvNet.Windows/WPF/Views/AboutWindow.xaml').read_text(encoding='utf-8')
-        self.assertIn('>NekoAnimeVE', about)
+        self.assertIn('>AnimeVE', about)
         resources = (ROOT / 'src/player/src/MpvNet.Windows/WPF/WpfApplication.cs').read_text(encoding='utf-8')
-        self.assertIn('NekoAnimeVE;component/WPF/Resources.xaml', resources)
+        self.assertIn('AnimeVE;component/WPF/Resources.xaml', resources)
         self.assertNotIn('mpvnet;component', resources)
         acceptance = (ROOT / 'tools/standalone/test_complete.py').read_text(encoding='utf-8')
-        self.assertIn("('NekoAnimeVE Manager', 'NekoAnimeVE 管理器')", acceptance)
+        self.assertIn("('AnimeVE Manager', 'AnimeVE 管理器')", acceptance)
         self.assertNotIn("'AnimeJaNai' in title", acceptance)
 
     def test_original_upstream_model_and_license_identity_is_preserved(self):
-        self.assertIn('the-database/AnimeJaNaiManager', (ROOT / 'README.md').read_text(encoding='utf-8'))
+        self.assertIn('the-database/AnimeJaNaiManager', (ROOT / 'docs/open-source-notices.md').read_text(encoding='utf-8'))
+
+    def test_bilingual_readme_about_and_statistics_shortcut(self):
+        english = (ROOT / 'README.md').read_text(encoding='utf-8')
+        chinese = (ROOT / 'README.zh-CN.md').read_text(encoding='utf-8')
+        self.assertIn('(README.zh-CN.md)', english)
+        self.assertIn('(README.md)', chinese)
+        for text in (english, chinese):
+            self.assertTrue(text.startswith('# ' + PROJECT_NAME))
+            self.assertIn('| Tab |', text)
+        manager = (ROOT / 'src/manager/AnimeJaNaiConfEditor/Views/MainWindow.axaml').read_text(encoding='utf-8')
+        self.assertNotIn('aboutLicenseScope', manager)
+        player = (ROOT / 'src/player/src/MpvNet/App.cs').read_text(encoding='utf-8')
+        self.assertIn('sunuuc · https://github.com/sunuuc/mpv-AnimeVE', player)
+        self.assertIn('OPEN_SOURCE_NOTICES.md', player)
+        for name in ('input.conf', 'input-animejanai.conf'):
+            rows = (ROOT / 'portable_config' / name).read_text(encoding='utf-8').splitlines()
+            bindings = [row.split('#', 1)[0].split() for row in rows if row.strip() and not row.startswith('#')]
+            self.assertEqual([row for row in bindings if row[0] == 'TAB'],
+                             [['TAB', 'script-binding', 'stats/display-stats-toggle']])
         self.assertIn('2x_AnimeJaNai', (ROOT / 'animejanai/animejanai.conf').read_text(encoding='utf-8'))
         self.assertTrue((ROOT / 'THIRD_PARTY_LICENSES/AnimeJaNaiManager-GPL-3.0.txt').is_file())
 
@@ -93,7 +112,7 @@ def verify_package(folder):
     env = dict(os.environ, BRANDING_APP=str(app))
     script = '''
 $ErrorActionPreference = 'Stop'
-$names = 'NekoAnimeVE.exe', 'NekoAnimeVEManager.exe', 'NekoAnimeVEUpdater.exe'
+$names = 'AnimeVE.exe', 'AnimeVEManager.exe', 'AnimeVEUpdater.exe'
 $result = foreach ($name in $names) {
     $info = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $env:BRANDING_APP $name))
     @{name=$name;product=$info.ProductName;version=$info.ProductVersion}

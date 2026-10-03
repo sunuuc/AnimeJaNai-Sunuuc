@@ -26,13 +26,13 @@ def prepare(app, dist, meta, seven):
         subprocess.run([str(seven), 'a', '-t7z', '-mx=3', '-bd', str(archive.resolve()), relative],
                        cwd=app, stdout=subprocess.DEVNULL, check=True)
         entry = {'name': name, 'asset': archive.name,
-                 'url': f'https://github.com/sunuuc/mpv-NekoAnimeVE/releases/download/{meta["tag"]}/{archive.name}',
+                 'url': f'https://github.com/sunuuc/mpv-AnimeVE/releases/download/{meta["tag"]}/{archive.name}',
                  'sha256': sha(archive), 'bytes': archive.stat().st_size,
                  'installed_bytes': model.stat().st_size, 'files': [relative],
                  'requires': [], 'recommended': False, 'title': model_title(model.stem),
                  'description': model.stem}
         catalog['packs'].append(entry)
-        assets.append({'repo': 'sunuuc/mpv-NekoAnimeVE', 'tag': meta['tag'],
+        assets.append({'repo': 'sunuuc/mpv-AnimeVE', 'tag': meta['tag'],
                        'name': archive.name, 'sha256': entry['sha256'], 'bytes': entry['bytes']})
     if not assets:
         raise RuntimeError('No upscaling models found in the pinned upstream core')

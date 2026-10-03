@@ -6,10 +6,14 @@
     
     <Grid>
         <StackPanel HorizontalAlignment="Center">
-            <TextBox IsReadOnly="True" FontSize="30" TextAlignment="Center" Margin="10,10,10,0" BorderThickness="0" Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}">NekoAnimeVE
+            <TextBox IsReadOnly="True" FontSize="30" TextAlignment="Center" Margin="10,10,10,0" BorderThickness="0" Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}">AnimeVE
             </TextBox>
             <TextBox IsReadOnly="True" Text="{Binding About, Mode=OneWay}" TextAlignment="Center" Margin="20,10,20,20" BorderThickness="0" Foreground="{Binding Theme.Foreground}" Background="{Binding Theme.Background}">
             </TextBox>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,0,10,20">
+                <Button Content="GitHub" Command="{Binding OpenSourceCommand}" Padding="12,6" Margin="0,0,10,0" />
+                <Button Content="{lng:Text Key=aboutNotices}" Command="{Binding OpenNoticesCommand}" Padding="12,6" />
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

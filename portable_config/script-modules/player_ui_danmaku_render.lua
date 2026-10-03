@@ -10,7 +10,7 @@ return function(mp, utils, on_change)
         blockmode=utils.parse_json('[]'),statmode=utils.parse_json('[]'),
         fontSizeStrict=false,fontSizeNorm=false,blacklist='',blacklistRegex=false}
     local root=os.getenv('LOCALAPPDATA') or os.getenv('APPDATA') or os.getenv('TEMP')
-    M.config_path=root and (root..'/NekoAnimeVE-DanmakuFactory.json') or nil
+    M.config_path=root and (root..'/AnimeVE-DanmakuFactory.json') or nil
     local executable=mp.command_native({'expand-path','~~/../animejanai/danmaku/DanmakuFactory.exe'})
     local job,serial,ass_path,input_path,owned_input= nil,0,nil,nil,false
     local previous_secondary,previous_style,previous_visibility
@@ -104,7 +104,7 @@ return function(mp, utils, on_change)
         local expected=serial
         local temp=os.getenv('TEMP') or root
         if not temp then M.busy=false;M.error='本机临时目录不可用';on_change();return end
-        local output=temp..'/NekoAnimeVE-danmaku-'..tostring(utils.getpid())..'-'..serial..'.ass'
+        local output=temp..'/AnimeVE-danmaku-'..tostring(utils.getpid())..'-'..serial..'.ass'
         os.remove(output)
         local args={executable,'--ignore-warnings','--force','-o',output,'-i',path}
         -- Pass settings through the upstream CLI, which also supports word blocking.
@@ -144,7 +144,7 @@ return function(mp, utils, on_change)
     function M.comments(list)
         local temp=os.getenv('TEMP') or root
         if not temp then M.error='本机临时目录不可用';on_change();return end
-        local path=temp..'/NekoAnimeVE-comments-'..tostring(utils.getpid())..'-'..(serial+1)..'.xml'
+        local path=temp..'/AnimeVE-comments-'..tostring(utils.getpid())..'-'..(serial+1)..'.xml'
         local lines={'<?xml version="1.0" encoding="UTF-8"?><i>'}
         for _,item in ipairs(list) do
             lines[#lines+1]=string.format('<d p="%.3f,%d,25,%d,0,0,0,0">%s</d>',
@@ -194,7 +194,7 @@ return function(mp, utils, on_change)
                 words[#words+1]=line
             end
         end
-        local path=root..'/NekoAnimeVE-danmaku-blocklist.txt'
+        local path=root..'/AnimeVE-danmaku-blocklist.txt'
         local ok,why=write(path,table.concat(words,'\n'))
         if not ok then M.error='无法保存屏蔽词：'..tostring(why);on_change();return end
         M.set('blacklist',#words>0 and path or '')
