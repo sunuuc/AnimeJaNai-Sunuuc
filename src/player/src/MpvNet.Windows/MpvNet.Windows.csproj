@@ -10,9 +10,9 @@
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
-		<FileVersion>1.2.4.0</FileVersion>
-		<AssemblyVersion>1.2.4.0</AssemblyVersion>
-		<InformationalVersion>1.2.4</InformationalVersion>
+		<FileVersion>1.2.5.0</FileVersion>
+		<AssemblyVersion>1.2.5.0</AssemblyVersion>
+		<InformationalVersion>1.2.5</InformationalVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -76,6 +76,8 @@ foreach(string page in new[]{"global","profile","components","about"})
     if(page=="about")
         Check(text.Contains(vm.ProductVersion) && text.Contains("sunuuc/mpv-AnimeVE") &&
               text.Contains("the-database/mpv-AnimeJaNai") &&
+              text.Contains(UiText.T("mpv-AnimeVE: player interface, danmaku and component download management. Source code and issues:")) &&
+              text.Contains(UiText.T("Based on mpv-AnimeJaNai: AI upscaling and RIFE processing chains, models and GPU components.")) &&
               w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("docs/LICENSE") &&
               w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("docs/OPEN_SOURCE_NOTICES.md") &&
               w.GetVisualDescendants().OfType<Button>().Select(b=>b.Tag?.ToString()).Contains("docs/THIRD_PARTY_LICENSES") &&

@@ -95,8 +95,14 @@ class BrandingTests(unittest.TestCase):
         for key in re.findall(r'local:Text Key=([^}]+)', manager):
             self.assertIn(key, data['keys'])
         self.assertNotIn('aboutLicenseScope', manager)
-        for key in ('aboutChanges', 'aboutDownloads', 'aboutUpstream'):
+        for key in ('aboutChanges', 'aboutDownloads'):
             self.assertNotIn(key, manager)
+        self.assertLess(manager.index('Key=aboutCurrent'),manager.index('Content="sunuuc/mpv-AnimeVE"'))
+        self.assertLess(manager.index('Key=aboutUpstream'),manager.index('Content="the-database/mpv-AnimeJaNai"'))
+        for key in ('aboutCurrent','aboutUpstream'):
+            self.assertIn(data['keys'][key],data['translations'])
+        self.assertIn('RIFE',data['translations'][data['keys']['aboutUpstream']])
+        self.assertIn('mpv-AnimeVE',data['translations'][data['keys']['aboutCurrent']])
         player = (ROOT / 'src/player/src/MpvNet/App.cs').read_text(encoding='utf-8')
         self.assertIn('https://github.com/sunuuc/mpv-AnimeVE', player)
         self.assertIn('OPEN_SOURCE_NOTICES.md', player)

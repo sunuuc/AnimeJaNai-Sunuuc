@@ -62,11 +62,8 @@ def run(*args,**kwargs):return subprocess.run(list(map(str,args)),check=True,**k
 def download(item):
     dest=R/'downloads'/item['name'];dest.parent.mkdir(exist_ok=True)
     if dest.exists() and sha(dest)==item['sha256']:return dest
-    if item['repo']==REPO:
-        run('gh','release','download',item['tag'],'-R',REPO,'--pattern',item['name'],'--dir',dest.parent,'--clobber')
-        if sha(dest)!=item['sha256']:raise RuntimeError('Download hash mismatch: '+item['name'])
-        return dest
-    url=f'https://github.com/{item["repo"]}/releases/download/{item["tag"]}/{item["name"]}'
+    release_path='latest/download' if item['tag']=='latest' else 'download/'+item['tag']
+    url=f'https://github.com/{item["repo"]}/releases/{release_path}/{item["name"]}'
     for attempt in range(3):
         try:
             req=urllib.request.Request(url,headers={'User-Agent':'AnimeVE-full-build'})
@@ -327,7 +324,7 @@ def package():
 def api(endpoint,payload=None,method=None):
     cmd=['gh','api',endpoint]
     if payload is not None:result=subprocess.check_output(cmd+['--method',method or 'POST','--input','-'],input=json.dumps(payload).encode())
-    else:result=subprocess.check_output(cmd)
-    return json.loads(result)
+    else:result=subprocess.check_output(cmd+(['--method',method] if method else []))
+    return json.loads(result) if result else None
 
 if __name__=='__main__':{'prepare':prepare,'stage':stage,'package':package}[sys.argv[1]]()

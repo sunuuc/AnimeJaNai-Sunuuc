@@ -9,9 +9,10 @@ A Windows anime player with AI upscaling, RIFE frame interpolation and online/lo
 ## Features
 
 - **AI upscaling and interpolation**: multiple-model processing chains, adjustable RIFE interpolation and custom profiles with resolution/FPS conditions.
-- **Optional downloads**: GPU detection, component recommendations and manual selection of models and GPU components. Models download separately.
-- **Danmaku**: parallel route search and automatic fallback when an episode has no comments; local XML, speed, font size, opacity, display area, type filters and blocked words.
-- **Playback and subtitles**: local files, network streams, playlists, resume positions, chapters, audio tracks and dual subtitles.
+- **Model downloads**: choose models and GPU components yourself. Models are not bundled with the package.
+- **Danmaku**: search across multiple routes, automatic source switching and local XML.
+
+More features to explore.
 
 ## Installation
 
@@ -20,8 +21,6 @@ Requires 64-bit Windows.
 1. Download `mpv-AnimeVE-*-win-x64.7z` from [Releases](https://github.com/sunuuc/mpv-AnimeVE/releases/latest) and extract it.
 2. Run `AnimeVE.exe`, then open or drag in a video.
 3. For AI processing, open `AnimeVEManager.exe`, download the required items under **Components**, then enable them under **Profiles**.
-
-The package includes the application runtime. Separate .NET, Python and VapourSynth installations are not required.
 
 ## Usage
 

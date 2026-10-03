@@ -8,19 +8,38 @@ import hashlib
 import shutil
 import subprocess
 import argparse
+from unittest.mock import patch
+import io
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools/standalone'))
 from components import prepare, validate
-from build import copy_validation_reports, release_notes
+from build import copy_validation_reports, release_notes, download
 
 class ComponentContracts(unittest.TestCase):
-    def test_release_page_contains_only_the_four_feature_items(self):
+    def test_release_page_follows_the_current_chinese_readme(self):
         notes=release_notes()
-        self.assertEqual(notes.count('- **'),4)
+        readme=(ROOT/'README.md').read_text(encoding='utf-8')
+        features=readme.split('## 功能\n',1)[1].split('\n## ',1)[0].strip()+'\n'
+        self.assertEqual(notes,features)
         self.assertNotIn('Hills Lite',notes)
         self.assertNotIn('首次',notes)
-        self.assertTrue(all(label in notes for label in ('AI 超分与补帧','按需下载','弹幕','播放与字幕')))
+    def test_latest_build_input_is_still_hash_verified(self):
+        content=b'pinned native input'
+        item={'repo':'sunuuc/mpv-AnimeVE','tag':'latest','name':'native-build-inputs.7z',
+              'sha256':hashlib.sha256(content).hexdigest()}
+        with tempfile.TemporaryDirectory() as temp,patch('build.R',Path(temp)):
+            with patch('build.urllib.request.urlopen',return_value=io.BytesIO(content)) as opened:
+                self.assertEqual(download(item).read_bytes(),content)
+                self.assertEqual(opened.call_args.args[0].full_url,
+                                 'https://github.com/sunuuc/mpv-AnimeVE/releases/latest/download/native-build-inputs.7z')
+            with patch('build.urllib.request.urlopen',return_value=io.BytesIO(b'damaged')) as opened:
+                self.assertEqual(download(item).read_bytes(),content)
+                opened.assert_not_called()
+            (Path(temp)/'downloads'/item['name']).unlink()
+            with patch('build.urllib.request.urlopen',side_effect=lambda *a,**kw:io.BytesIO(b'damaged')),patch('build.time.sleep'):
+                with self.assertRaisesRegex(RuntimeError,'Download hash mismatch'):download(item)
+                self.assertFalse((Path(temp)/'downloads'/item['name']).exists())
     def test_converter_targets_generic_windows_x64(self):
         source=(ROOT/'tools/standalone/build_danmaku_factory.py').read_text(encoding='utf-8')
         self.assertIn("'-target', 'x86_64-windows-gnu'",source)
@@ -107,7 +126,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             archive=root/(name+'.7z')
             subprocess.run([str(seven),'a','-t7z','-bd',str(archive),*files],cwd=root/'source',stdout=subprocess.DEVNULL,check=True)
             cache=app/'app/.component-downloads'/name;cache.mkdir(parents=True);shutil.copy2(archive,cache/'package.7z')
-            return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-AnimeVE/releases/download/test/'+archive.name,
+            return {'name':name,'asset':archive.name,'url':'https://github.com/sunuuc/mpv-AnimeVE/releases/latest/download/'+archive.name,
                     'sha256':digest(archive),'bytes':archive.stat().st_size,'installed_bytes':len(content),'files':files,
                     'requires':requires,'recommended':False}
         runtime=pack('fixture-runtime',b'test runtime')
@@ -189,6 +208,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
             models=[p for p in catalog['packs'] if p['name'].startswith('upscale-model-')]
             write(catalog['packs'])
             for p in models:
+                assert p['url']=='https://github.com/sunuuc/mpv-AnimeVE/releases/latest/download/'+p['asset']
                 archive=model_assets/p['asset'];assert digest(archive)==p['sha256']
                 cache=app/'app/.component-downloads'/p['name'];cache.mkdir(parents=True)
                 shutil.copy2(archive,cache/'package.7z')

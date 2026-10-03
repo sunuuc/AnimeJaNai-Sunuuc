@@ -30,4 +30,4 @@ python tools/standalone/build.py stage
 - `tools/standalone`：依赖、编译、打包与发布工具。
 - `app/build-info/standalone`：发行包中的构建来源、文件校验值与验证报告。
 
-发布说明从 `CHANGELOG.md` 中提取与 `release.json` 版本对应的条目。
+发布说明使用 `README.md` 的功能介绍；更新记录写入 `CHANGELOG.md`。发布检查通过后只保留最新发布。
