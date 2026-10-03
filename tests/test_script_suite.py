@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 bundle=Path(sys.argv[1]).resolve();out=Path(sys.argv[2]).resolve();out.mkdir(parents=True,exist_ok=True)
 results=[]
 def run(name,args,marker):
-    cp=subprocess.run([str(bundle/'mpv.exe'),'--no-config','--load-scripts=no','--osc=no','--vo=null','--ao=null',*args],capture_output=True,timeout=30)
+    cp=subprocess.run([str(bundle/'app/mpv.exe'),'--no-config','--load-scripts=no','--osc=no','--vo=null','--ao=null',*args],capture_output=True,timeout=30)
     log=cp.stdout+cp.stderr;(out/(name+'.log')).write_bytes(log)
     passed=cp.returncode==0 and marker in log and b'stack traceback' not in log.lower()
     results.append({'case':name,'passed':passed,'exit_code':cp.returncode})

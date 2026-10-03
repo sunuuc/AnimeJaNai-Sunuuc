@@ -27,7 +27,7 @@ def stop(proc):
         except subprocess.TimeoutExpired:proc.kill();proc.wait(5)
 
 def components():
-    cp=subprocess.run([str(APP/'AnimeVEUpdater.exe'),'--components','--json'],env=ENV,cwd=OUT,capture_output=True,timeout=40)
+    cp=subprocess.run([str(APP/'app/AnimeVEUpdater.exe'),'--components','--json'],env=ENV,cwd=OUT,capture_output=True,timeout=40)
     (OUT/'components.log').write_bytes(cp.stdout+cp.stderr)
     assert cp.returncode==0,cp.stderr
     data=json.loads(cp.stdout)
@@ -45,7 +45,7 @@ def no_release_update_logic():
         assert 'ctrl+u' not in text,rel
     checks={}
     for arg in ('--check','--open-releases'):
-        cp=subprocess.run([str(APP/'AnimeVEUpdater.exe'),arg],env=ENV,cwd=OUT,capture_output=True,timeout=30)
+        cp=subprocess.run([str(APP/'app/AnimeVEUpdater.exe'),arg],env=ENV,cwd=OUT,capture_output=True,timeout=30)
         log=cp.stdout+cp.stderr
         (OUT/('unsupported-'+arg[2:]+'.log')).write_bytes(log)
         assert cp.returncode==2,(arg,cp.returncode,log)
@@ -55,7 +55,7 @@ def no_release_update_logic():
 
 sample=OUT/'blank.y4m';sample.write_bytes(b'YUV4MPEG2 W16 H16 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+bytes([100])*256+bytes([128])*128)*24*20)
 def production_scripts():
-    cp=subprocess.run([str(APP/'mpv.exe'),'--config-dir='+str(APP/'portable_config'),
+    cp=subprocess.run([str(APP/'app/mpv.exe'),'--config-dir='+str(APP/'portable_config'),
         '--vo=null','--ao=null','--hwdec=no','--vf=','--idle=yes','--osc=no',
         '--scripts='+str(ROOT/'tools/standalone/full_smoke.lua'),str(sample)],env=ENV,cwd=OUT,capture_output=True,timeout=30)
     log=cp.stdout+cp.stderr;(OUT/'production-scripts.log').write_bytes(log)

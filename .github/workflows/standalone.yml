@@ -99,7 +99,7 @@ jobs:
           path: downloads
           key: standalone-dependencies-${{ hashFiles('tools/standalone/dependencies.json', 'tools/standalone/libass-build-packages.json', 'tools/standalone/build_danmaku_factory.py') }}
       - name: Verify optional components and model-free core
-        run: python tests/test_optional_components.py stage --updater stage/AnimeVEUpdater.exe --seven stage/7za.exe --model-assets dist
+        run: python tests/test_optional_components.py stage --updater stage/app/AnimeVEUpdater.exe --seven stage/app/7za.exe --model-assets dist
       - name: FPS, external playlist and controller tests
         run: |
           Start-Service AudioEndpointBuilder
@@ -111,7 +111,7 @@ jobs:
       - name: Player UI input, layout, track and danmaku tests on Windows
         run: python tests/test_player_ui_windows.py stage complete-evidence/player_ui
       - name: Player UI online danmaku transport tests
-        run: python tests/test_danmaku_online.py --mpv stage/mpv.exe
+        run: python tests/test_danmaku_online.py --mpv stage/app/mpv.exe
       - name: Native danmaku composition, resize, lifecycle and route fallback
         run: python tools/standalone/test_danmaku_package.py stage complete-evidence/danmaku
       - name: Local HTTP playback and request-count regressions

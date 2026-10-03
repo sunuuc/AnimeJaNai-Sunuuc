@@ -71,7 +71,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
     public class ComponentManagerViewModel : ViewModelBase
     {
         public static string UpdaterPath { get; } =
-            Path.Combine(MainWindowViewModel.RootDir, "AnimeVEUpdater.exe");
+            Path.Combine(MainWindowViewModel.RootDir, "app", "AnimeVEUpdater.exe");
 
         public bool UpdaterFound => File.Exists(UpdaterPath);
 

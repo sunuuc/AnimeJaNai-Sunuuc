@@ -202,28 +202,13 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        // Two layouts: at the install root the exe sits next to AnimeVE.exe with the data in
-        // animejanai/ (3.4.0+); in the legacy layout (and `dotnet run` from the project
-        // output, which copies animejanai.conf + onnx/ beside the binary) the exe lives
-        // inside the data directory itself.
-        public static bool AtInstallRoot { get; } =
-            !File.Exists(Path.Combine(AppContext.BaseDirectory, "animejanai.conf")) &&
-            File.Exists(Path.Combine(AppContext.BaseDirectory, "animejanai", "animejanai.conf"));
-
-        // animejanai/: conf, onnx models, rife models, benchmarks, backups.
-        // ANIMEJANAI_DATA_DIR / ANIMEJANAI_ROOT override the exe-relative layout
-        // for the AppImage, where the binary is in a read-only mount but the
-        // writable data lives under $XDG_DATA_HOME/AnimeJaNai.
-        public static string DataDir { get; } = Path.GetFullPath(
-            Environment.GetEnvironmentVariable("ANIMEJANAI_DATA_DIR") is { Length: > 0 } dd ? dd
-            : AtInstallRoot ? Path.Combine(AppContext.BaseDirectory, "animejanai")
-            : AppContext.BaseDirectory);
-
-        // install root: player, AnimeVEUpdater, portable_config/
         public static string RootDir { get; } = Path.GetFullPath(
-            Environment.GetEnvironmentVariable("ANIMEJANAI_ROOT") is { Length: > 0 } rd ? rd
-            : AtInstallRoot ? AppContext.BaseDirectory
-            : Path.Combine(AppContext.BaseDirectory, ".."));
+            Environment.GetEnvironmentVariable("ANIMEJANAI_ROOT") is { Length: > 0 } root ? root
+            : Path.GetDirectoryName(Environment.ProcessPath)!);
+
+        public static string DataDir { get; } = Path.GetFullPath(
+            Environment.GetEnvironmentVariable("ANIMEJANAI_DATA_DIR") is { Length: > 0 } data ? data
+            : Path.Combine(RootDir, "animejanai"));
 
         public string BackupPath => Path.Combine(DataDir, "backups");
 

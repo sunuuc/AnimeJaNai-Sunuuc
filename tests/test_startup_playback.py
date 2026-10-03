@@ -67,7 +67,7 @@ class Player:
         self.name=name;self.pipe=r'\\.\pipe\startup-'+uuid.uuid4().hex
         flags=FLAGS+(['--input-ipc-server='+self.pipe] if ipc else [])
         self.started=time.monotonic()
-        self.proc=subprocess.Popen([str(APP/exe),*flags,*args],cwd=CALLER,env=ENV,stdout=self.log,stderr=self.log)
+        self.proc=subprocess.Popen([str(APP/('app/'+exe if exe=='mpv.exe' else exe)),*flags,*args],cwd=CALLER,env=ENV,stdout=self.log,stderr=self.log)
         if ipc:
             try:
                 deadline=time.monotonic()+15

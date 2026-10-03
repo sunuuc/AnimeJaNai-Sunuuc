@@ -747,15 +747,12 @@
     "About": "关于",
     "Anime playback, optional AI upscaling and frame interpolation, and online or local danmaku.": "动漫视频播放，可选 AI 超分与补帧，支持在线和本地弹幕。",
     "Project sources": "项目来源",
-    "Current project: mpv-AnimeVE, maintained by sunuuc. Source code and issue reports:": "当前项目：mpv-AnimeVE，由 sunuuc 维护。源码与问题反馈：",
-    "Based on mpv-AnimeJaNai by the-database. GPU downloads are pinned to upstream 3.6.0.": "基于 the-database 的 mpv-AnimeJaNai；显卡组件固定使用上游 3.6.0。",
-    "This modified edition changes branding, localization, playback controls, danmaku and component management. It is not an official upstream release.": "本版本修改了品牌、中文界面、播放控制、弹幕与组件管理；属于修改版发行，并非上游官方版本。",
+    "Source code and issues": "源码与问题反馈",
     "Licenses and credits": "许可与致谢",
     "mpv / mpv.net — playback engine and Windows frontend\nAnimeJaNaiManager — configuration manager\nDanmakuFactory / libass — danmaku conversion and subtitle rendering\nRIFE / Real-ESRGAN Compact — frame interpolation and upscaling\nthumbfast / PCRE2 — thumbnails and text matching\nAvalonia / FluentAvalonia / ReactiveUI — manager interface\nTensorRT / CUDA / DirectML / ONNX Runtime — inference dependencies": "mpv / mpv.net：播放引擎与 Windows 前端\nAnimeJaNaiManager：配置管理器\nDanmakuFactory / libass：弹幕转换与字幕渲染\nRIFE / Real-ESRGAN Compact：补帧与超分\nthumbfast / PCRE2：缩略图与文本匹配\nAvalonia / FluentAvalonia / ReactiveUI：管理器界面\nTensorRT / CUDA / DirectML / ONNX Runtime：推理依赖",
     "Project license": "项目许可证",
     "Sources and third-party notices": "来源与第三方声明",
     "Third-party license texts": "第三方许可证原文",
-    "Models and GPU components download on demand. No models are bundled. Hardware recommendations do not guarantee real-time AI performance.": "模型与显卡组件按需下载，播放器包不内置模型文件。硬件推荐不代表所有模型都能实时运行。",
     "SD upscaling model": "SD 标清超分模型",
     "HD upscaling: fast (sharp)": "HD 超分：极速（锐化）",
     "HD upscaling: fast": "HD 超分：极速",
@@ -869,14 +866,11 @@
     "about": "About",
     "aboutPurpose": "Anime playback, optional AI upscaling and frame interpolation, and online or local danmaku.",
     "aboutSources": "Project sources",
-    "aboutCurrent": "Current project: mpv-AnimeVE, maintained by sunuuc. Source code and issue reports:",
-    "aboutUpstream": "Based on mpv-AnimeJaNai by the-database. GPU downloads are pinned to upstream 3.6.0.",
-    "aboutChanges": "This modified edition changes branding, localization, playback controls, danmaku and component management. It is not an official upstream release.",
+    "aboutCurrent": "Source code and issues",
     "aboutLicenses": "Licenses and credits",
     "aboutCredits": "mpv / mpv.net — playback engine and Windows frontend\nAnimeJaNaiManager — configuration manager\nDanmakuFactory / libass — danmaku conversion and subtitle rendering\nRIFE / Real-ESRGAN Compact — frame interpolation and upscaling\nthumbfast / PCRE2 — thumbnails and text matching\nAvalonia / FluentAvalonia / ReactiveUI — manager interface\nTensorRT / CUDA / DirectML / ONNX Runtime — inference dependencies",
     "openLicense": "Project license",
     "openNotices": "Sources and third-party notices",
-    "openThirdParty": "Third-party license texts",
-    "aboutDownloads": "Models and GPU components download on demand. No models are bundled. Hardware recommendations do not guarantee real-time AI performance."
+    "openThirdParty": "Third-party license texts"
   }
 }

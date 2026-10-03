@@ -80,13 +80,13 @@ public class AppClass
     }
 
     public static string About => $"mpv-AnimeVE v{AppInfo.Version}\n" +
-        "sunuuc · https://github.com/sunuuc/mpv-AnimeVE\n\n" +
+        "https://github.com/sunuuc/mpv-AnimeVE\n\n" +
         $"{Player.GetPropertyString("mpv-version")}\n" +
         $"ffmpeg {Player.GetPropertyString("ffmpeg-version")}\n" +
-        $"MediaInfo v{FileVersionInfo.GetVersionInfo(Folder.Startup + "MediaInfo.dll").FileVersion}" +
+        $"MediaInfo v{FileVersionInfo.GetVersionInfo(Path.Combine(AppContext.BaseDirectory, "MediaInfo.dll")).FileVersion}" +
         "\n\nBased on mpv-AnimeJaNai, mpv.net and mpv.\n" +
         "Copyright (C) 2000-2024 mpv.net/mpv/mplayer contributors.\n" +
-        "Full credits and component licenses: OPEN_SOURCE_NOTICES.md";
+        "Licenses: docs/OPEN_SOURCE_NOTICES.md";
 
     void Player_Initialized()
     {

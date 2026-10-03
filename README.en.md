@@ -61,4 +61,4 @@ Select `AnimeVE.exe` in Hills Lite's external player settings.
 
 [Configuration](docs/standalone.md) · [Build guide](docs/build.md) · [Danmaku rendering](docs/danmaku-renderer.md) · [Sources and third-party licenses](docs/open-source-notices.md)
 
-Based on [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai), [mpv.net](https://github.com/mpvnet-player/mpv.net) and [mpv](https://github.com/mpv-player/mpv). Maintained by [sunuuc](https://github.com/sunuuc).
+Based on [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai), [mpv.net](https://github.com/mpvnet-player/mpv.net) and [mpv](https://github.com/mpv-player/mpv).

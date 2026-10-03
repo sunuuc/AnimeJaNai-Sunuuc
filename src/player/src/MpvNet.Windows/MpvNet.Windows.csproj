@@ -10,9 +10,9 @@
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
-		<FileVersion>1.2.1.0</FileVersion>
-		<AssemblyVersion>1.2.1.0</AssemblyVersion>
-		<InformationalVersion>1.2.1</InformationalVersion>
+		<FileVersion>1.2.2.0</FileVersion>
+		<AssemblyVersion>1.2.2.0</AssemblyVersion>
+		<InformationalVersion>1.2.2</InformationalVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -44,4 +44,12 @@
 		<PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" />
 	</ItemGroup>
 
+
+  <Target Name="GeneratePortableAppHost" DependsOnTargets="_GetAppHostPaths">
+    <CreateAppHost AppHostSourcePath="$(AppHostSourcePath)"
+                   AppHostDestinationPath="$(PortableAppHostPath)"
+                   AppBinaryName="app/$(AssemblyName).dll"
+                   IntermediateAssembly="$(PortableAssembly)"
+                   WindowsGraphicalUserInterface="true" />
+  </Target>
 </Project>

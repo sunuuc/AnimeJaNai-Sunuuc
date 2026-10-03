@@ -15,7 +15,7 @@ def fixture(name, value=100):
 class Player:
     def __init__(self):
         self.directory = os.add_dll_directory(str(BUNDLE))
-        self.lib = C.CDLL(str(BUNDLE/'libmpv-2.dll'))
+        self.lib = C.CDLL(str(BUNDLE/'app/libmpv-2.dll'))
         specs = {'mpv_create':(C.c_void_p,[]), 'mpv_initialize':(C.c_int,[C.c_void_p]),
           'mpv_set_option_string':(C.c_int,[C.c_void_p,C.c_char_p,C.c_char_p]),
           'mpv_set_property_string':(C.c_int,[C.c_void_p,C.c_char_p,C.c_char_p]),
@@ -152,14 +152,14 @@ def frontend():
 def run(case):
     if case=='frontend':return frontend()
     if case=='lua':
-        args=[str(BUNDLE/'mpv.exe'),'--no-config','--vo=null','--ao=null','--idle=yes',
+        args=[str(BUNDLE/'app/mpv.exe'),'--no-config','--vo=null','--ao=null','--idle=yes',
             '--scripts='+str(ROOT/'tests/test_stats.lua'),'--script-opts=r2root='+str(ROOT)]
         cp=subprocess.run(args,capture_output=True,timeout=20)
         (OUT/'lua-output.log').write_bytes(cp.stdout+cp.stderr)
         assert cp.returncode==0 and b'PASS native FPS Lua' in cp.stdout+cp.stderr,cp.stdout+cp.stderr
         return {'case':case}
     if case.startswith('close-'):
-        cp=subprocess.run([str(BUNDLE/'mpv.exe'),'--no-config','--vo=null','--ao=null','--frames=2',
+        cp=subprocess.run([str(BUNDLE/'app/mpv.exe'),'--no-config','--vo=null','--ao=null','--frames=2',
                            str(fixture('close.y4m'))],capture_output=True,timeout=20)
         assert cp.returncode==0,cp.stderr
         return {'case':case}

@@ -14,7 +14,7 @@ public partial class AboutViewModel : ViewModelBase
     public void OpenSource() => ProcessHelp.ShellExecute("https://github.com/sunuuc/mpv-AnimeVE");
 
     [RelayCommand]
-    public void OpenNotices() => ProcessHelp.ShellExecute(Path.Combine(Folder.Startup, "OPEN_SOURCE_NOTICES.md"));
+    public void OpenNotices() => ProcessHelp.ShellExecute(Path.Combine(Folder.Startup, "docs", "OPEN_SOURCE_NOTICES.md"));
 
     [RelayCommand]
     public void Close() => CloseAction!();

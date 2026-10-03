@@ -173,7 +173,7 @@ def stage():
     (ST/'portable_config/scripts/modernx.lua').unlink(missing_ok=True)
     (ST/'portable_config/script-opts/modernx.conf').unlink(missing_ok=True)
     p=ST/'portable_config/scripts/thumbfast.lua';s=p.read_text(encoding='utf-8')
-    s=s.replace('local mpv_path = options.mpv_path','local mpv_path = options.mpv_path == "mpv" and mp.command_native({"expand-path", "~~/../mpv.exe"}) or options.mpv_path')
+    s=s.replace('local mpv_path = options.mpv_path','local mpv_path = options.mpv_path == "mpv" and mp.command_native({"expand-path", "~~/../app/mpv.exe"}) or options.mpv_path')
     p.write_text(s,encoding='utf-8')
     for n in ('input.conf','input-animejanai.conf'):
         p=ST/'portable_config'/n;s=p.read_text(encoding='utf-8')
@@ -181,14 +181,46 @@ def stage():
         p.write_text(s,encoding='utf-8')
     component_assets=prepare_components(ST,DIST,META,SEVEN)
     dump(E/'component-assets.json',component_assets)
-    dump(E/'components.json',validate_components(ST))
+
     dump(ST/'manifest.json',{'name':META['name'],'version':META['version'],'distribution':'portable','repository':REPO,'component_version':'3.6.0','platform':'win-x64'})
     cp(R/'docs/standalone.md',ST/'使用说明.md')
     for name in ('README.md','README.en.md','CHANGELOG.md'):cp(R/name,ST/name)
     for name in ('standalone.md','build.md','danmaku-renderer.md','open-source-notices.md'):cp(R/'docs'/name,ST/'docs'/name)
-    for name in ('准备使用.txt','README-full.txt'):
-        (ST/name).write_text('直接运行 AnimeVE.exe；管理器的组件页可选择下载模型和显卡组件。\n不需要先安装原版，不要将此包当覆盖补丁使用。\n中文与语言选择在管理器全局设置；完整说明见 使用说明.md。\n不内置模型，默认普通播放；显卡驱动由系统提供。\n',encoding='utf-8')
+    organize_payload()
+    dump(E/'components.json',validate_components(ST))
     inspect_payload()
+
+def organize_payload():
+    runtime=ST/'app';runtime.mkdir(exist_ok=True)
+    docs=ST/'docs';docs.mkdir(exist_ok=True)
+    for name in ('README.md','README.en.md','CHANGELOG.md','LICENSE','OPEN_SOURCE_NOTICES.md',
+                 'THIRD_PARTY_LICENSES','licenses','使用说明.md','弹幕说明.md'):
+        source=ST/name
+        if source.exists():
+            cp(source,docs/name)
+            if source.is_dir():shutil.rmtree(source)
+            else:source.unlink()
+    for name in ('准备使用.txt','README-full.txt','更新说明-r2.md','更新说明-r4.md'):
+        (ST/name).unlink(missing_ok=True)
+    for source in list(ST.iterdir()):
+        if source.name in ('app','docs','portable_config','animejanai'):continue
+        target=runtime/source.name
+        cp(source,target)
+        if source.is_dir():shutil.rmtree(source)
+        else:source.unlink()
+    for name in ('README.md','README.en.md'):
+        path=docs/name
+        path.write_text(path.read_text(encoding='utf-8').replace('(docs/','('),encoding='utf-8')
+    for project,published,name in (
+        ('player/src/MpvNet.Windows/MpvNet.Windows.csproj','publish-player','AnimeVE'),
+        ('manager/AnimeJaNaiConfEditor/AnimeJaNaiConfEditor.csproj','publish-manager','AnimeVEManager')):
+        run('dotnet','msbuild',R/project,'-t:GeneratePortableAppHost','-p:Configuration=Release',
+            '-p:RuntimeIdentifier=win-x64',f'-p:PortableAssembly={R/published/(name+".dll")}',
+            f'-p:PortableAppHostPath={ST/(name+".exe")}', '-verbosity:quiet')
+        (runtime/(name+'.exe')).unlink()
+    expected={'AnimeVE.exe','AnimeVEManager.exe','app','docs','portable_config','animejanai'}
+    if {p.name for p in ST.iterdir()}!=expected:raise RuntimeError('Unexpected portable root entries')
+
 
 def clean_session_files(app):
     for folder in ('cache','watch_later'):
@@ -201,7 +233,7 @@ def inspect_payload():
     run(sys.executable,R/'tests/test_branding.py',ST)
     files=[p for p in ST.rglob('*') if p.is_file()]
     dump(E/'file-inventory.json',{p.relative_to(ST).as_posix():p.stat().st_size for p in files})
-    required=['AnimeVE.exe','mpv.exe','libmpv-2.dll','AnimeVEManager.exe','AnimeVEUpdater.exe',
+    required=['AnimeVE.exe','app/mpv.exe','app/libmpv-2.dll','AnimeVEManager.exe','app/AnimeVEUpdater.exe',
        'portable_config/mpv.conf','portable_config/mpv-animejanai.conf','portable_config/input.conf',
        'portable_config/script-opts/player_ui.conf','portable_config/script-opts/player_ui_danmaku.conf',
        'portable_config/scripts/network_playback.lua','portable_config/scripts/player_ui.lua','portable_config/scripts/player_ui_danmaku.lua','portable_config/scripts/thumbfast.lua',
@@ -209,9 +241,9 @@ def inspect_payload():
        'portable_config/script-modules/player_ui_menu.lua','portable_config/script-modules/player_ui_danmaku_online.lua',
        'portable_config/script-modules/player_ui_danmaku_render.lua','animejanai/danmaku/DanmakuFactory.exe',
        'animejanai/animejanai.conf','animejanai/inference/aji.dll','animejanai/inference/aji_trt.dll',
-       'animejanai/inference/aji_dml.dll','7za.exe','OPEN_SOURCE_NOTICES.md','LICENSE',
-       'THIRD_PARTY_LICENSES/mpv-source/Copyright','THIRD_PARTY_LICENSES/DirectML.txt',
-       'Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
+       'animejanai/inference/aji_dml.dll','app/7za.exe','app/manifest.json','docs/OPEN_SOURCE_NOTICES.md','docs/LICENSE',
+       'docs/THIRD_PARTY_LICENSES/mpv-source/Copyright','docs/THIRD_PARTY_LICENSES/DirectML.txt',
+       'app/Locale/zh-CN/LC_MESSAGES/mpvnet.mo']
     for name in required:
         if not (ST/name).is_file() or (ST/name).stat().st_size==0:raise RuntimeError('Incomplete package: '+name)
     component_report=validate_components(ST)
@@ -239,7 +271,7 @@ def package():
     if len(danmaku)!=4 or not all(r['passed'] for r in danmaku):raise RuntimeError('Native danmaku tests failed')
     shutil.rmtree(ST/'portable_config/watch_later',ignore_errors=True)
     inspect_payload();DIST.mkdir(exist_ok=True)
-    info=ST/'build-info/standalone'
+    info=ST/'app/build-info/standalone'
     shutil.rmtree(info/'validation',ignore_errors=True)
     shutil.rmtree(info/'ui-validation',ignore_errors=True)
     copy_validation_reports(E,info/'validation')

@@ -61,14 +61,14 @@ def digest(path):
 
 def verify_updater(updater, seven, live=False, model_assets=None, package=None):
     with tempfile.TemporaryDirectory(prefix='neko-components-') as temp:
-        root=Path(temp);app=root/'app';app.mkdir()
+        root=Path(temp);app=root/'package';runtime_dir=app/'app';runtime_dir.mkdir(parents=True)
         # Updater publish directory contains runtime files, but no GUI is launched.
-        shutil.copytree(updater.parent,app,dirs_exist_ok=True)
-        shutil.copy2(seven,app/'7za.exe')
-        target=app/'build-info/standalone/components.json';target.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copytree(updater.parent,runtime_dir,dirs_exist_ok=True)
+        shutil.copy2(seven,runtime_dir/'7za.exe')
+        target=runtime_dir/'build-info/standalone/components.json';target.parent.mkdir(parents=True,exist_ok=True)
         def write(packs):target.write_text(json.dumps({'package_version':'3.6.0','packs':packs}),encoding='utf-8')
         def call(*args,ok=0):
-            p=subprocess.run([str(app/updater.name),*args],capture_output=True,timeout=180)
+            p=subprocess.run([str(runtime_dir/updater.name),*args],capture_output=True,timeout=180)
             if p.returncode!=ok:raise AssertionError((args,p.returncode,p.stdout.decode('utf-8',errors='replace'),p.stderr.decode('utf-8',errors='replace')))
             return p
         def pack(name,content,requires=[]):
@@ -118,7 +118,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
         assert (app/first).read_bytes()==b'original one' and (app/second).read_bytes()==b'original two'
         print('PASS failed commit restores existing files')
         cancel=pack('cancel',b'cancel fixture');write([cancel])
-        p=subprocess.run([str(app/updater.name),'--install','cancel'],input=b'cancel\n',capture_output=True,timeout=20)
+        p=subprocess.run([str(runtime_dir/updater.name),'--install','cancel'],input=b'cancel\n',capture_output=True,timeout=20)
         assert p.returncode==3,(p.returncode,p.stdout,p.stderr)
         assert not (app/cancel['files'][0]).exists()
         print('PASS cancellation leaves no partial installed model')
@@ -132,7 +132,7 @@ def verify_updater(updater, seven, live=False, model_assets=None, package=None):
         else:assert not any(p['recommended'] for p in state['packs'])
         print('PASS recommendations select the detected GPU generation without selecting models')
         if model_assets:
-            catalog=json.loads((package/'build-info/standalone/components.json').read_text())
+            catalog=json.loads((package/'app/build-info/standalone/components.json').read_text())
             models=[p for p in catalog['packs'] if p['name'].startswith('upscale-model-')]
             write(catalog['packs'])
             for p in models:

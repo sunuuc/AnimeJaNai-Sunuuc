@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Management;
 
-string installDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+string installDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
 using var cancellation = new CancellationTokenSource();
 if (Console.IsInputRedirected)
     _ = Task.Run(async () => { if (await Console.In.ReadLineAsync() == "cancel") cancellation.Cancel(); });
@@ -19,7 +19,7 @@ try
     if (mode == "--verify")
     {
         var sums = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(
-            Path.Combine(installDir, "build-info", "standalone", "SHA256.json")))!;
+            Path.Combine(installDir, "app", "build-info", "standalone", "SHA256.json")))!;
         var failed = sums.Where(p => !p.Key.EndsWith(".conf") && !p.Key.Contains("interface-language") &&
             (!File.Exists(Inside(installDir, p.Key)) || Hash(Inside(installDir, p.Key)) != p.Value)).Select(p => p.Key).ToArray();
         Console.WriteLine(JsonSerializer.Serialize(new { ok = failed.Length == 0, failed }));
@@ -31,7 +31,7 @@ try
         return 2;
     }
     var index = JsonSerializer.Deserialize<PackIndex>(File.ReadAllText(Path.Combine(installDir,
-        "build-info", "standalone", "components.json")), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+        "app", "build-info", "standalone", "components.json")), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
         ?? throw new InvalidDataException("Missing component catalog.");
     ValidateIndex(index);
     var gpu = DetectGpu();
@@ -208,7 +208,7 @@ static async Task DownloadFileAsync(Pack pack, string destination, CancellationT
 
 async Task<string> SevenZip(string[] arguments)
 {
-    var psi = new ProcessStartInfo { FileName = Path.Combine(installDir, "7za.exe"), WorkingDirectory = installDir,
+    var psi = new ProcessStartInfo { FileName = Path.Combine(installDir, "app", "7za.exe"), WorkingDirectory = installDir,
         UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
         StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
     foreach (var arg in arguments) psi.ArgumentList.Add(arg);

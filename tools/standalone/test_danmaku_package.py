@@ -14,9 +14,9 @@ def verify(app, evidence):
     env = os.environ.copy()
     env.update({
         'ANIMEJANAI_INSTALL': str(app),
-        'ANIMEJANAI_MPV_EXE': str(app / 'mpv.exe'),
+        'ANIMEJANAI_MPV_EXE': str(app / 'app/mpv.exe'),
         'DANMAKU_FACTORY': str(app / 'animejanai/danmaku/DanmakuFactory.exe'),
-        'ANIMEJANAI_LIBASS': str(app / 'libass-9.dll'),
+        'ANIMEJANAI_LIBASS': str(app / 'app/libass-9.dll'),
         'ANIMEJANAI_PLAYER_CONFIG': str(app / 'portable_config/mpv.conf'),
         'ANIMEJANAI_DANMAKU_SCRIPT': str(app / 'portable_config/scripts/player_ui_danmaku.lua'),
         'ANIMEJANAI_PLAYER_UI_SCRIPT': str(app / 'portable_config/scripts/player_ui.lua'),

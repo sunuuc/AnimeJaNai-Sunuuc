@@ -28,6 +28,6 @@ python tools/standalone/build.py stage
 - `portable_config`：播放脚本和默认配置。
 - `third_party/danmaku-factory`、`third_party/libass`：随包编译的修改源码。
 - `tools/standalone`：依赖、编译、打包与发布工具。
-- `build-info/standalone`：发行包中的构建来源、文件校验值与验证报告。
+- `app/build-info/standalone`：发行包中的构建来源、文件校验值与验证报告。
 
 发布说明从 `CHANGELOG.md` 中提取与 `release.json` 版本对应的条目。

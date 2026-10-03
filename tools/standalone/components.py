@@ -47,7 +47,7 @@ def prepare(app, dist, meta, seven):
             if 'LICENSE' not in name.upper():
                 (app/name).unlink(missing_ok=True)
     (app/'animejanai/inference/gpu-target.json').unlink(missing_ok=True)
-    target = app/'build-info/standalone/components.json'
+    target = app/'app/build-info/standalone/components.json'
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(catalog, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     return assets
@@ -65,7 +65,7 @@ def model_title(name):
 def validate(app):
     if list(app.rglob('*.onnx')) or list(app.rglob('*.engine')):
         raise RuntimeError('Core distribution must not contain AI models or engine caches')
-    catalog = json.loads((app/'build-info/standalone/components.json').read_text(encoding='utf-8'))
+    catalog = json.loads((app/'app/build-info/standalone/components.json').read_text(encoding='utf-8'))
     if not any(p['name'].startswith('upscale-model-') for p in catalog['packs']):
         raise RuntimeError('Missing optional model catalog')
     for pack in catalog['packs']:

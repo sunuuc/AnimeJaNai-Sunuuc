@@ -61,4 +61,4 @@ Windows 动漫播放器，支持 AI 超分、RIFE 补帧和在线／本地弹幕
 
 [配置说明](docs/standalone.md) · [构建](docs/build.md) · [弹幕渲染](docs/danmaku-renderer.md) · [来源与第三方许可](docs/open-source-notices.md)
 
-基于 [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai)、[mpv.net](https://github.com/mpvnet-player/mpv.net) 和 [mpv](https://github.com/mpv-player/mpv)。由 [sunuuc](https://github.com/sunuuc) 维护。
+基于 [mpv-AnimeJaNai](https://github.com/the-database/mpv-AnimeJaNai)、[mpv.net](https://github.com/mpvnet-player/mpv.net) 和 [mpv](https://github.com/mpv-player/mpv)。

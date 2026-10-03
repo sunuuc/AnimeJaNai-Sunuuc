@@ -8,7 +8,7 @@ namespace AnimeJaNai.Localization;
 // Only UI preference lives here; never touch AI profiles, model names or mpv.conf.
 public static class InterfaceLanguage
 {
-    public static string SettingsPath { get; set; } = Path.Combine(AppContext.BaseDirectory,"portable_config","interface-language.json");
+    public static string SettingsPath { get; set; } = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!,"portable_config","interface-language.json");
     public static readonly string[] Choices = { "zh-CN", "en", "system" };
     public static string Selection { get; private set; } = Read();
     public static string Effective => Resolve(Selection, CultureInfo.CurrentUICulture.Name);

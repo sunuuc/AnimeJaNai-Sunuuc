@@ -92,7 +92,7 @@ class BrandingTests(unittest.TestCase):
         manager = (ROOT / 'src/manager/AnimeJaNaiConfEditor/Views/MainWindow.axaml').read_text(encoding='utf-8')
         self.assertNotIn('aboutLicenseScope', manager)
         player = (ROOT / 'src/player/src/MpvNet/App.cs').read_text(encoding='utf-8')
-        self.assertIn('sunuuc · https://github.com/sunuuc/mpv-AnimeVE', player)
+        self.assertIn('https://github.com/sunuuc/mpv-AnimeVE', player)
         self.assertIn('OPEN_SOURCE_NOTICES.md', player)
         for name in ('input.conf', 'input-animejanai.conf'):
             rows = (ROOT / 'portable_config' / name).read_text(encoding='utf-8').splitlines()
@@ -105,14 +105,21 @@ class BrandingTests(unittest.TestCase):
 
 def verify_package(folder):
     app = Path(folder).resolve()
+    assert {p.name for p in app.iterdir()} == {
+        'AnimeVE.exe', 'AnimeVEManager.exe', 'app', 'docs', 'portable_config', 'animejanai'}
+    assert not list(app.glob('*.dll'))
+    for name in ('AnimeVE', 'AnimeVEManager'):
+        assert ('app/'+name+'.dll').encode() in (app/(name+'.exe')).read_bytes()
+    for name in ('LICENSE', 'OPEN_SOURCE_NOTICES.md', 'THIRD_PARTY_LICENSES'):
+        assert (app/'docs'/name).exists(), name
     for filename in ENTRY_POINTS:
-        assert (app / filename).is_file(), filename
+        assert (app / ('app/'+filename if filename.endswith('Updater.exe') else filename)).is_file(), filename
     for filename in ('mpvnet.exe', 'AnimeJaNaiManager.exe', 'AnimeJaNaiUpdater.exe'):
         assert not (app / filename).exists(), 'Obsolete entry point: ' + filename
     env = dict(os.environ, BRANDING_APP=str(app))
     script = '''
 $ErrorActionPreference = 'Stop'
-$names = 'AnimeVE.exe', 'AnimeVEManager.exe', 'AnimeVEUpdater.exe'
+$names = 'AnimeVE.exe', 'AnimeVEManager.exe', 'app/AnimeVEUpdater.exe'
 $result = foreach ($name in $names) {
     $info = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $env:BRANDING_APP $name))
     @{name=$name;product=$info.ProductName;version=$info.ProductVersion}

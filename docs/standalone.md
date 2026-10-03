@@ -4,14 +4,23 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `mpv-AnimeVE-1.2.1-win-x64.7z` | 播放器便携包 |
-| `mpv-AnimeVE-1.2.1-sources.zip` | 对应版本源码 |
+| `mpv-AnimeVE-1.2.2-win-x64.7z` | 播放器便携包 |
+| `mpv-AnimeVE-1.2.2-sources.zip` | 对应版本源码 |
 | `SHA256SUMS.txt` | 下载校验值 |
 | `AnimeVE.exe` | 播放器 |
 | `AnimeVEManager.exe` | 配置与组件管理器 |
-| `AnimeVEUpdater.exe` | 组件管理命令行工具 |
+| `app/AnimeVEUpdater.exe` | 组件管理命令行工具 |
 
 解压播放器包后运行 `AnimeVE.exe`。模型和显卡组件在管理器“组件”页下载。
+
+## 目录
+
+- `AnimeVE.exe`：播放器。
+- `AnimeVEManager.exe`：管理器。
+- `app`：运行库、语言资源和组件工具。
+- `portable_config`：播放器配置。
+- `animejanai`：AI 配置、模型和缓存。
+- `docs`：文档与许可证。
 
 ## 配置
 

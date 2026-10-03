@@ -6,7 +6,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <Title>AnimeVE Manager</Title>
     <Product>AnimeVE</Product>
     <AssemblyName>AnimeVEManager</AssemblyName>
@@ -52,4 +52,12 @@
     </None>
   </ItemGroup>
 <ItemGroup><EmbeddedResource Include="LanguageStrings.json" LogicalName="AnimeJaNai.LanguageStrings.json" /></ItemGroup>
+
+  <Target Name="GeneratePortableAppHost" DependsOnTargets="_GetAppHostPaths">
+    <CreateAppHost AppHostSourcePath="$(AppHostSourcePath)"
+                   AppHostDestinationPath="$(PortableAppHostPath)"
+                   AppBinaryName="app/$(AssemblyName).dll"
+                   IntermediateAssembly="$(PortableAssembly)"
+                   WindowsGraphicalUserInterface="true" />
+  </Target>
 </Project>

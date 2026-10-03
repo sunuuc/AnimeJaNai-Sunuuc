@@ -25,7 +25,7 @@ test_env=os.environ.copy();test_env['LOCALAPPDATA']=str(PRIVATE)
 results=[]
 def run(name,args,marker,timeout=90):
     try:
-        p=subprocess.run([str(APP/'mpv.exe'),*args],capture_output=True,timeout=timeout,env=test_env)
+        p=subprocess.run([str(APP/'app/mpv.exe'),*args],capture_output=True,timeout=timeout,env=test_env)
         log=p.stdout+p.stderr
         passed=p.returncode==0 and marker in log and b'stack traceback' not in log.lower()
         result={'case':name,'passed':passed,'exit_code':p.returncode}

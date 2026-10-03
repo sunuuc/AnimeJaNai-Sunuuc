@@ -23,7 +23,7 @@ class Param(C.Structure):
 class Viewport(unittest.TestCase):
     def test_screen_composition_and_resize(self):
         directory = os.add_dll_directory(str(INSTALL))
-        dll = C.CDLL(str(INSTALL / 'libmpv-2.dll'))
+        dll = C.CDLL(str(INSTALL / 'app/libmpv-2.dll'))
         signatures = {
             'mpv_create': (C.c_void_p, []),
             'mpv_set_option_string': (C.c_int, [C.c_void_p, C.c_char_p, C.c_char_p]),
