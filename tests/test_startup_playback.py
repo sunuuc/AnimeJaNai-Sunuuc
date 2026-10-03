@@ -13,10 +13,10 @@ SOURCE=Path(sys.argv[1]).resolve();OUT=Path(sys.argv[2]).resolve();OUT.mkdir(par
 APP=OUT/'独立 player';shutil.copytree(SOURCE,APP)
 CALLER=OUT/'caller 工作目录';CALLER.mkdir()
 ENV=os.environ.copy()
-for key in ('NEKOANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
+for key in ('ANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR','_started_from_console'):
     ENV.pop(key,None)
 ENV['PATH']=os.environ['SystemRoot']+r'\System32'
-ENV['NEKOANIMEVE_HOME']=str(OUT/'deleted-original'/'portable_config')
+ENV['ANIMEVE_HOME']=str(OUT/'deleted-original'/'portable_config')
 ENV['DOTNET_ROOT']=str(OUT/'no-dotnet');ENV['DOTNET_ROOT_X64']=ENV['DOTNET_ROOT']
 ENV['DOTNET_MULTILEVEL_LOOKUP']='0';ENV['DOTNET_BUNDLE_EXTRACT_BASE_DIR']=str(OUT/'bundles')
 MEDIA=b'YUV4MPEG2 W160 H90 F24:1 Ip A1:1 C420jpeg\n'+(b'FRAME\n'+b'\x60'*(160*90)+b'\x80'*(160*90//2))*24*12

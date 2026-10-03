@@ -126,7 +126,7 @@ public static class StartupDiagnostics
                     : startIndex.HasValue ? "index"
                     : rawStart is "auto" or "no" ? "auto" : "other";
                 string configuration = options.Any(o => o.Name == "config-dir") ? "explicit"
-                    : Directory.Exists(Environment.GetEnvironmentVariable("NEKOANIMEVE_HOME")) ? "environment"
+                    : Directory.Exists(Environment.GetEnvironmentVariable("ANIMEVE_HOME")) ? "environment"
                     : Directory.Exists(Path.Combine(Folder.Startup, "portable_config")) ? "portable" : "appdata";
                 var data = new
                 {

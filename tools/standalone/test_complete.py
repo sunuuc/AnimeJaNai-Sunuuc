@@ -17,7 +17,7 @@ def record(name,fn):
 ENV=os.environ.copy();empty=OUT/'no-dotnet';empty.mkdir(exist_ok=True)
 ENV.update({'DOTNET_ROOT':str(empty),'DOTNET_ROOT_X64':str(empty),'DOTNET_MULTILEVEL_LOOKUP':'0',
     'DOTNET_BUNDLE_EXTRACT_BASE_DIR':str(OUT/'bundles')})
-for key in ('NEKOANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR'):ENV.pop(key,None)
+for key in ('ANIMEVE_HOME','MPV_HOME','ANIMEJANAI_ROOT','ANIMEJANAI_DATA_DIR'):ENV.pop(key,None)
 ENV['PATH']=str(APP)+os.pathsep+str(APP/'animejanai/inference')+os.pathsep+os.environ.get('SystemRoot',r'C:\Windows')+r'\System32'
 
 def stop(proc):

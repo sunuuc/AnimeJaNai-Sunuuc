@@ -251,7 +251,7 @@ public class MainPlayer : MpvClient
                 if (explicitConfig.Length > 0)
                     return _configFolder = System.IO.Path.GetFullPath(explicitConfig).AddSep();
 
-                string? mpvnet_home = Environment.GetEnvironmentVariable("NEKOANIMEVE_HOME");
+                string? mpvnet_home = Environment.GetEnvironmentVariable("ANIMEVE_HOME");
 
                 if (Directory.Exists(mpvnet_home))
                     return _configFolder = mpvnet_home.AddSep();

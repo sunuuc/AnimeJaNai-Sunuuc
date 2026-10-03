@@ -115,7 +115,7 @@ Config Folder
 
 mpv.net searches the config folder at:
 
-1. Folder defined via NEKOANIMEVE_HOME environment variable.
+1. Folder defined via ANIMEVE_HOME environment variable.
 2. startup\portable_config (startup means the directory containing AnimeVE.exe)
 3. `%APPDATA%\mpv.net` (`C:\Users\Username\AppData\Roaming\mpv.net`)
 
@@ -726,7 +726,7 @@ as mpv properties available on the command line.
 Environment Variables
 ---------------------
 
-### NEKOANIMEVE_HOME
+### ANIMEVE_HOME
 
 Directory where mpv.net looks for the user configuration.
 

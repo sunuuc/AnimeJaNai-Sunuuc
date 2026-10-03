@@ -15,7 +15,7 @@ class Test
  {
     var root=Path.GetFullPath(args[0]);Directory.CreateDirectory(root);
     var config=Path.Combine(root,"isolated-player");Directory.CreateDirectory(config);
-    Environment.SetEnvironmentVariable("NEKOANIMEVE_HOME",config);
+    Environment.SetEnvironmentVariable("ANIMEVE_HOME",config);
     InterfaceLanguage.SettingsPath=Path.Combine(config,"interface-language.json");
     MpvNet.Translator.Current=new WpfTranslator();
     WpfApplication.Init();
