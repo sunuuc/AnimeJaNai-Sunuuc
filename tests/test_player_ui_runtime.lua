@@ -92,6 +92,7 @@ local steps={}
 steps[#steps+1]=function(next_)
  check(ui().version=='1.3.0','Player UI controller version')
  check(mp.get_property_number('vo-presented-frame-count',0)>0,'native video output')
+ check(not ui().loading and ui().visible,'paused first frame exits loading and displays controls')
  check(button('previous') and button('play') and button('next') and button('volume') and button('speed'),
   'Player UI playback controls are present')
  check(button('settings') and button('audio') and button('sub') and button('danmaku')
@@ -446,7 +447,7 @@ mp.register_event('file-loaded',function()
  local function wait()
   attempts=attempts+1
   if ui().overlay_error then error('native overlay rejected: '..ui().overlay_error)end
-  if ui().version and ui().overlay_ok and mp.get_property_number('vo-presented-frame-count',0)>0 then next_step()
+  if ui().version and ui().overlay_ok and ui().visible and mp.get_property_number('vo-presented-frame-count',0)>0 then next_step()
   elseif attempts<30 then after(.2,wait)else error('UI initialization timeout')end
  end
  after(.5,wait)

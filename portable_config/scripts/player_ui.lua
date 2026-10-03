@@ -1202,7 +1202,17 @@ mp.register_event('start-file',function()
     menus.close();state.drag=nil;state.pressed=nil;state.fps=nil
     samples:reset();hide_thumb();sync_timers();request_render()
 end)
-mp.register_event('file-loaded',function()samples:reset();sync_timers();request_render()end)
+local function paused_video_ready()
+    if bool('pause') and bool('vo-configured') and not bool('idle-active',true) then
+        playback_ready=true;loading=false;show()
+    end
+end
+mp.observe_property('vo-configured','bool',function(_,configured)
+    if configured then paused_video_ready() end
+end)
+mp.register_event('file-loaded',function()
+    samples:reset();paused_video_ready();sync_timers();request_render()
+end)
 mp.register_event('playback-restart',function()
     playback_ready=true;loading=false;show()
 end)
